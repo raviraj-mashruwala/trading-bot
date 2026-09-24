@@ -163,6 +163,8 @@ trade_plans/
 logs/
 .pytest_cache/
 *.egg-info/
+.claude/
+.superpowers/
 ```
 
 Create `.env.example`:
@@ -6907,7 +6909,7 @@ git commit -m "feat: add broker interface with Kite and virtual broker implement
   - `PositionMonitor(broker)` with `snapshot() -> dict[str, Position]`, `unrealised_pnl(positions) -> float`.
   - `ExitDecision` enum: `HOLD`, `BOOK_TARGET_1`, `BOOK_TARGET_2`, `STOP_HIT`, `SQUARE_OFF`.
   - `ExitManager(square_off_time)` with `decide(state, price, now) -> ExitDecision` and `trail_stop(state) -> float`.
-  - `Executor(broker, plan, risk_manager, database, execution_config, mode, clock=now_ist)` with `start() -> None`, `tick() -> None`, `adopt_existing_positions() -> None`, `is_done -> bool`.
+  - `Executor(broker, plan, risk_manager, database, execution_config, mode, clock=now_ist)` with `start() -> None`, `tick() -> None`, `is_done -> bool`, and the `blocked` / `kill_switch_tripped` / `states` attributes. Adoption of pre-existing positions happens inside `start()` via the private `_adopt` helper — there is no public adopt method.
 
 **Architectural rule:** nothing under `tradingbot/executor/` may import `tradingbot.core.llm`. Step 1 pins this with a test.
 
