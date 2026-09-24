@@ -143,9 +143,15 @@ def test_compute_snapshot_rejects_too_few_candles():
 
 
 def test_indicator_functions_never_mutate_the_input_frame():
-    df = make_candles(np.arange(100, 300, dtype=float))
+    df = make_candles(np.arange(100, 160, dtype=float))
     before = df.copy(deep=True)
 
-    compute_snapshot("INFY", df)
+    # Call individual indicator functions on the 60-candle frame
+    # (compute_snapshot requires 200+ candles; individual functions have no floor)
+    rsi(df["close"])
+    atr(df)
+    bollinger_bands(df["close"])
+    vwap(df)
+    support_resistance(df)
 
     pd.testing.assert_frame_equal(df, before)
