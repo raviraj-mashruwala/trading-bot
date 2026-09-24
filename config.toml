@@ -1,0 +1,44 @@
+[general]
+mode = "paper"
+capital = 400000
+log_level = "INFO"
+
+[scanner]
+min_volume = 500000
+min_price = 50
+max_price = 5000
+min_market_cap_cr = 5000
+min_atr_pct = 0.5
+max_stocks_to_llm = 100
+llm_pick_count = 15
+
+[strategy]
+backtest_days = 30
+candle_interval = "15minute"
+min_confidence = 0.5
+min_reward_risk = 1.5
+max_trades_per_day = 2
+
+[risk]
+max_risk_per_trade_pct = 0.01
+max_daily_loss_pct = 0.02
+max_capital_deployed_pct = 0.50
+max_concurrent_positions = 2
+
+[execution]
+entry_slippage_pct = 0.05
+square_off_time = "15:10"
+connection_timeout_sec = 30
+heartbeat_interval_sec = 60
+plan_max_age_hours = 14
+max_entry_price_drift_pct = 2.0
+
+[llm]
+provider = "anthropic"
+model = "claude-sonnet-5"
+timeout_sec = 60
+max_retries = 1
+
+[paper]
+slippage_pct = 0.05
+initial_capital = 400000
