@@ -19,7 +19,7 @@ def make_risk_config(**overrides) -> RiskConfig:
     defaults = {
         "max_risk_per_trade_pct": 0.01,
         "max_daily_loss_pct": 0.02,
-        "max_capital_deployed_pct": 2.5,
+        "max_capital_deployed_pct": 0.50,
         "max_concurrent_positions": 2,
     }
     defaults.update(overrides)
@@ -31,7 +31,7 @@ def make_strategy_config(**overrides) -> StrategyConfig:
         "backtest_days": 30,
         "candle_interval": "15minute",
         "min_confidence": 0.5,
-        "min_reward_risk": 1.4,
+        "min_reward_risk": 1.5,
         "max_trades_per_day": 2,
     }
     defaults.update(overrides)
@@ -44,10 +44,10 @@ def make_manager(capital=400000.0, **risk_overrides) -> RiskManager:
 
 def make_setup(
     symbol="RELIANCE",
-    entry=2855.0,
-    stop=2830.0,
-    target_1=2890.0,
-    target_2=2920.0,
+    entry=100.0,
+    stop=90.0,
+    target_1=120.0,
+    target_2=130.0,
     confidence=0.72,
     direction=Direction.LONG,
 ) -> TradeSetup:
@@ -83,8 +83,8 @@ def make_plan(legs, generated_at=datetime(2026, 9, 23, 22, 0, tzinfo=IST)) -> Tr
 def test_position_size_uses_risk_divided_by_stop_distance():
     manager = make_manager()
 
-    # 1% of 400000 = 4000 risk budget; 25 rupees of risk per share -> 160 shares.
-    assert manager.position_size(make_setup()) == 160
+    # 1% of 400000 = 4000 risk budget; 10 rupees of risk per share -> 400 shares.
+    assert manager.position_size(make_setup()) == 400
 
 
 def test_position_size_is_floored_not_rounded_up():
@@ -126,7 +126,7 @@ def test_short_setups_size_on_the_absolute_stop_distance():
 def test_risk_amount_is_quantity_times_stop_distance():
     manager = make_manager()
 
-    assert manager.risk_amount_for(make_setup(), quantity=160) == pytest.approx(4000.0)
+    assert manager.risk_amount_for(make_setup(), quantity=400) == pytest.approx(4000.0)
 
 
 def test_vet_setup_accepts_a_healthy_setup():
@@ -138,20 +138,20 @@ def test_vet_setup_rejects_low_confidence():
 
 
 def test_vet_setup_rejects_poor_reward_to_risk():
-    # 25 of risk against 25 of reward is 1.0, below the 1.5 minimum.
-    assert make_manager().vet_setup(make_setup(target_1=2880.0)) == "reward:risk below minimum"
+    # 10 of risk against 5 of reward is 0.5, below the 1.5 minimum.
+    assert make_manager().vet_setup(make_setup(target_1=105.0)) == "reward:risk below minimum"
 
 
 def test_vet_setup_rejects_a_long_whose_stop_sits_above_entry():
-    assert make_manager().vet_setup(make_setup(stop=2900.0)) == "stop loss on the wrong side of entry"
+    assert make_manager().vet_setup(make_setup(stop=110.0)) == "stop loss on the wrong side of entry"
 
 
 def test_vet_setup_rejects_a_long_whose_target_sits_below_entry():
-    assert make_manager().vet_setup(make_setup(target_1=2800.0)) == "target on the wrong side of entry"
+    assert make_manager().vet_setup(make_setup(target_1=80.0)) == "target on the wrong side of entry"
 
 
 def test_vet_setup_rejects_a_zero_width_stop():
-    assert make_manager().vet_setup(make_setup(stop=2855.0)) == "stop loss equals entry price"
+    assert make_manager().vet_setup(make_setup(stop=100.0)) == "stop loss equals entry price"
 
 
 def test_select_legs_keeps_only_the_highest_confidence_setups():
@@ -201,7 +201,7 @@ def test_select_legs_carries_the_sized_quantity_and_risk_onto_the_leg():
 
     legs = manager.select_legs([make_setup()], max_entry_wait=time(11, 0), exit_before=time(15, 10))
 
-    assert legs[0].quantity == 160
+    assert legs[0].quantity == 400
     assert legs[0].risk_amount == pytest.approx(4000.0)
     assert legs[0].max_entry_wait == time(11, 0)
     assert legs[0].exit_before == time(15, 10)
@@ -246,14 +246,14 @@ def test_vet_leg_at_open_accepts_a_price_that_has_barely_moved():
     manager = make_manager()
     leg = manager.select_legs([make_setup()], max_entry_wait=time(11, 0), exit_before=time(15, 10))[0]
 
-    assert manager.vet_leg_at_open(leg, current_price=2860.0) is None
+    assert manager.vet_leg_at_open(leg, current_price=101.0) is None
 
 
 def test_vet_leg_at_open_rejects_a_price_that_gapped_away():
     manager = make_manager()
     leg = manager.select_legs([make_setup()], max_entry_wait=time(11, 0), exit_before=time(15, 10))[0]
 
-    reason = manager.vet_leg_at_open(leg, current_price=3100.0)
+    reason = manager.vet_leg_at_open(leg, current_price=150.0)
 
     assert reason is not None
     assert "drifted" in reason

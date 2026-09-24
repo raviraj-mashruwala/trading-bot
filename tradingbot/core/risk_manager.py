@@ -148,9 +148,7 @@ class RiskManager:
             )
 
         required = sum(leg.notional for leg in plan.legs)
-        # Only block on insufficient capital if available is actually constrained below total capital.
-        # This allows for the case where total capital equals available on a fresh day.
-        if required > available_capital and available_capital < self.capital:
+        if required > available_capital:
             blockers.append(
                 f"insufficient capital: plan needs {required:,.0f} but {available_capital:,.0f} is available"
             )
