@@ -293,3 +293,53 @@ def test_restarting_after_square_off_time_closes_the_adopted_position(tmp_path):
     executor.tick()
 
     assert broker.get_positions() == []
+
+
+from tradingbot.core.events import EventBus
+import asyncio
+
+
+async def test_executor_emits_events_when_event_bus_provided(tmp_path):
+    bus = EventBus()
+    events = []
+    bus.subscribe(lambda e: events.append(e))
+
+    flush_task = asyncio.create_task(bus.flush_loop())
+
+    prices = {"RELIANCE": 100.0}
+    broker = VirtualBroker(PaperConfig(slippage_pct=0.0, initial_capital=400000.0), lambda s: prices[s])
+    database = Database(tmp_path / "exec_events.db")
+    database.initialise()
+    risk_manager = RiskManager(
+        RiskConfig(max_risk_per_trade_pct=0.01, max_daily_loss_pct=0.02, max_capital_deployed_pct=0.50, max_concurrent_positions=2),
+        StrategyConfig(backtest_days=30, candle_interval="15minute", min_confidence=0.5, min_reward_risk=1.5, max_trades_per_day=2),
+        capital=400000.0,
+    )
+    executor = Executor(
+        broker=broker,
+        plan=make_plan([make_leg()]),
+        risk_manager=risk_manager,
+        database=database,
+        execution_config=make_execution_config(),
+        mode=Mode.PAPER,
+        clock=Clock(),
+        event_bus=bus,
+    )
+
+    executor.start()
+    broker.advance()
+    executor.tick()
+
+    await asyncio.sleep(0.15)
+    await bus.shutdown()
+    flush_task.cancel()
+    try:
+        await flush_task
+    except asyncio.CancelledError:
+        pass
+
+    types = [e["type"] for e in events]
+    assert "exec.started" in types
+    assert "exec.entry_filled" in types
+
+    database.close()

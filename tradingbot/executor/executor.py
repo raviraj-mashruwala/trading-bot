@@ -66,6 +66,7 @@ class Executor:
         execution_config: ExecutionConfig,
         mode: Mode,
         clock=now_ist,
+        event_bus=None,
     ) -> None:
         self.broker = broker
         self.plan = plan
@@ -74,6 +75,7 @@ class Executor:
         self.config = execution_config
         self.mode = mode
         self.clock = clock
+        self.event_bus = event_bus
 
         self.orders = OrderManager(broker)
         self.monitor = PositionMonitor(broker)
@@ -96,6 +98,13 @@ class Executor:
                 logger.error("refusing to execute: %s", reason)
             self.blocked = True
             return
+
+        if self.event_bus:
+            self.event_bus.emit_sync("exec.started", {
+                "trade_date": self.plan.trade_date,
+                "mode": self.mode.value,
+                "legs": [leg.to_dict() for leg in self.plan.legs],
+            })
 
         open_positions = self.monitor.snapshot()
 
@@ -170,6 +179,12 @@ class Executor:
             logger.info(
                 "%s filled x%d at %.2f", state.leg.symbol, state.filled_quantity, state.entry_fill_price
             )
+            if self.event_bus:
+                self.event_bus.emit_sync("exec.entry_filled", {
+                    "symbol": state.leg.symbol,
+                    "fill_price": state.entry_fill_price,
+                    "quantity": state.filled_quantity,
+                })
             return
 
         if status in (OrderStatus.CANCELLED, OrderStatus.REJECTED):
