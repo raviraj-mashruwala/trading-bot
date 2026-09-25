@@ -35,9 +35,10 @@ max_entry_price_drift_pct = 2.0
 
 [llm]
 provider = "anthropic"  # "anthropic" or "openai"
-model = "claude-sonnet-5"  # or "gpt-4o", "gpt-4o-mini" for openai
+model = "claude-sonnet-5"  # or "gpt-4o", "gpt-4o-mini", "llama-3.3-70b-versatile"
 timeout_sec = 60
 max_retries = 1
+base_url = ""  # leave empty for default; set to "https://api.groq.com/openai/v1" for Groq
 
 [paper]
 slippage_pct = 0.05

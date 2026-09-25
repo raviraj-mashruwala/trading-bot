@@ -70,6 +70,7 @@ class LLMConfig:
     model: str
     timeout_sec: int
     max_retries: int
+    base_url: str = ""
 
 
 @dataclass(frozen=True)
@@ -190,6 +191,7 @@ def load_config(config_path: Path | None = None) -> Config:
             model=llm_raw["model"],
             timeout_sec=int(llm_raw["timeout_sec"]),
             max_retries=int(llm_raw["max_retries"]),
+            base_url=llm_raw.get("base_url", ""),
         ),
         paper=PaperConfig(
             slippage_pct=float(paper_raw["slippage_pct"]),

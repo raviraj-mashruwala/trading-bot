@@ -30,6 +30,7 @@ class OpenAIProvider(LLMProvider):
         self,
         config: LLMConfig,
         api_key: str,
+        base_url: str | None = None,
         client: Any | None = None,
         log_dir: Path | None = None,
     ) -> None:
@@ -42,7 +43,11 @@ class OpenAIProvider(LLMProvider):
         else:
             from openai import AsyncOpenAI
 
-            self.client = AsyncOpenAI(api_key=api_key, timeout=config.timeout_sec)
+            self.client = AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=config.timeout_sec,
+            )
 
     async def analyze(
         self,
