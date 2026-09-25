@@ -40,7 +40,7 @@ export function ExecutionControls() {
       {!isRunning && (
         <>
           <select
-            className="h-9 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-amber-500/50"
+            className="h-9 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-[#d4a015]/50"
             value={mode}
             onChange={(e) => setSelectedMode(e.target.value)}
           >
@@ -49,7 +49,7 @@ export function ExecutionControls() {
           </select>
 
           <select
-            className="h-9 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-amber-500/50"
+            className="h-9 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-[#d4a015]/50"
             value={selectedPlan}
             onChange={(e) => setSelectedPlan(e.target.value)}
           >
@@ -64,7 +64,7 @@ export function ExecutionControls() {
           <Button
             onClick={() => startMutation.mutate()}
             disabled={startMutation.isPending || !hasPlans}
-            className="bg-amber-500 text-black font-semibold hover:bg-amber-400"
+            className="bg-[#d4a015] text-black font-semibold hover:bg-[#d4a015]"
           >
             Start Execution
           </Button>
@@ -86,11 +86,11 @@ export function ExecutionControls() {
       )}
 
       {startMutation.isError && (
-        <span className="text-xs text-red-400">{startMutation.error.message}</span>
+        <span className="text-xs text-[#f85149]">{startMutation.error.message}</span>
       )}
 
       <div className="flex items-center gap-1.5 ml-auto">
-        <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-emerald-400 animate-pulse" : execStatus === "done" ? "bg-amber-400" : "bg-muted-foreground/30"}`} />
+        <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-[#2da44e] animate-pulse" : execStatus === "done" ? "bg-[#d4a015]" : "bg-muted-foreground/30"}`} />
         <span className="text-xs text-muted-foreground uppercase tracking-wider">{execStatus}</span>
       </div>
     </div>

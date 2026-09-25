@@ -6,9 +6,9 @@ import type { StepStatus } from "@/types";
 
 const STATUS_CONFIG: Record<StepStatus, { dot: string; border: string; bg: string; text: string; label: string }> = {
   pending: { dot: "bg-muted-foreground/30", border: "border-border/30", bg: "", text: "text-muted-foreground/50", label: "Pending" },
-  active: { dot: "bg-amber-400 animate-pulse", border: "border-amber-500/40", bg: "bg-amber-500/5", text: "text-amber-300", label: "Running" },
-  complete: { dot: "bg-emerald-400", border: "border-emerald-500/30", bg: "bg-emerald-500/5", text: "text-emerald-300", label: "Done" },
-  failed: { dot: "bg-red-400", border: "border-red-500/30", bg: "bg-red-500/5", text: "text-red-300", label: "Failed" },
+  active: { dot: "bg-[#d4a015] animate-pulse", border: "border-[#d4a015]/40", bg: "bg-[#d4a015]/5", text: "text-[#d4a015]", label: "Running" },
+  complete: { dot: "bg-[#2da44e]", border: "border-[#2da44e]/30", bg: "bg-[#2da44e]/5", text: "text-[#2da44e]", label: "Done" },
+  failed: { dot: "bg-red-400", border: "border-[#f85149]/30", bg: "bg-[#f85149]/5", text: "text-[#f85149]", label: "Failed" },
 };
 
 interface Props {
@@ -31,7 +31,7 @@ export function PipelineStepCard({ label, stepNumber, status, data, isLast }: Pr
           {status === "complete" ? "✓" : stepNumber}
         </div>
         {!isLast && (
-          <div className={cn("w-px flex-1 min-h-[8px]", status === "complete" ? "bg-emerald-500/30" : "bg-border/40")} />
+          <div className={cn("w-px flex-1 min-h-[8px]", status === "complete" ? "bg-[#2da44e]/30" : "bg-border/40")} />
         )}
       </div>
       <div

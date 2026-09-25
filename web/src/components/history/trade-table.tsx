@@ -27,14 +27,14 @@ export function TradeTable({ trades }: { trades: Trade[] }) {
             <td className="py-2 font-medium text-foreground/90">{t.symbol}</td>
             <td className="text-muted-foreground">{t.strategy}</td>
             <td>
-              <span className={`text-[11px] font-medium uppercase ${t.direction === "long" ? "text-emerald-400" : "text-red-400"}`}>
+              <span className={`text-[11px] font-medium uppercase ${t.direction === "long" ? "text-[#2da44e]" : "text-[#f85149]"}`}>
                 {t.direction}
               </span>
             </td>
             <td className="text-right font-mono-nums">{t.quantity}</td>
             <td className="text-right font-mono-nums">₹{t.entry_price.toFixed(2)}</td>
             <td className="text-right font-mono-nums">₹{t.exit_price.toFixed(2)}</td>
-            <td className={`text-right font-mono-nums font-medium ${t.pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <td className={`text-right font-mono-nums font-medium ${t.pnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}>
               {fmt(t.pnl)}
             </td>
             <td className="text-muted-foreground">{t.exit_reason}</td>

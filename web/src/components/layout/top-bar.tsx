@@ -17,9 +17,9 @@ export function TopBar() {
       <div className="flex items-center gap-2">
         <span className="relative flex h-2 w-2">
           {isHealthy && (
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2da44e] opacity-75" />
           )}
-          <span className={`relative inline-flex h-2 w-2 rounded-full ${isHealthy ? "bg-emerald-500" : "bg-red-500"}`} />
+          <span className={`relative inline-flex h-2 w-2 rounded-full ${isHealthy ? "bg-[#2da44e]" : "bg-[#f85149]"}`} />
         </span>
         <span className="text-xs text-muted-foreground">
           {isHealthy ? "Connected" : "Disconnected"}

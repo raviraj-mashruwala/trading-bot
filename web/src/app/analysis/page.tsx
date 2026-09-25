@@ -51,7 +51,7 @@ export default function AnalysisPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Analysis Pipeline</h1>
         <div className="flex items-center gap-2">
-          <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-amber-400 animate-pulse" : analysisStatus?.status === "complete" ? "bg-emerald-400" : "bg-muted-foreground/30"}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-[#d4a015] animate-pulse" : analysisStatus?.status === "complete" ? "bg-[#2da44e]" : "bg-muted-foreground/30"}`} />
           <span className="text-xs text-muted-foreground uppercase tracking-wider">
             {analysisStatus?.status ?? "idle"}{analysisStatus?.trade_date ? ` — ${analysisStatus.trade_date}` : ""}
           </span>
@@ -63,7 +63,7 @@ export default function AnalysisPage() {
           type="date"
           value={dateInput}
           onChange={(e) => setDateInput(e.target.value)}
-          className="h-9 w-44 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-amber-500/50"
+          className="h-9 w-44 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-[#d4a015]/50"
           placeholder="Trade date"
         />
         {isRunning ? (
@@ -71,11 +71,11 @@ export default function AnalysisPage() {
             Cancel
           </Button>
         ) : (
-          <Button onClick={() => runMutation.mutate(dateInput || undefined)} disabled={runMutation.isPending} className="bg-amber-500 text-black font-semibold hover:bg-amber-400">
+          <Button onClick={() => runMutation.mutate(dateInput || undefined)} disabled={runMutation.isPending} className="bg-[#d4a015] text-black font-semibold hover:bg-[#d4a015]">
             Run Analysis
           </Button>
         )}
-        {runMutation.isError && <span className="text-xs text-red-400">{runMutation.error.message}</span>}
+        {runMutation.isError && <span className="text-xs text-[#f85149]">{runMutation.error.message}</span>}
       </div>
 
       <PipelineStepper />
@@ -83,7 +83,7 @@ export default function AnalysisPage() {
       {latestPlan && <PlanLegsCards legs={latestPlan.legs} />}
 
       {pipelineStatus === "failed" && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-300">
+        <div className="rounded-lg border border-[#f85149]/30 bg-[#f85149]/5 p-4 text-sm text-[#f85149]">
           Analysis failed: {pipelineError}
         </div>
       )}

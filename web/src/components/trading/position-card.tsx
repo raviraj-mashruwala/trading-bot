@@ -12,7 +12,7 @@ export function PositionCard({ position: p }: { position: ExecutionPosition }) {
     <Card className="border-border/50 bg-card/80">
       <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
         <CardTitle className="text-sm font-semibold">{p.symbol}</CardTitle>
-        <span className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${p.direction === "long" ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+        <span className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${p.direction === "long" ? "bg-[#2da44e]/15 text-[#2da44e]" : "bg-[#f85149]/15 text-[#f85149]"}`}>
           {p.direction} x{p.quantity}
         </span>
       </CardHeader>
@@ -27,7 +27,7 @@ export function PositionCard({ position: p }: { position: ExecutionPosition }) {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Stop</span>
-          <span className="font-mono-nums text-red-400/80">{fmt(p.current_stop)}</span>
+          <span className="font-mono-nums text-[#f85149]/80">{fmt(p.current_stop)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">T1</span>
@@ -37,7 +37,7 @@ export function PositionCard({ position: p }: { position: ExecutionPosition }) {
           <span className="text-[11px] text-muted-foreground">Unrealised</span>
           <span
             data-testid="unrealised-pnl"
-            className={`font-mono-nums text-base font-bold ${p.unrealised_pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}
+            className={`font-mono-nums text-base font-bold ${p.unrealised_pnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}
           >
             {fmt(p.unrealised_pnl)}
           </span>

@@ -29,7 +29,7 @@ export function DayGroup({ date, trades, dailyPnl }: Props) {
             {trades.length} trade{trades.length !== 1 ? "s" : ""}
           </span>
         </div>
-        <span className={`font-mono-nums text-sm font-semibold ${dailyPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+        <span className={`font-mono-nums text-sm font-semibold ${dailyPnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}>
           {fmt(dailyPnl)}
         </span>
       </CardHeader>

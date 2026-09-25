@@ -14,7 +14,7 @@ export default function SettingsPage() {
   if (isLoading || !config) {
     return (
       <div className="flex items-center gap-2 py-12 text-muted-foreground">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#d4a015] border-t-transparent" />
         Loading configuration...
       </div>
     );

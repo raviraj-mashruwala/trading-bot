@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0e14;
-  --foreground: #e2e8f0;
-  --card: #111827;
-  --card-foreground: #e2e8f0;
-  --primary: #f59e0b;
-  --primary-foreground: #0b0e14;
-  --secondary: #1e293b;
-  --secondary-foreground: #e2e8f0;
-  --muted: #1a2332;
-  --muted-foreground: #64748b;
-  --accent: #1a2332;
-  --accent-foreground: #e2e8f0;
-  --destructive: #ef4444;
+  --background: #070a0f;
+  --foreground: #c9d1d9;
+  --card: #0f1419;
+  --card-foreground: #c9d1d9;
+  --primary: #d4a015;
+  --primary-foreground: #070a0f;
+  --secondary: #1c2736;
+  --secondary-foreground: #c9d1d9;
+  --muted: #161d26;
+  --muted-foreground: #5a6a7f;
+  --accent: #161d26;
+  --accent-foreground: #c9d1d9;
+  --destructive: #f85149;
   --destructive-foreground: #ffffff;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #f59e0b;
-  --profit: #10b981;
-  --loss: #ef4444;
+  --border: #1c2736;
+  --input: #1c2736;
+  --ring: #d4a015;
+  --profit: #2da44e;
+  --loss: #f85149;
+  --text-heading: #e6edf3;
+  --surface-elevated: #161d26;
 }
 
 @theme inline {
@@ -42,8 +44,9 @@
   --color-ring: var(--ring);
   --color-profit: var(--profit);
   --color-loss: var(--loss);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: 'Satoshi', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 * {
@@ -53,15 +56,23 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
+h1, h2, h3 {
+  font-family: var(--font-display);
+  color: var(--text-heading);
 }
 
 .font-mono-nums {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 

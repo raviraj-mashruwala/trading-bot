@@ -43,7 +43,7 @@ export default function HistoryPage() {
               onClick={() => setDays(p.days)}
               className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
                 days === p.days
-                  ? "bg-amber-500/20 text-amber-400"
+                  ? "bg-[#d4a015]/20 text-[#d4a015]"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >

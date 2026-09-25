@@ -27,14 +27,14 @@ describe("PositionCard", () => {
   it("shows green for positive unrealised P&L", () => {
     render(<PositionCard position={position} />);
     const pnl = screen.getByTestId("unrealised-pnl");
-    expect(pnl.className).toContain("text-emerald");
+    expect(pnl.className).toContain("text-\[#2da44e");
   });
 
   it("shows red for negative unrealised P&L", () => {
     const losing = { ...position, last_price: 2430, unrealised_pnl: -200 };
     render(<PositionCard position={losing} />);
     const pnl = screen.getByTestId("unrealised-pnl");
-    expect(pnl.className).toContain("text-red");
+    expect(pnl.className).toContain("text-\[#f85149");
   });
 
   it("shows T1 booked status", () => {

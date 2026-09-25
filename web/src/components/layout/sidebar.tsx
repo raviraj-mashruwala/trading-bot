@@ -27,7 +27,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-52 flex-col border-r border-border/50 bg-[#0d1017] px-3 py-5">
       <div className="mb-8 flex items-center gap-2 px-3">
-        <div className="h-2 w-2 rounded-full bg-amber-500" />
+        <div className="h-2 w-2 rounded-full bg-[#d4a015]" />
         <span className="text-sm font-semibold tracking-wide text-foreground/90">TRADINGBOT</span>
       </div>
       <nav className="flex flex-col gap-0.5">
@@ -40,12 +40,12 @@ export function Sidebar() {
               className={cn(
                 "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-150",
                 active
-                  ? "bg-amber-500/10 text-amber-400"
+                  ? "bg-[#d4a015]/10 text-[#d4a015]"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-amber-500" />
+                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#d4a015]" />
               )}
               <span className="opacity-80">{ICONS[item.icon]}</span>
               {item.label}

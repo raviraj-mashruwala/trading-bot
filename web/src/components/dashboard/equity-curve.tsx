@@ -38,13 +38,13 @@ export function EquityCurve({ trades }: { trades: Trade[] }) {
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#5a6a7f" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: "#5a6a7f" }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: "#111827", border: "1px solid #1e293b", borderRadius: "8px", fontSize: 12 }}
-              labelStyle={{ color: "#64748b" }}
+              contentStyle={{ background: "#0f1419", border: "1px solid #1e293b", borderRadius: "8px", fontSize: 12 }}
+              labelStyle={{ color: "#5a6a7f" }}
             />
-            <Line type="monotone" dataKey="cumulative" stroke="#f59e0b" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="cumulative" stroke="#d4a015" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>

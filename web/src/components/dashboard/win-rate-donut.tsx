@@ -30,11 +30,11 @@ export function WinRateDonut({ winRate, tradeCount }: { winRate: number; tradeCo
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
               <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={72} dataKey="value" strokeWidth={0}>
-                <Cell fill="#10b981" />
-                <Cell fill="#ef4444" opacity={0.7} />
+                <Cell fill="#2da44e" />
+                <Cell fill="#f85149" opacity={0.7} />
               </Pie>
               <Tooltip
-                contentStyle={{ background: "#111827", border: "1px solid #1e293b", borderRadius: "8px", fontSize: 12 }}
+                contentStyle={{ background: "#0f1419", border: "1px solid #1e293b", borderRadius: "8px", fontSize: 12 }}
               />
             </PieChart>
           </ResponsiveContainer>

@@ -33,15 +33,15 @@ export function DailyPnlChart({ trades }: { trades: Trade[] }) {
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#5a6a7f" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: "#5a6a7f" }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: "#111827", border: "1px solid #1e293b", borderRadius: "8px", fontSize: 12 }}
-              labelStyle={{ color: "#64748b" }}
+              contentStyle={{ background: "#0f1419", border: "1px solid #1e293b", borderRadius: "8px", fontSize: 12 }}
+              labelStyle={{ color: "#5a6a7f" }}
             />
             <Bar dataKey="pnl" radius={[3, 3, 0, 0]}>
               {data.map((entry, i) => (
-                <Cell key={i} fill={entry.pnl >= 0 ? "#10b981" : "#ef4444"} opacity={0.85} />
+                <Cell key={i} fill={entry.pnl >= 0 ? "#2da44e" : "#f85149"} opacity={0.85} />
               ))}
             </Bar>
           </BarChart>
