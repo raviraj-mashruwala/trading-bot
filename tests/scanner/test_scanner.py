@@ -142,3 +142,22 @@ async def test_scan_does_no_network_work_on_a_non_trading_day():
 
     assert fetcher.universe_calls == 0
     assert context_fetcher.calls == 0
+
+
+from tradingbot.core.events import EventBus
+
+
+async def test_scan_emits_universe_and_filtered_events():
+    bus = EventBus()
+    events = []
+    bus.subscribe(lambda e: events.append(e))
+
+    fetcher = StubFetcher([make_stock("RELIANCE"), make_stock("ILLIQUID", avg_volume=10.0)])
+    scanner = Scanner(fetcher, StubContextFetcher(), StubAnalyzer([]), make_config(), event_bus=bus)
+
+    await scanner.scan(date(2026, 9, 24))
+
+    types = [e["type"] for e in events]
+    assert "scan.universe" in types
+    assert "scan.filtered" in types
+    assert "scan.context" in types

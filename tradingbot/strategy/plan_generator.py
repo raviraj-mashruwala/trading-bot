@@ -45,6 +45,7 @@ class PlanGenerator:
         backtester: Backtester | None = None,
         max_entry_wait: time = DEFAULT_MAX_ENTRY_WAIT,
         exit_before: time = DEFAULT_EXIT_BEFORE,
+        event_bus=None,
     ) -> None:
         self.scanner = scanner
         self.fetcher = fetcher
@@ -56,6 +57,7 @@ class PlanGenerator:
         self.backtester = backtester or Backtester()
         self.max_entry_wait = max_entry_wait
         self.exit_before = exit_before
+        self.event_bus = event_bus
 
     async def generate(self, trade_date: date) -> TradePlan:
         scan = await self.scanner.scan(trade_date)
@@ -76,16 +78,34 @@ class PlanGenerator:
                 logger.warning("skipping %s: %s", stock.symbol, exc)
                 continue
 
+            if self.event_bus:
+                await self.event_bus.emit("strategy.indicators", snapshots[stock.symbol].to_dict())
+
             backtests[stock.symbol] = self.backtester.run_all(stock.symbol, candles)
+            if self.event_bus:
+                await self.event_bus.emit("strategy.backtest", {
+                    "symbol": stock.symbol,
+                    "results": [r.to_dict() for r in backtests[stock.symbol]],
+                })
             usable.append(stock)
 
         setups = await self.selector.design_setups(usable, snapshots, backtests, scan.context)
         logger.info("LLM returned %d setups for %d usable symbols", len(setups), len(usable))
+        if self.event_bus:
+            await self.event_bus.emit("strategy.setups", {
+                "count": len(setups),
+                "setups": [{"symbol": s.symbol, "strategy": s.strategy.value, "direction": s.direction.value, "entry_price": s.entry_price, "stop_loss": s.stop_loss, "target_1": s.target_1, "confidence": s.confidence} for s in setups],
+            })
 
         legs = self.risk_manager.select_legs(
             setups, max_entry_wait=self.max_entry_wait, exit_before=self.exit_before
         )
         logger.info("risk manager approved %d legs", len(legs))
+        if self.event_bus:
+            await self.event_bus.emit("strategy.sized", {
+                "approved": [{"symbol": l.symbol, "quantity": l.quantity, "risk_amount": l.risk_amount} for l in legs],
+                "dropped": [],
+            })
 
         plan = TradePlan(
             trade_date=trade_date.isoformat(),

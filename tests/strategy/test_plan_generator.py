@@ -212,3 +212,22 @@ async def test_the_written_plan_reloads_identically(tmp_path):
     plan = await generator.generate(date(2026, 9, 24))
 
     assert PlanStore(tmp_path).load("2026-09-24") == plan
+
+
+from tradingbot.core.events import EventBus
+
+
+async def test_generate_emits_strategy_events(tmp_path):
+    bus = EventBus()
+    events = []
+    bus.subscribe(lambda e: events.append(e))
+
+    generator, _ = make_generator(tmp_path, make_shortlist("RELIANCE"), [make_setup("RELIANCE")])
+    generator.event_bus = bus
+
+    await generator.generate(date(2026, 9, 24))
+
+    types = [e["type"] for e in events]
+    assert "strategy.indicators" in types
+    assert "strategy.setups" in types
+    assert "strategy.sized" in types

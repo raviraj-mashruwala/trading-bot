@@ -27,11 +27,12 @@ class ScanResult:
 class Scanner:
     """Runs the full pre-market narrowing pipeline for one trade date."""
 
-    def __init__(self, fetcher, context_fetcher, analyzer, config: ScannerConfig) -> None:
+    def __init__(self, fetcher, context_fetcher, analyzer, config: ScannerConfig, *, event_bus=None) -> None:
         self.fetcher = fetcher
         self.context_fetcher = context_fetcher
         self.analyzer = analyzer
         self.config = config
+        self.event_bus = event_bus
 
     async def scan(self, trade_date: date) -> ScanResult:
         if not is_trading_day(trade_date):
@@ -41,6 +42,8 @@ class Scanner:
 
         symbols = self.fetcher.fetch_universe()
         logger.info("universe contains %d symbols", len(symbols))
+        if self.event_bus:
+            await self.event_bus.emit("scan.universe", {"count": len(symbols), "symbols": symbols})
 
         stocks = self.fetcher.fetch_stock_metrics(symbols)
         filter_result = apply_filters(stocks, self.config)
@@ -50,10 +53,24 @@ class Scanner:
             len(stocks),
             filter_result.rejected or "none",
         )
+        if self.event_bus:
+            await self.event_bus.emit("scan.filtered", {
+                "passed_count": len(filter_result.passed),
+                "rejected": filter_result.rejected,
+                "stocks": [{"symbol": s.symbol, "price": s.last_price, "volume": s.avg_volume} for s in filter_result.passed[:20]],
+            })
 
         context = self.context_fetcher.fetch()
+        if self.event_bus:
+            await self.event_bus.emit("scan.context", context.to_dict())
+
         shortlist = await self.analyzer.shortlist(filter_result.passed, context)
         logger.info("LLM shortlisted %d candidates", len(shortlist))
+        if self.event_bus:
+            await self.event_bus.emit("scan.shortlist", {
+                "count": len(shortlist),
+                "picks": [{"symbol": s.symbol, "reasoning": s.reasoning, "strategy_bias": s.suggested_strategy.value, "direction": s.direction_bias} for s in shortlist],
+            })
 
         return ScanResult(
             trade_date=trade_date,
