@@ -9,7 +9,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 
 from tradingbot.api.state import AppState
-from tradingbot.core.models import Mode
+from tradingbot.core.models import Direction, Mode
 from tradingbot.core.plan_store import PlanNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -139,6 +139,15 @@ async def execution_status(request: Request):
     if executor is not None and hasattr(executor, "states"):
         for leg_state in executor.states:
             if leg_state.filled_quantity > 0:
+                try:
+                    last_price = executor.broker.get_ltp(leg_state.leg.symbol)
+                    delta = last_price - leg_state.entry_fill_price
+                    if leg_state.leg.direction is Direction.SHORT:
+                        delta = -delta
+                    unrealised = delta * leg_state.filled_quantity
+                except Exception:
+                    last_price = 0.0
+                    unrealised = 0.0
                 positions.append({
                     "symbol": leg_state.leg.symbol,
                     "direction": leg_state.leg.direction.value,
@@ -147,6 +156,8 @@ async def execution_status(request: Request):
                     "current_stop": leg_state.current_stop,
                     "target_1_booked": leg_state.target_1_booked,
                     "pnl": leg_state.realised_pnl,
+                    "last_price": last_price,
+                    "unrealised_pnl": unrealised,
                 })
 
     return {
