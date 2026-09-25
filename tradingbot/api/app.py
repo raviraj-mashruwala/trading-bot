@@ -75,11 +75,13 @@ def create_app(
     from tradingbot.api.config_routes import router as config_router
     from tradingbot.api.plan_routes import router as plan_router
     from tradingbot.api.trade_routes import router as trade_router
+    from tradingbot.api.analysis_routes import router as analysis_router
 
     app.include_router(health_router)
     app.include_router(config_router)
     app.include_router(plan_router)
     app.include_router(trade_router)
+    app.include_router(analysis_router)
 
     return app
 
