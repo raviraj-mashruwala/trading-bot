@@ -25,13 +25,12 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
         if mode is Mode.PAPER:
             from tradingbot.paper.virtual_broker import VirtualBroker
-            from tradingbot.scanner.data_fetcher import DataFetcher
+            from tradingbot.scanner.nse_live import NseLiveFetcher
 
-            fetcher = DataFetcher()
+            nse = NseLiveFetcher()
 
             def price_feed(symbol: str) -> float:
-                candles = fetcher.fetch_candles(symbol, days=1, interval="5m")
-                return float(candles["close"].iloc[-1])
+                return nse.get_ltp(symbol)
 
             broker = VirtualBroker(config.paper, price_feed=price_feed)
         else:
