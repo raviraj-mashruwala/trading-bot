@@ -114,3 +114,21 @@ export interface StepState {
 }
 
 export type PipelineStatus = "idle" | "running" | "complete" | "failed";
+
+export interface ExecutionPosition {
+  symbol: string;
+  direction: Direction;
+  quantity: number;
+  entry_price: number;
+  current_stop: number;
+  target_1_booked: boolean;
+  pnl: number;
+  last_price: number;
+  unrealised_pnl: number;
+}
+
+export interface SessionResult {
+  total_pnl: number;
+  trades_count: number;
+  mode: string;
+}

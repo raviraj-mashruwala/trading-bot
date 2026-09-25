@@ -1,6 +1,6 @@
 import type {
   HealthStatus, ConfigResponse, Provider, PlanSummary, TradePlan,
-  Trade, TradeStats, AnalysisStatus,
+  Trade, TradeStats, AnalysisStatus, ExecutionPosition,
 } from "@/types";
 
 async function get<T>(url: string): Promise<T> {
@@ -44,4 +44,14 @@ export const api = {
       ? post<{ status: string; trade_date: string }>("/api/analyze", { trade_date: tradeDate })
       : post<{ status: string; trade_date: string }>("/api/analyze"),
   cancelAnalysis: () => post<{ status: string }>("/api/analyze/cancel"),
+  getExecutionStatus: () => get<{ status: string; mode: string | null; positions: ExecutionPosition[] }>("/api/execute/status"),
+  postExecute: (mode?: string, date?: string) => {
+    const body: Record<string, string> = {};
+    if (mode) body.mode = mode;
+    if (date) body.date = date;
+    return Object.keys(body).length > 0
+      ? post<{ status: string; mode: string; trade_date: string }>("/api/execute", body)
+      : post<{ status: string; mode: string; trade_date: string }>("/api/execute");
+  },
+  stopExecution: () => post<{ status: string }>("/api/execute/stop"),
 };
