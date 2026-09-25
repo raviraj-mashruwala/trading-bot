@@ -1,0 +1,34 @@
+[project]
+name = "tradingbot"
+version = "0.1.0"
+description = "Automated intraday equity trading bot for Indian markets"
+requires-python = ">=3.12"
+dependencies = [
+    "kiteconnect>=5.0.1",
+    "anthropic>=0.40.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "scikit-learn>=1.5.0",
+    "click>=8.1.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+    "yfinance>=0.2.40",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "freezegun>=1.5.0",
+]
+
+[project.scripts]
+tradingbot = "tradingbot.cli:cli"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
