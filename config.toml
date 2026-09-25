@@ -34,8 +34,8 @@ plan_max_age_hours = 14
 max_entry_price_drift_pct = 2.0
 
 [llm]
-provider = "anthropic"
-model = "claude-sonnet-5"
+provider = "anthropic"  # "anthropic" or "openai"
+model = "claude-sonnet-5"  # or "gpt-4o", "gpt-4o-mini" for openai
 timeout_sec = 60
 max_retries = 1
 

@@ -83,6 +83,7 @@ class Secrets:
     anthropic_api_key: str = field(repr=False)
     kite_api_key: str = field(repr=False)
     kite_api_secret: str = field(repr=False)
+    openai_api_key: str = field(default="", repr=False)
 
     def __repr__(self) -> str:  # pragma: no cover - trivial
         return "Secrets(<redacted>)"
@@ -198,5 +199,6 @@ def load_config(config_path: Path | None = None) -> Config:
             anthropic_api_key=_require_env("ANTHROPIC_API_KEY"),
             kite_api_key=_require_env("KITE_API_KEY"),
             kite_api_secret=_require_env("KITE_API_SECRET"),
+            openai_api_key=os.environ.get("OPENAI_API_KEY", "").strip(),
         ),
     )

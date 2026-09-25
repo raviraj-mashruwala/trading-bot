@@ -78,7 +78,7 @@ def test_load_config_parses_every_section(config_file, monkeypatch):
 
 
 def test_missing_anthropic_key_raises_config_error(config_file, monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     monkeypatch.setenv("KITE_API_KEY", "kite-key")
     monkeypatch.setenv("KITE_API_SECRET", "kite-secret")
 

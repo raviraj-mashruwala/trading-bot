@@ -240,7 +240,7 @@ def test_a_missing_config_file_is_reported_cleanly(tmp_path, monkeypatch):
 
 
 def test_a_missing_api_key_is_reported_cleanly(tmp_path, monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     monkeypatch.setenv("KITE_API_KEY", "kite-key")
     monkeypatch.setenv("KITE_API_SECRET", "kite-secret")
     config_path = write_config(tmp_path)

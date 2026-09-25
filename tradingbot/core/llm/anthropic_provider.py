@@ -138,7 +138,15 @@ def build_provider(
     secrets: Secrets,
     log_dir: Path | None = None,
 ) -> LLMProvider:
-    """Return the provider named in config. Only 'anthropic' ships today."""
+    """Return the provider named in config."""
     if config.provider == "anthropic":
         return AnthropicProvider(config, api_key=secrets.anthropic_api_key, log_dir=log_dir)
-    raise ValueError(f"unknown llm.provider {config.provider!r}; expected 'anthropic'")
+    if config.provider == "openai":
+        from tradingbot.core.llm.openai_provider import OpenAIProvider
+
+        if not secrets.openai_api_key:
+            from tradingbot.core.config import ConfigError
+
+            raise ConfigError("OPENAI_API_KEY is not set but llm.provider is 'openai'.")
+        return OpenAIProvider(config, api_key=secrets.openai_api_key, log_dir=log_dir)
+    raise ValueError(f"unknown llm.provider {config.provider!r}; expected 'anthropic' or 'openai'")
