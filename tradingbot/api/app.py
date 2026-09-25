@@ -71,19 +71,15 @@ def create_app(
     async def ws_endpoint(websocket):
         await websocket_endpoint(websocket, manager)
 
-    @app.get("/api/health")
-    async def health(request: Request):
-        state: AppState = request.app.state.app_state
-        db_ok = True
-        try:
-            state.database.connection.execute("SELECT 1")
-        except Exception:  # noqa: BLE001
-            db_ok = False
-        return {
-            "api": "ok",
-            "database": "ok" if db_ok else "error",
-            "llm": "unconfigured",
-        }
+    from tradingbot.api.health_routes import router as health_router
+    from tradingbot.api.config_routes import router as config_router
+    from tradingbot.api.plan_routes import router as plan_router
+    from tradingbot.api.trade_routes import router as trade_router
+
+    app.include_router(health_router)
+    app.include_router(config_router)
+    app.include_router(plan_router)
+    app.include_router(trade_router)
 
     return app
 
