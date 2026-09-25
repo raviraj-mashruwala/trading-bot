@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Trade } from "@/types";
 
 function computeEquityCurve(trades: Trade[]): Array<{ date: string; cumulative: number }> {
@@ -22,24 +22,29 @@ export function EquityCurve({ trades }: { trades: Trade[] }) {
 
   if (data.length === 0) {
     return (
-      <Card>
-        <CardHeader><CardTitle className="text-sm">Equity Curve</CardTitle></CardHeader>
-        <CardContent className="text-sm text-muted-foreground">No trades yet</CardContent>
+      <Card className="border-border/50 bg-card/80">
+        <CardContent className="p-4">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Equity Curve</div>
+          <div className="mt-8 text-center text-sm text-muted-foreground/50">No trades yet</div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm">Equity Curve</CardTitle></CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
+    <Card className="border-border/50 bg-card/80">
+      <CardContent className="p-4">
+        <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Equity Curve</div>
+        <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Line type="monotone" dataKey="cumulative" stroke="#16a34a" strokeWidth={2} dot={false} />
+            <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ background: "#111827", border: "1px solid #1e293b", borderRadius: "8px", fontSize: 12 }}
+              labelStyle={{ color: "#64748b" }}
+            />
+            <Line type="monotone" dataKey="cumulative" stroke="#f59e0b" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>

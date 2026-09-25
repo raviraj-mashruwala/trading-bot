@@ -11,7 +11,14 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { data: config, isLoading } = useQuery({ queryKey: ["config"], queryFn: api.getConfig });
 
-  if (isLoading || !config) return <div>Loading config...</div>;
+  if (isLoading || !config) {
+    return (
+      <div className="flex items-center gap-2 py-12 text-muted-foreground">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+        Loading configuration...
+      </div>
+    );
+  }
 
   const handleSave = async (section: string, changed: Record<string, unknown>) => {
     await api.putConfig(section, changed);
@@ -19,8 +26,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold">Settings</h1>
 
       {SECTION_ORDER.map((section) => (
         <div key={section}>
@@ -37,11 +44,14 @@ export default function SettingsPage() {
         </div>
       ))}
 
-      <div className="space-y-2 rounded border p-4 opacity-60">
-        <h3 className="text-sm font-semibold">Secrets (read-only)</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+      <div className="rounded-lg border border-border/30 bg-card/40 p-4">
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">Secrets (read-only)</div>
+        <div className="grid grid-cols-2 gap-2 text-[13px]">
           {Object.entries(config.secrets).map(([key, val]) => (
-            <div key={key}><span className="font-mono">{key}:</span> {val}</div>
+            <div key={key} className="flex justify-between">
+              <span className="text-muted-foreground/60">{key}</span>
+              <span className="font-mono-nums text-muted-foreground/40">{val}</span>
+            </div>
           ))}
         </div>
       </div>

@@ -2,8 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import type { PlanSummary } from "@/types";
 
 export function LastAnalysis() {
@@ -13,21 +12,30 @@ export function LastAnalysis() {
   const latest: PlanSummary | undefined = plans?.at(-1);
 
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm">Last Analysis</CardTitle></CardHeader>
-      <CardContent className="space-y-2 text-sm">
+    <Card className="border-border/50 bg-card/80">
+      <CardContent className="p-4">
+        <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Last Analysis</div>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">Status:</span>
-          <Badge variant={status?.status === "running" ? "default" : "secondary"}>{status?.status ?? "unknown"}</Badge>
+          <span className={`inline-flex h-1.5 w-1.5 rounded-full ${status?.status === "running" ? "bg-amber-400 animate-pulse" : status?.status === "complete" ? "bg-emerald-400" : "bg-muted-foreground/40"}`} />
+          <span className="text-sm text-foreground/80">{status?.status ?? "unknown"}</span>
         </div>
         {latest ? (
-          <>
-            <div><span className="text-muted-foreground">Date:</span> {latest.trade_date}</div>
-            <div><span className="text-muted-foreground">Legs:</span> {latest.legs_count}</div>
-            <div><span className="text-muted-foreground">Regime:</span> {latest.market_regime}</div>
-          </>
+          <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+            <div>
+              <div className="text-[10px] text-muted-foreground/60">Date</div>
+              <div className="font-mono-nums text-foreground/80">{latest.trade_date}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground/60">Legs</div>
+              <div className="font-mono-nums text-foreground/80">{latest.legs_count}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted-foreground/60">Regime</div>
+              <div className="text-foreground/80">{latest.market_regime}</div>
+            </div>
+          </div>
         ) : (
-          <div className="text-muted-foreground">No plans generated yet</div>
+          <div className="mt-3 text-sm text-muted-foreground/50">No plans generated yet</div>
         )}
       </CardContent>
     </Card>

@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { DayGroup } from "@/components/history/day-group";
 import { StatCards } from "@/components/dashboard/stat-cards";
-import { Button } from "@/components/ui/button";
 import type { Trade } from "@/types";
 
 const PERIODS = [
@@ -34,28 +33,31 @@ export default function HistoryPage() {
   const grouped = groupByDate(trades ?? []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Trade History</h1>
-        <div className="flex gap-1">
+        <h1 className="text-xl font-semibold">Trade History</h1>
+        <div className="flex gap-0.5 rounded-lg border border-border/50 bg-card/80 p-0.5">
           {PERIODS.map((p) => (
-            <Button
+            <button
               key={p.label}
-              size="sm"
-              variant={days === p.days ? "default" : "outline"}
               onClick={() => setDays(p.days)}
+              className={`rounded-md px-3 py-1 text-xs font-medium transition-all ${
+                days === p.days
+                  ? "bg-amber-500/20 text-amber-400"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               {p.label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
 
       {stats && <StatCards stats={stats} />}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         {grouped.size === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">No trades in this period</div>
+          <div className="py-12 text-center text-sm text-muted-foreground/50">No trades in this period</div>
         ) : (
           [...grouped.entries()].map(([date, { trades: dayTrades, pnl }]) => (
             <DayGroup key={date} date={date} trades={dayTrades} dailyPnl={pnl} />

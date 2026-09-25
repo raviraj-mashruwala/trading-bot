@@ -13,17 +13,17 @@ export default function DashboardPage() {
   const { data: trades } = useQuery({ queryKey: ["trades"], queryFn: () => api.getTrades(30) });
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold">Dashboard</h1>
 
       {stats && <StatCards stats={stats} />}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <EquityCurve trades={trades ?? []} />
         <DailyPnlChart trades={trades ?? []} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <WinRateDonut winRate={stats?.win_rate ?? 0} tradeCount={stats?.trade_count ?? 0} />
         <LastAnalysis />
       </div>

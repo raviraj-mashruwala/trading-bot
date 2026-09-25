@@ -7,8 +7,6 @@ import { usePipelineStore } from "@/lib/store";
 import { PipelineStepper } from "@/components/analysis/pipeline-stepper";
 import { PlanLegsCards } from "@/components/analysis/plan-legs-cards";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import type { TradePlan } from "@/types";
 
 export default function AnalysisPage() {
@@ -49,36 +47,35 @@ export default function AnalysisPage() {
   const isRunning = pipelineStatus === "running" || analysisStatus?.status === "running";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Analysis Pipeline</h1>
-        <div className="flex items-center gap-3">
-          {analysisStatus && (
-            <Badge variant={isRunning ? "default" : "secondary"}>
-              {analysisStatus.status}{analysisStatus.trade_date ? ` — ${analysisStatus.trade_date}` : ""}
-            </Badge>
-          )}
+        <h1 className="text-xl font-semibold">Analysis Pipeline</h1>
+        <div className="flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-amber-400 animate-pulse" : analysisStatus?.status === "complete" ? "bg-emerald-400" : "bg-muted-foreground/30"}`} />
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">
+            {analysisStatus?.status ?? "idle"}{analysisStatus?.trade_date ? ` — ${analysisStatus.trade_date}` : ""}
+          </span>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <Input
+        <input
           type="date"
           value={dateInput}
           onChange={(e) => setDateInput(e.target.value)}
-          className="w-48"
-          placeholder="Trade date (optional)"
+          className="h-9 w-44 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-amber-500/50"
+          placeholder="Trade date"
         />
         {isRunning ? (
           <Button variant="destructive" onClick={() => cancelMutation.mutate()} disabled={cancelMutation.isPending}>
             Cancel
           </Button>
         ) : (
-          <Button onClick={() => runMutation.mutate(dateInput || undefined)} disabled={runMutation.isPending}>
+          <Button onClick={() => runMutation.mutate(dateInput || undefined)} disabled={runMutation.isPending} className="bg-amber-500 text-black font-semibold hover:bg-amber-400">
             Run Analysis
           </Button>
         )}
-        {runMutation.isError && <span className="text-sm text-red-500">{runMutation.error.message}</span>}
+        {runMutation.isError && <span className="text-xs text-red-400">{runMutation.error.message}</span>}
       </div>
 
       <PipelineStepper />
@@ -86,7 +83,7 @@ export default function AnalysisPage() {
       {latestPlan && <PlanLegsCards legs={latestPlan.legs} />}
 
       {pipelineStatus === "failed" && (
-        <div className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-300">
           Analysis failed: {pipelineError}
         </div>
       )}

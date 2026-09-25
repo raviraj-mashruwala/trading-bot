@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 interface Props {
   name: string;
@@ -43,25 +41,25 @@ export function ConfigSection({ name, fields, onSave }: Props) {
   };
 
   return (
-    <div className="space-y-4 rounded border p-4">
-      <h3 className="text-sm font-semibold capitalize">{name}</h3>
+    <div className="rounded-lg border border-border/50 bg-card/80 p-4">
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-amber-400/80">{name}</div>
       <div className="grid grid-cols-2 gap-3">
         {Object.entries(values).map(([key, val]) => (
           <div key={key}>
-            <Label className="text-xs text-muted-foreground">{key}</Label>
-            <Input
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground/60">{key}</label>
+            <input
               value={val}
               onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
-              className="mt-1"
+              className="h-9 w-full rounded-md border border-border/50 bg-muted/30 px-3 text-sm text-foreground/90 outline-none transition-colors focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30"
             />
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-2">
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+      <div className="mt-3 flex items-center gap-2">
+        <Button size="sm" onClick={handleSave} disabled={saving} className="bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30">
           {saving ? "Saving..." : "Save"}
         </Button>
-        {saved && <span className="text-xs text-green-600">Saved</span>}
+        {saved && <span className="text-[11px] text-emerald-400">Saved</span>}
       </div>
     </div>
   );

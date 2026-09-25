@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useExecutionStore } from "@/lib/execution-store";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export function ExecutionControls() {
   const [selectedMode, setSelectedMode] = useState<string>("");
@@ -41,7 +40,7 @@ export function ExecutionControls() {
       {!isRunning && (
         <>
           <select
-            className="rounded-md border bg-background px-3 py-2 text-sm"
+            className="h-9 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-amber-500/50"
             value={mode}
             onChange={(e) => setSelectedMode(e.target.value)}
           >
@@ -50,7 +49,7 @@ export function ExecutionControls() {
           </select>
 
           <select
-            className="rounded-md border bg-background px-3 py-2 text-sm"
+            className="h-9 rounded-lg border border-border/50 bg-card/80 px-3 text-sm text-foreground/90 outline-none focus:ring-1 focus:ring-amber-500/50"
             value={selectedPlan}
             onChange={(e) => setSelectedPlan(e.target.value)}
           >
@@ -65,11 +64,12 @@ export function ExecutionControls() {
           <Button
             onClick={() => startMutation.mutate()}
             disabled={startMutation.isPending || !hasPlans}
+            className="bg-amber-500 text-black font-semibold hover:bg-amber-400"
           >
             Start Execution
           </Button>
 
-          {!hasPlans && <span className="text-sm text-muted-foreground">No plans available — run analysis first</span>}
+          {!hasPlans && <span className="text-xs text-muted-foreground/60">No plans — run analysis first</span>}
         </>
       )}
 
@@ -77,7 +77,7 @@ export function ExecutionControls() {
         <Button
           variant="destructive"
           size="lg"
-          className="font-bold"
+          className="font-bold shadow-lg shadow-red-500/20"
           onClick={() => stopMutation.mutate()}
           disabled={stopMutation.isPending}
         >
@@ -86,12 +86,13 @@ export function ExecutionControls() {
       )}
 
       {startMutation.isError && (
-        <span className="text-sm text-red-500">{startMutation.error.message}</span>
+        <span className="text-xs text-red-400">{startMutation.error.message}</span>
       )}
 
-      <Badge variant={isRunning ? "default" : "secondary"}>
-        {execStatus}
-      </Badge>
+      <div className="flex items-center gap-1.5 ml-auto">
+        <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-emerald-400 animate-pulse" : execStatus === "done" ? "bg-amber-400" : "bg-muted-foreground/30"}`} />
+        <span className="text-xs text-muted-foreground uppercase tracking-wider">{execStatus}</span>
+      </div>
     </div>
   );
 }
