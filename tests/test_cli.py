@@ -279,3 +279,15 @@ def test_execute_without_a_plan_fails_cleanly(tmp_path, monkeypatch):
     assert result.exit_code != 0
     assert "no trade plan" in result.output.lower()
     assert "Traceback" not in result.output
+
+
+def test_serve_command_is_listed_in_help():
+    result = CliRunner().invoke(cli, ["--help"])
+    assert "serve" in result.output
+
+
+def test_serve_help_shows_port_option():
+    result = CliRunner().invoke(cli, ["serve", "--help"])
+    assert result.exit_code == 0
+    assert "--port" in result.output
+    assert "--reload" in result.output

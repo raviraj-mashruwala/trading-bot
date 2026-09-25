@@ -349,3 +349,23 @@ def auth(obj: dict) -> None:
     token_path.write_text(access_token)
     token_path.chmod(0o600)
     click.echo(f"Access token saved to {token_path}. It expires at the next market open.")
+
+
+@cli.command()
+@click.option("--port", default=8000, type=int, help="Port to listen on.")
+@click.option("--reload", "use_reload", is_flag=True, help="Enable auto-reload for development.")
+@click.pass_obj
+def serve(obj: dict, port: int, use_reload: bool) -> None:
+    """Start the web API server."""
+    import uvicorn
+
+    click.echo(f"Starting API server on http://0.0.0.0:{port}")
+    click.echo("Press Ctrl+C to stop.")
+
+    uvicorn.run(
+        "tradingbot.api.app:create_app",
+        factory=True,
+        host="0.0.0.0",
+        port=port,
+        reload=use_reload,
+    )
