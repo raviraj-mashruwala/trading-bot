@@ -188,6 +188,17 @@ class IndicatorSnapshot:
     pivot: float
     support_levels: list[float]
     resistance_levels: list[float]
+    adx_14: float = 0.0
+    supertrend: float = 0.0
+    supertrend_direction: int = 1
+    bb_bandwidth: float = 0.0
+    vwap_upper_1: float = 0.0
+    vwap_lower_1: float = 0.0
+    poc: float = 0.0
+    vah: float = 0.0
+    val: float = 0.0
+    ema_9: float = 0.0
+    sma_9: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -209,6 +220,17 @@ class IndicatorSnapshot:
             "pivot": self.pivot,
             "support_levels": list(self.support_levels),
             "resistance_levels": list(self.resistance_levels),
+            "adx_14": self.adx_14,
+            "supertrend": self.supertrend,
+            "supertrend_direction": self.supertrend_direction,
+            "bb_bandwidth": self.bb_bandwidth,
+            "vwap_upper_1": self.vwap_upper_1,
+            "vwap_lower_1": self.vwap_lower_1,
+            "poc": self.poc,
+            "vah": self.vah,
+            "val": self.val,
+            "ema_9": self.ema_9,
+            "sma_9": self.sma_9,
         }
 
 
