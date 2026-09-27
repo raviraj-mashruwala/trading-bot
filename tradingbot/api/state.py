@@ -31,3 +31,7 @@ class AppState:
     executor_ref: object | None = None
     executor_task: asyncio.Task | None = None
     executor_mode: str | None = None
+
+    # Persistence stores (initialised lazily by plan endpoints)
+    run_store: object | None = None
+    setup_store: object | None = None

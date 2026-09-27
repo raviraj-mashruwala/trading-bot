@@ -51,16 +51,16 @@ def test_high_vix_classifies_the_regime_as_volatile():
 def test_low_vix_classifies_the_regime_as_low_vol():
     fetcher = MarketContextFetcher(http_client=make_client(lambda request: httpx.Response(200, json=[])))
 
-    assert fetcher.classify_regime(vix=9.0, nifty_above_sma20=True, nifty_above_sma50=True) is MarketRegime.LOW_VOL
+    assert fetcher.classify_regime(vix=9.0, nifty_above_sma20=True, nifty_above_sma50=True) is MarketRegime.LOW_VOL_SQUEEZE
 
 
 def test_aligned_moving_averages_classify_the_regime_as_trending():
     fetcher = MarketContextFetcher(http_client=make_client(lambda request: httpx.Response(200, json=[])))
 
-    assert fetcher.classify_regime(vix=15.0, nifty_above_sma20=True, nifty_above_sma50=True) is MarketRegime.TRENDING
+    assert fetcher.classify_regime(vix=15.0, nifty_above_sma20=True, nifty_above_sma50=True) is MarketRegime.TRENDING_UP
 
 
 def test_conflicting_moving_averages_classify_the_regime_as_ranging():
     fetcher = MarketContextFetcher(http_client=make_client(lambda request: httpx.Response(200, json=[])))
 
-    assert fetcher.classify_regime(vix=15.0, nifty_above_sma20=True, nifty_above_sma50=False) is MarketRegime.RANGING
+    assert fetcher.classify_regime(vix=15.0, nifty_above_sma20=True, nifty_above_sma50=False) is MarketRegime.RANGE_BOUND

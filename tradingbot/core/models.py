@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, time
+from datetime import date, datetime, time
 from enum import Enum
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -34,13 +34,35 @@ class StrategyName(str, Enum):
     MEAN_REVERSION = "mean_reversion"
     VWAP_BOUNCE = "vwap_bounce"
     ORB = "orb"
+    GAP_AND_GO = "gap_and_go"
+    PIVOT_POINT = "pivot_point"
+    RELATIVE_STRENGTH = "relative_strength"
+    BOLLINGER_SQUEEZE = "bollinger_squeeze"
+    SUPPLY_DEMAND = "supply_demand"
 
 
 class MarketRegime(str, Enum):
-    TRENDING = "trending"
-    RANGING = "ranging"
+    TRENDING_UP = "trending_up"
+    TRENDING_DOWN = "trending_down"
+    RANGE_BOUND = "range_bound"
     VOLATILE = "volatile"
-    LOW_VOL = "low_vol"
+    LOW_VOL_SQUEEZE = "low_vol_squeeze"
+
+
+class SetupStatus(str, Enum):
+    PROPOSED = "proposed"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    ACTIVE = "active"
+    FILLED = "filled"
+    EXPIRED = "expired"
+    CLOSED = "closed"
+
+
+class ExecutionMode(str, Enum):
+    PAPER = "paper"
+    LIVE = "live"
+    SHADOW = "shadow"
 
 
 class TradeStatus(str, Enum):
@@ -78,6 +100,14 @@ class Stock:
     sector: str
 
 
+# Backward-compat mapping: old regime string values -> new enum values.
+_REGIME_COMPAT: dict[str, str] = {
+    "trending": "trending_up",
+    "ranging": "range_bound",
+    "low_vol": "low_vol_squeeze",
+}
+
+
 @dataclass(frozen=True)
 class MarketContext:
     """Macro picture handed to the LLM alongside the candidate list."""
@@ -109,6 +139,8 @@ class MarketContext:
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> MarketContext:
+        regime_val = raw["regime"]
+        regime_val = _REGIME_COMPAT.get(regime_val, regime_val)
         return cls(
             nifty_level=float(raw["nifty_level"]),
             nifty_trend=raw["nifty_trend"],
@@ -119,7 +151,7 @@ class MarketContext:
             global_cues=raw["global_cues"],
             sector_leaders=list(raw["sector_leaders"]),
             sector_laggards=list(raw["sector_laggards"]),
-            regime=MarketRegime(raw["regime"]),
+            regime=MarketRegime(regime_val),
         )
 
 
@@ -156,6 +188,17 @@ class IndicatorSnapshot:
     pivot: float
     support_levels: list[float]
     resistance_levels: list[float]
+    adx_14: float = 0.0
+    supertrend: float = 0.0
+    supertrend_direction: int = 1
+    bb_bandwidth: float = 0.0
+    vwap_upper_1: float = 0.0
+    vwap_lower_1: float = 0.0
+    poc: float = 0.0
+    vah: float = 0.0
+    val: float = 0.0
+    ema_9: float = 0.0
+    sma_9: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -177,6 +220,17 @@ class IndicatorSnapshot:
             "pivot": self.pivot,
             "support_levels": list(self.support_levels),
             "resistance_levels": list(self.resistance_levels),
+            "adx_14": self.adx_14,
+            "supertrend": self.supertrend,
+            "supertrend_direction": self.supertrend_direction,
+            "bb_bandwidth": self.bb_bandwidth,
+            "vwap_upper_1": self.vwap_upper_1,
+            "vwap_lower_1": self.vwap_lower_1,
+            "poc": self.poc,
+            "vah": self.vah,
+            "val": self.val,
+            "ema_9": self.ema_9,
+            "sma_9": self.sma_9,
         }
 
 
@@ -372,6 +426,8 @@ class TradePlan:
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> TradePlan:
+        regime_val = raw["market_regime"]
+        regime_val = _REGIME_COMPAT.get(regime_val, regime_val)
         return cls(
             schema_version=int(raw.get("schema_version", PLAN_SCHEMA_VERSION)),
             trade_date=raw["trade_date"],
@@ -379,7 +435,7 @@ class TradePlan:
             capital=float(raw["capital"]),
             max_risk_per_trade_pct=float(raw["max_risk_per_trade_pct"]),
             max_daily_loss_pct=float(raw["max_daily_loss_pct"]),
-            market_regime=MarketRegime(raw["market_regime"]),
+            market_regime=MarketRegime(regime_val),
             market_summary=raw["market_summary"],
             legs=[TradeLeg.from_dict(item) for item in raw["legs"]],
         )
@@ -426,3 +482,98 @@ class ExecutedTrade:
     exit_reason: str
     status: TradeStatus
     mode: Mode
+
+
+# ---------------------------------------------------------------------------
+# Extended models for analysis pipeline redesign
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ScoredStock:
+    """A stock with composite screening score and factor breakdown."""
+
+    symbol: str
+    exchange: str
+    last_price: float
+    avg_volume: float
+    market_cap_cr: float
+    atr_pct: float
+    sector: str
+    composite_score: float
+    factor_scores: dict[str, float]
+    instrument_token: int
+
+
+@dataclass(frozen=True)
+class AnalysisRun:
+    """Metadata for one full pipeline execution."""
+
+    run_id: str
+    timestamp: datetime
+    trade_date: date
+    market_regime: MarketRegime
+    regime_confidence: float
+    total_scanned: int
+    tier1_passed: int
+    tier2_shortlisted: int
+    setups_proposed: int
+    setups_approved: int
+    llm_calls: int
+    llm_cost_usd: float
+    duration_seconds: float
+
+
+@dataclass(frozen=True)
+class BacktestReport:
+    """Detailed backtest statistics for one symbol+strategy pair."""
+
+    symbol: str
+    strategy: StrategyName
+    period_start: date
+    period_end: date
+    total_trades: int
+    winners: int
+    losers: int
+    win_rate: float
+    avg_winner: float
+    avg_loser: float
+    profit_factor: float
+    expectancy: float
+    expectancy_r: float
+    sharpe_ratio: float
+    max_drawdown_pct: float
+    max_consecutive_losses: int
+    avg_hold_minutes: float
+    oos_degradation: float
+    calmar_ratio: float
+
+
+@dataclass(frozen=True)
+class MonteCarloResult:
+    """Monte Carlo simulation summary for risk-of-ruin analysis."""
+
+    simulations: int
+    median_return_pct: float
+    p10_return_pct: float
+    p90_return_pct: float
+    median_max_drawdown: float
+    p95_max_drawdown: float
+    risk_of_ruin_pct: float
+    confidence_score: float
+
+
+@dataclass(frozen=True)
+class QualityGateResult:
+    """Pass/fail verdict from the quality gate with per-criterion flags."""
+
+    passed: bool
+    total_trades_ok: bool
+    win_rate_ok: bool
+    profit_factor_ok: bool
+    expectancy_ok: bool
+    oos_ok: bool
+    monte_carlo_p10_ok: bool
+    ruin_risk_ok: bool
+    consecutive_losses_ok: bool
+    failures: list[str]

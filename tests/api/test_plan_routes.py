@@ -21,7 +21,7 @@ def make_plan(trade_date="2026-09-28") -> TradePlan:
         trade_date=trade_date,
         generated_at=datetime(2026, 9, 27, 22, 30, tzinfo=IST),
         capital=400000.0, max_risk_per_trade_pct=0.01,
-        max_daily_loss_pct=0.02, market_regime=MarketRegime.TRENDING,
+        max_daily_loss_pct=0.02, market_regime=MarketRegime.TRENDING_UP,
         market_summary="Nifty bullish.", legs=[leg],
     )
 

@@ -114,7 +114,7 @@ def test_trade_plan_round_trips_through_dict():
         capital=400000.0,
         max_risk_per_trade_pct=0.01,
         max_daily_loss_pct=0.02,
-        market_regime=MarketRegime.TRENDING,
+        market_regime=MarketRegime.TRENDING_UP,
         market_summary="Nifty bullish, IT leading.",
         legs=[leg],
     )
@@ -130,7 +130,7 @@ def test_trade_plan_age_hours_measured_from_generated_at():
         capital=400000.0,
         max_risk_per_trade_pct=0.01,
         max_daily_loss_pct=0.02,
-        market_regime=MarketRegime.TRENDING,
+        market_regime=MarketRegime.TRENDING_UP,
         market_summary="Nifty bullish.",
         legs=[],
     )

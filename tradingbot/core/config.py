@@ -55,6 +55,50 @@ class RiskConfig:
 
 
 @dataclass(frozen=True)
+class ScreeningConfig:
+    min_volume: int
+    min_price: float
+    max_price: float
+    min_market_cap_cr: float
+    min_atr_pct: float
+    min_trading_days: int
+    max_per_sector: int
+    volume_surge_weight: int
+    relative_strength_weight: int
+    atr_expansion_weight: int
+    price_structure_weight: int
+    delivery_pct_weight: int
+    sector_momentum_weight: int
+    gap_analysis_weight: int
+    candlestick_pattern_weight: int
+    volume_profile_weight: int
+
+
+@dataclass(frozen=True)
+class BacktestConfig:
+    lookback_days: int
+    walk_forward_windows: int
+    train_pct: int
+    monte_carlo_simulations: int
+    min_trades: int
+    min_win_rate: float
+    min_profit_factor: float
+    min_expectancy_r: float
+    max_oos_degradation: float
+    max_risk_of_ruin: float
+    max_consecutive_losses: int
+
+
+@dataclass(frozen=True)
+class KiteConfig:
+    api_key_env: str
+    api_secret_env: str
+    sync_hour: int
+    sync_minute: int
+    rate_limit_per_sec: int
+
+
+@dataclass(frozen=True)
 class ExecutionConfig:
     entry_slippage_pct: float
     square_off_time: time
@@ -62,6 +106,8 @@ class ExecutionConfig:
     heartbeat_interval_sec: int
     plan_max_age_hours: float
     max_entry_price_drift_pct: float
+    mode: str = "paper"
+    shadow_fraction: float = 0.1
 
 
 @dataclass(frozen=True)
@@ -100,6 +146,9 @@ class Config:
     llm: LLMConfig
     paper: PaperConfig
     secrets: Secrets
+    screening: ScreeningConfig
+    backtest: BacktestConfig
+    kite: KiteConfig
 
 
 def _require_env(name: str) -> str:
@@ -148,6 +197,11 @@ def load_config(config_path: Path | None = None) -> Config:
     llm_raw = _section(data, "llm")
     paper_raw = _section(data, "paper")
 
+    # Optional sections — backward compatible with defaults
+    screening_raw = data.get("screening", {})
+    backtest_raw = data.get("backtest", {})
+    kite_raw = data.get("kite", {})
+
     return Config(
         general=GeneralConfig(
             mode=mode,
@@ -185,6 +239,8 @@ def load_config(config_path: Path | None = None) -> Config:
             heartbeat_interval_sec=int(execution_raw["heartbeat_interval_sec"]),
             plan_max_age_hours=float(execution_raw["plan_max_age_hours"]),
             max_entry_price_drift_pct=float(execution_raw["max_entry_price_drift_pct"]),
+            mode=execution_raw.get("mode", "paper"),
+            shadow_fraction=float(execution_raw.get("shadow_fraction", 0.1)),
         ),
         llm=LLMConfig(
             provider=llm_raw["provider"],
@@ -202,5 +258,43 @@ def load_config(config_path: Path | None = None) -> Config:
             kite_api_key=_require_env("KITE_API_KEY"),
             kite_api_secret=_require_env("KITE_API_SECRET"),
             openai_api_key=os.environ.get("OPENAI_API_KEY", "").strip(),
+        ),
+        screening=ScreeningConfig(
+            min_volume=int(screening_raw.get("min_volume", 500000)),
+            min_price=float(screening_raw.get("min_price", 50)),
+            max_price=float(screening_raw.get("max_price", 5000)),
+            min_market_cap_cr=float(screening_raw.get("min_market_cap_cr", 1000)),
+            min_atr_pct=float(screening_raw.get("min_atr_pct", 0.5)),
+            min_trading_days=int(screening_raw.get("min_trading_days", 10)),
+            max_per_sector=int(screening_raw.get("max_per_sector", 3)),
+            volume_surge_weight=int(screening_raw.get("volume_surge_weight", 15)),
+            relative_strength_weight=int(screening_raw.get("relative_strength_weight", 15)),
+            atr_expansion_weight=int(screening_raw.get("atr_expansion_weight", 10)),
+            price_structure_weight=int(screening_raw.get("price_structure_weight", 15)),
+            delivery_pct_weight=int(screening_raw.get("delivery_pct_weight", 10)),
+            sector_momentum_weight=int(screening_raw.get("sector_momentum_weight", 10)),
+            gap_analysis_weight=int(screening_raw.get("gap_analysis_weight", 10)),
+            candlestick_pattern_weight=int(screening_raw.get("candlestick_pattern_weight", 10)),
+            volume_profile_weight=int(screening_raw.get("volume_profile_weight", 5)),
+        ),
+        backtest=BacktestConfig(
+            lookback_days=int(backtest_raw.get("lookback_days", 365)),
+            walk_forward_windows=int(backtest_raw.get("walk_forward_windows", 10)),
+            train_pct=int(backtest_raw.get("train_pct", 70)),
+            monte_carlo_simulations=int(backtest_raw.get("monte_carlo_simulations", 10000)),
+            min_trades=int(backtest_raw.get("min_trades", 30)),
+            min_win_rate=float(backtest_raw.get("min_win_rate", 0.45)),
+            min_profit_factor=float(backtest_raw.get("min_profit_factor", 1.5)),
+            min_expectancy_r=float(backtest_raw.get("min_expectancy_r", 0.3)),
+            max_oos_degradation=float(backtest_raw.get("max_oos_degradation", 0.3)),
+            max_risk_of_ruin=float(backtest_raw.get("max_risk_of_ruin", 0.05)),
+            max_consecutive_losses=int(backtest_raw.get("max_consecutive_losses", 8)),
+        ),
+        kite=KiteConfig(
+            api_key_env=kite_raw.get("api_key_env", "KITE_API_KEY"),
+            api_secret_env=kite_raw.get("api_secret_env", "KITE_API_SECRET"),
+            sync_hour=int(kite_raw.get("sync_hour", 6)),
+            sync_minute=int(kite_raw.get("sync_minute", 0)),
+            rate_limit_per_sec=int(kite_raw.get("rate_limit_per_sec", 3)),
         ),
     )

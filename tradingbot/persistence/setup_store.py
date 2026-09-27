@@ -1,0 +1,116 @@
+"""SQLite-backed store for trade setups with lifecycle tracking."""
+
+from __future__ import annotations
+
+import sqlite3
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any
+from zoneinfo import ZoneInfo
+
+IST = ZoneInfo("Asia/Kolkata")
+
+
+class SetupStore:
+    """Persist and query trade setups across multiple analysis runs."""
+
+    def __init__(self, db_path: Path):
+        self._conn = sqlite3.connect(str(db_path))
+        self._conn.row_factory = sqlite3.Row
+        self._conn.execute("""
+            CREATE TABLE IF NOT EXISTS setups (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL,
+                trade_date TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                strategy TEXT NOT NULL,
+                direction TEXT NOT NULL,
+                entry_price REAL NOT NULL,
+                stop_loss REAL NOT NULL,
+                target_1 REAL NOT NULL,
+                target_2 REAL,
+                confidence REAL NOT NULL,
+                status TEXT NOT NULL DEFAULT 'proposed',
+                reasoning TEXT,
+                rejection_reason TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        self._conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_setup_date ON setups(trade_date)"
+        )
+        self._conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_setup_symbol ON setups(symbol, trade_date)"
+        )
+        self._conn.commit()
+
+    def save(self, setup: dict[str, Any]) -> int:
+        now = datetime.now(tz=IST).isoformat()
+        cursor = self._conn.execute(
+            "INSERT INTO setups (run_id, trade_date, symbol, strategy, direction, "
+            "entry_price, stop_loss, target_1, target_2, confidence, status, reasoning, "
+            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                setup["run_id"],
+                setup["trade_date"],
+                setup["symbol"],
+                setup["strategy"],
+                setup["direction"],
+                setup["entry_price"],
+                setup["stop_loss"],
+                setup["target_1"],
+                setup.get("target_2"),
+                setup["confidence"],
+                setup.get("status", "proposed"),
+                setup.get("reasoning", ""),
+                now,
+                now,
+            ),
+        )
+        self._conn.commit()
+        return cursor.lastrowid
+
+    def get_active(self, trade_date: date) -> list[dict[str, Any]]:
+        rows = self._conn.execute(
+            "SELECT * FROM setups WHERE trade_date = ? AND status IN ('approved', 'active') "
+            "ORDER BY confidence DESC",
+            (str(trade_date),),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_all_for_date(self, trade_date: date) -> list[dict[str, Any]]:
+        """Return every setup for a date regardless of status."""
+        rows = self._conn.execute(
+            "SELECT * FROM setups WHERE trade_date = ? ORDER BY created_at",
+            (str(trade_date),),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_for_symbol(self, symbol: str, trade_date: date) -> list[dict[str, Any]]:
+        rows = self._conn.execute(
+            "SELECT * FROM setups WHERE symbol = ? AND trade_date = ? ORDER BY created_at",
+            (symbol, str(trade_date)),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_by_id(self, setup_id: int) -> dict[str, Any]:
+        row = self._conn.execute(
+            "SELECT * FROM setups WHERE id = ?", (setup_id,)
+        ).fetchone()
+        if row is None:
+            raise KeyError(f"Setup {setup_id} not found")
+        return dict(row)
+
+    def update_status(
+        self, setup_id: int, status: str, reason: str = ""
+    ) -> None:
+        now = datetime.now(tz=IST).isoformat()
+        self._conn.execute(
+            "UPDATE setups SET status = ?, rejection_reason = ?, updated_at = ? WHERE id = ?",
+            (status, reason, now, setup_id),
+        )
+        self._conn.commit()
+
+    def close(self) -> None:
+        self._conn.close()

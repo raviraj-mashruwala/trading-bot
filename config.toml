@@ -25,20 +25,59 @@ max_daily_loss_pct = 0.02
 max_capital_deployed_pct = 0.50
 max_concurrent_positions = 2
 
+[screening]
+min_volume = 500000
+min_price = 50
+max_price = 5000
+min_market_cap_cr = 1000
+min_atr_pct = 0.5
+min_trading_days = 10
+max_per_sector = 3
+volume_surge_weight = 15
+relative_strength_weight = 15
+atr_expansion_weight = 10
+price_structure_weight = 15
+delivery_pct_weight = 10
+sector_momentum_weight = 10
+gap_analysis_weight = 10
+candlestick_pattern_weight = 10
+volume_profile_weight = 5
+
+[backtest]
+lookback_days = 365
+walk_forward_windows = 10
+train_pct = 70
+monte_carlo_simulations = 10000
+min_trades = 30
+min_win_rate = 0.45
+min_profit_factor = 1.5
+min_expectancy_r = 0.3
+max_oos_degradation = 0.3
+max_risk_of_ruin = 0.05
+max_consecutive_losses = 8
+
+[kite]
+api_key_env = "KITE_API_KEY"
+api_secret_env = "KITE_API_SECRET"
+sync_hour = 6
+sync_minute = 0
+rate_limit_per_sec = 3
+
 [execution]
+mode = "paper"
 entry_slippage_pct = 0.05
 square_off_time = "15:10"
 connection_timeout_sec = 30
 heartbeat_interval_sec = 60
 plan_max_age_hours = 14
 max_entry_price_drift_pct = 2.0
+shadow_fraction = 0.1
 
 [llm]
-provider = "openai"
-model = "llama-3.3-70b-versatile"
+provider = "anthropic"
+model = "claude-sonnet-4-20250514"
 timeout_sec = 60
 max_retries = 1
-base_url = "https://api.groq.com/openai/v1"
 
 [paper]
 slippage_pct = 0.05
