@@ -1,4 +1,4 @@
-"""Analysis routes — start, status, cancel."""
+"""Analysis routes — start, status, cancel, daily plans."""
 
 from __future__ import annotations
 
@@ -124,3 +124,65 @@ async def cancel_analysis(request: Request):
         state.analysis_status = "idle"
         return {"status": "cancelled"}
     return {"status": state.analysis_status}
+
+
+# ---------------------------------------------------------------------------
+# Daily plan & setup endpoints
+# ---------------------------------------------------------------------------
+
+
+def _ensure_stores(state: AppState) -> None:
+    """Lazily create persistence stores on first access."""
+    if state.run_store is None:
+        from tradingbot.persistence.run_store import RunStore
+        from tradingbot.persistence.setup_store import SetupStore
+
+        db_path = Path(state.data_dir) / "analysis.db"
+        state.run_store = RunStore(db_path)
+        state.setup_store = SetupStore(db_path)
+
+
+@router.get("/plans/today")
+async def get_daily_plan(request: Request):
+    state: AppState = request.app.state.app_state
+    _ensure_stores(state)
+    from tradingbot.persistence.daily_plan import DailyPlanBuilder
+
+    builder = DailyPlanBuilder(state.run_store, state.setup_store)
+    today = date.today()
+    return builder.build(today)
+
+
+@router.get("/plans/runs")
+async def list_runs(request: Request, trade_date: str | None = None):
+    state: AppState = request.app.state.app_state
+    _ensure_stores(state)
+    d = date.fromisoformat(trade_date) if trade_date else date.today()
+    return state.run_store.list_for_date(d)
+
+
+@router.get("/plans/setups")
+async def get_setups(
+    request: Request,
+    symbol: str | None = None,
+    trade_date: str | None = None,
+):
+    state: AppState = request.app.state.app_state
+    _ensure_stores(state)
+    d = date.fromisoformat(trade_date) if trade_date else date.today()
+    if symbol:
+        return state.setup_store.get_for_symbol(symbol, d)
+    return state.setup_store.get_active(d)
+
+
+@router.patch("/setups/{setup_id}")
+async def update_setup(setup_id: int, request: Request):
+    state: AppState = request.app.state.app_state
+    _ensure_stores(state)
+    body = await request.json()
+    status = body.get("status")
+    reason = body.get("reason", "")
+    if status not in ("approved", "rejected", "active"):
+        raise HTTPException(status_code=400, detail="Invalid status")
+    state.setup_store.update_status(setup_id, status, reason)
+    return {"ok": True, "setup_id": setup_id, "status": status}
