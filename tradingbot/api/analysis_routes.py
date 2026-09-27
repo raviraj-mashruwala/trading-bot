@@ -119,7 +119,7 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
         pipeline = AnalysisPipeline(
             data_sync=None,
             candle_store=candle_store,
-            screener=Tier1Screener(config.scanner, candle_store),
+            screener=Tier1Screener(config.screening, candle_store),
             tier2=Tier2Analyzer(provider),
             tier3=Tier3Analyzer(provider),
             backtest_engine=WalkForwardEngine(),

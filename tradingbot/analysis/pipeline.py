@@ -217,7 +217,13 @@ class AnalysisPipeline:
             if len(df) > 0:
                 report = self._backtest.run(symbol, df, strategy)
                 if report.total_trades >= 5:
-                    mc = self._mc.run([report.expectancy] * report.total_trades)
+                    # Reconstruct approximate trade PnLs from report stats
+                    # so Monte Carlo gets real variance (winners vs losers)
+                    trade_pnls = (
+                        [report.avg_winner] * report.winners
+                        + [report.avg_loser] * report.losers
+                    )
+                    mc = self._mc.run(trade_pnls) if trade_pnls else None
                     gate = self._gates.evaluate(report, mc)
                     if gate.passed:
                         results.append(report)
