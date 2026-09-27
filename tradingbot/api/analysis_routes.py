@@ -18,7 +18,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 
-async def _run_analysis(state: AppState, trade_date: date) -> None:
+# ---------------------------------------------------------------------------
+# V1: Legacy PlanGenerator path (backward compat)
+# ---------------------------------------------------------------------------
+
+
+async def _run_analysis_v1(state: AppState, trade_date: date) -> None:
     try:
         from tradingbot.core.llm.anthropic_provider import build_provider
         from tradingbot.core.risk_manager import RiskManager
@@ -80,6 +85,79 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         await state.event_bus.emit("analysis.failed", {"error": str(exc)})
 
 
+# ---------------------------------------------------------------------------
+# V2: New AnalysisPipeline path (opt-in via pipeline=v2)
+# ---------------------------------------------------------------------------
+
+
+async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
+    """Run the redesigned 3-tier analysis pipeline."""
+    try:
+        from tradingbot.analysis.pipeline import AnalysisPipeline
+        from tradingbot.analysis.tier2_analyzer import Tier2Analyzer
+        from tradingbot.analysis.tier3_analyzer import Tier3Analyzer
+        from tradingbot.backtest.monte_carlo import MonteCarloSimulator
+        from tradingbot.backtest.quality_gates import QualityGates
+        from tradingbot.backtest.walk_forward import WalkForwardEngine
+        from tradingbot.core.llm.anthropic_provider import build_provider
+        from tradingbot.data.candle_store import CandleStore
+        from tradingbot.data.data_sync import DataSync
+        from tradingbot.screening.screener import Tier1Screener
+
+        config = state.config
+        log_dir = Path(state.data_dir) / "logs"
+
+        _ensure_stores(state)
+
+        provider = build_provider(config.llm, config.secrets, log_dir=log_dir / "llm")
+
+        candle_db = Path(state.data_dir) / "candles.db"
+        candle_store = CandleStore(candle_db)
+
+        pipeline = AnalysisPipeline(
+            data_sync=DataSync.__new__(DataSync),
+            candle_store=candle_store,
+            screener=Tier1Screener(config.scanner, candle_store),
+            tier2=Tier2Analyzer(provider),
+            tier3=Tier3Analyzer(provider),
+            backtest_engine=WalkForwardEngine(),
+            monte_carlo=MonteCarloSimulator(capital=config.general.capital),
+            quality_gates=QualityGates(),
+            run_store=state.run_store,
+            setup_store=state.setup_store,
+            event_bus=state.event_bus,
+            capital=config.general.capital,
+        )
+
+        await state.event_bus.emit("analysis.started", {
+            "trade_date": trade_date.isoformat(),
+            "pipeline": "v2",
+        })
+
+        analysis_run = await pipeline.run(trade_date)
+
+        state.analysis_status = "complete"
+        state.analysis_error = None
+
+        await state.event_bus.emit("analysis.complete", {
+            "trade_date": trade_date.isoformat(),
+            "run_id": analysis_run.run_id,
+            "pipeline": "v2",
+        })
+
+    except asyncio.CancelledError:
+        state.analysis_status = "idle"
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.error("analysis v2 failed: %s", exc, exc_info=True)
+        state.analysis_status = "failed"
+        state.analysis_error = str(exc)
+        await state.event_bus.emit("analysis.failed", {
+            "error": str(exc),
+            "pipeline": "v2",
+        })
+
+
 @router.post("/analyze")
 async def start_analysis(request: Request):
     state: AppState = request.app.state.app_state
@@ -101,7 +179,12 @@ async def start_analysis(request: Request):
     state.analysis_status = "running"
     state.analysis_trade_date = trade_date.isoformat()
     state.analysis_error = None
-    state.analysis_task = asyncio.create_task(_run_analysis(state, trade_date))
+
+    pipeline_version = body.get("pipeline", "v1")
+    if pipeline_version == "v2":
+        state.analysis_task = asyncio.create_task(_run_analysis_v2(state, trade_date))
+    else:
+        state.analysis_task = asyncio.create_task(_run_analysis_v1(state, trade_date))
 
     return {"status": "started", "trade_date": trade_date.isoformat()}
 
