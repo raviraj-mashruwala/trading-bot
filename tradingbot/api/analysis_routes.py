@@ -101,7 +101,6 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
         from tradingbot.backtest.walk_forward import WalkForwardEngine
         from tradingbot.core.llm.anthropic_provider import build_provider
         from tradingbot.data.candle_store import CandleStore
-        from tradingbot.data.data_sync import DataSync
         from tradingbot.screening.screener import Tier1Screener
 
         config = state.config
@@ -114,8 +113,11 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
         candle_db = Path(state.data_dir) / "candles.db"
         candle_store = CandleStore(candle_db)
 
+        # data_sync=None is safe: _build_stock_metrics() returns [] (stub),
+        # and the deep_fetch call is guarded by hasattr(). Real DataSync
+        # needs KiteClient + InstrumentCache which require auth setup.
         pipeline = AnalysisPipeline(
-            data_sync=DataSync.__new__(DataSync),
+            data_sync=None,
             candle_store=candle_store,
             screener=Tier1Screener(config.scanner, candle_store),
             tier2=Tier2Analyzer(provider),

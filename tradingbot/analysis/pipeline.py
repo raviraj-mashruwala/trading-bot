@@ -120,7 +120,7 @@ class AnalysisPipeline:
                 direction=direction,
                 regime=regime,
                 indicators={},
-                backtest_results=[],
+                backtest_results=bt_results,
                 price_action=f"{sym} analysis",
             )
             llm_calls += 1
