@@ -53,7 +53,7 @@ def make_context() -> MarketContext:
         global_cues="US flat",
         sector_leaders=["IT"],
         sector_laggards=["FMCG"],
-        regime=MarketRegime.TRENDING,
+        regime=MarketRegime.TRENDING_UP,
     )
 
 

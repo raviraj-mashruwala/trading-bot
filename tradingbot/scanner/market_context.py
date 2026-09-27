@@ -66,10 +66,10 @@ class MarketContextFetcher:
         if vix >= VIX_VOLATILE_THRESHOLD:
             return MarketRegime.VOLATILE
         if vix <= VIX_LOW_THRESHOLD:
-            return MarketRegime.LOW_VOL
+            return MarketRegime.LOW_VOL_SQUEEZE
         if nifty_above_sma20 == nifty_above_sma50:
-            return MarketRegime.TRENDING
-        return MarketRegime.RANGING
+            return MarketRegime.TRENDING_UP
+        return MarketRegime.RANGE_BOUND
 
     @staticmethod
     def _describe_trend(above_sma20: bool, above_sma50: bool) -> str:

@@ -105,7 +105,7 @@ def make_plan() -> TradePlan:
         capital=400000.0,
         max_risk_per_trade_pct=0.01,
         max_daily_loss_pct=0.02,
-        market_regime=MarketRegime.TRENDING,
+        market_regime=MarketRegime.TRENDING_UP,
         market_summary="Nifty bullish.",
         legs=[leg],
     )

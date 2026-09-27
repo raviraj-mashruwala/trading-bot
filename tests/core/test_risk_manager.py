@@ -74,7 +74,7 @@ def make_plan(legs, generated_at=datetime(2026, 9, 23, 22, 0, tzinfo=IST)) -> Tr
         capital=400000.0,
         max_risk_per_trade_pct=0.01,
         max_daily_loss_pct=0.02,
-        market_regime=MarketRegime.TRENDING,
+        market_regime=MarketRegime.TRENDING_UP,
         market_summary="Nifty bullish.",
         legs=legs,
     )

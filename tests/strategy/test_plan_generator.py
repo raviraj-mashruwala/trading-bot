@@ -54,7 +54,7 @@ class StubScanner:
                 global_cues="US flat",
                 sector_leaders=["IT"],
                 sector_laggards=["FMCG"],
-                regime=MarketRegime.TRENDING,
+                regime=MarketRegime.TRENDING_UP,
             ),
             shortlist=self.shortlist,
             filter_result=FilterResult(passed=[], rejected={}),
@@ -202,7 +202,7 @@ async def test_the_plan_records_the_market_regime_and_capital(tmp_path):
 
     plan = await generator.generate(date(2026, 9, 24))
 
-    assert plan.market_regime is MarketRegime.TRENDING
+    assert plan.market_regime is MarketRegime.TRENDING_UP
     assert plan.capital == pytest.approx(400000.0)
 
 
