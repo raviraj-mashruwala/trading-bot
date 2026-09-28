@@ -130,7 +130,7 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
 
             if not instrument_cache.get_all():
                 logger.info("InstrumentCache empty, running initial sync...")
-                data_sync.full_sync(daily_lookback=30, intraday_lookback=7)
+                data_sync.full_sync(daily_lookback=365, intraday_lookback=60)
 
         pipeline = AnalysisPipeline(
             data_sync=data_sync,
@@ -374,7 +374,7 @@ async def start_sync(request: Request):
 
             import asyncio as _aio
 
-            stats = await _aio.to_thread(sync.full_sync, 30, 7)
+            stats = await _aio.to_thread(sync.full_sync, 365, 60)
 
             state.sync_status = "complete"
             state.sync_progress = (
