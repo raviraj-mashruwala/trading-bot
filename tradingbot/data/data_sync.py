@@ -64,6 +64,25 @@ class DataSync:
             total += self._sync_symbol(symbol, interval, days)
         return total
 
+    def full_sync(
+        self, daily_lookback: int = 365, intraday_lookback: int = 60,
+    ) -> dict[str, int]:
+        """Run complete sync: instruments -> daily candles -> intraday candles."""
+        inst_count = self.sync_instruments()
+        all_instruments = self._instruments.get_all()
+        symbols = [i["symbol"] for i in all_instruments]
+
+        daily = self.sync_daily_candles(symbols, lookback_days=daily_lookback)
+        intraday = self.sync_intraday_candles(
+            symbols, interval="15minute", lookback_days=intraday_lookback,
+        )
+        return {
+            "instruments": inst_count,
+            "daily_candles": daily,
+            "intraday_candles": intraday,
+            "symbols": len(symbols),
+        }
+
     def deep_fetch(self, symbols: list[str]) -> int:
         """Fetch 5-minute (100 days) and 1-minute (5 days) candles."""
         total = 0
