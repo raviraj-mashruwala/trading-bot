@@ -7,6 +7,7 @@ the rest, and reports out-of-sample degradation.
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from datetime import date
 
 import numpy as np
@@ -118,11 +119,25 @@ class WalkForwardEngine:
                     "won": pnl > 0,
                     "entry": signal.entry_price,
                     "exit": exit_price,
+                    "regime": self._tag_regime(full_df, i),
                 }
             )
             i = exit_idx + 1
 
         return trades
+
+    def _tag_regime(self, df: pd.DataFrame, idx: int) -> str:
+        """Classify market regime at index based on SMA20/50 relationship."""
+        if idx < 50:
+            return "unknown"
+        close = float(df["close"].iloc[idx])
+        sma20 = float(df["close"].iloc[idx - 20:idx].mean())
+        sma50 = float(df["close"].iloc[idx - 50:idx].mean())
+        if close > sma20 > sma50:
+            return "trending_up"
+        if close < sma20 < sma50:
+            return "trending_down"
+        return "range_bound"
 
     def _resolve(
         self,
@@ -203,6 +218,27 @@ class WalkForwardEngine:
 
         calmar = (expectancy * 252 / max_dd) if max_dd > 0 else 0.0
 
+        # Aggregate per-regime performance stats
+        regime_buckets: dict[str, list[dict]] = defaultdict(list)
+        for t in trades:
+            regime_buckets[t.get("regime", "unknown")].append(t)
+
+        regime_performance: dict[str, dict] = {}
+        for regime, bucket in regime_buckets.items():
+            w = [t for t in bucket if t["pnl"] > 0]
+            l = [t for t in bucket if t["pnl"] <= 0]
+            gross_loss_regime = abs(sum(t["pnl"] for t in l))
+            gross_profit_regime = sum(t["pnl"] for t in w)
+            regime_performance[regime] = {
+                "trades": len(bucket),
+                "win_rate": len(w) / len(bucket) if bucket else 0,
+                "profit_factor": (
+                    gross_profit_regime / gross_loss_regime
+                    if gross_loss_regime > 0
+                    else float("inf") if gross_profit_regime > 0 else 0.0
+                ),
+            }
+
         return BacktestReport(
             symbol=symbol,
             strategy=strategy_name,
@@ -223,6 +259,7 @@ class WalkForwardEngine:
             avg_hold_minutes=0.0,
             oos_degradation=oos_deg,
             calmar_ratio=calmar,
+            regime_performance=regime_performance,
         )
 
     def _empty_report(

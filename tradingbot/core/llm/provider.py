@@ -3,7 +3,31 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
+
+MODEL_PRICING: dict[str, dict[str, float]] = {
+    "claude-sonnet-4-20250514": {"input": 3.0, "output": 15.0},
+    "claude-opus-4-20250514": {"input": 15.0, "output": 75.0},
+    "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.0},
+}
+DEFAULT_PRICING: dict[str, float] = {"input": 3.0, "output": 15.0}
+
+
+@dataclass
+class LLMUsage:
+    """Token usage and cost for a single LLM call."""
+
+    input_tokens: int
+    output_tokens: int
+    model: str
+
+    def cost_usd(self) -> float:
+        pricing = MODEL_PRICING.get(self.model, DEFAULT_PRICING)
+        return (
+            self.input_tokens * pricing["input"] / 1_000_000
+            + self.output_tokens * pricing["output"] / 1_000_000
+        )
 
 
 class LLMError(Exception):

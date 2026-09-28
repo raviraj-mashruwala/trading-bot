@@ -32,5 +32,6 @@ def test_max_positions_check():
 def test_emergency_stop():
     mgr = SafetyManager(capital=400000, max_daily_loss_pct=2.0)
     mock_executor = MagicMock()
-    # Should not raise
-    mgr.emergency_stop(mock_executor)
+    # Should not raise with empty lists
+    result = mgr.emergency_stop(mock_executor, [], [])
+    assert result == {"cancelled": 0, "squared_off": 0, "errors": 0}

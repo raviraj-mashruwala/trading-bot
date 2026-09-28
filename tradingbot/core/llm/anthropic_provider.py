@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from tradingbot.core.config import LLMConfig, Secrets
-from tradingbot.core.llm.provider import LLMProvider, LLMResponseError
+from tradingbot.core.llm.provider import LLMProvider, LLMResponseError, LLMUsage
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +87,15 @@ class AnthropicProvider(LLMProvider):
                 continue
 
             self._log_call(system_prompt, user_prompt, tool_name, payload)
+
+            # Attach token usage for cost tracking (after logging to avoid serialization issues)
+            usage = getattr(response, "usage", None)
+            payload["_usage"] = LLMUsage(
+                input_tokens=getattr(usage, "input_tokens", 0) if usage else 0,
+                output_tokens=getattr(usage, "output_tokens", 0) if usage else 0,
+                model=self.config.model,
+            )
+
             return payload
 
         assert last_error is not None

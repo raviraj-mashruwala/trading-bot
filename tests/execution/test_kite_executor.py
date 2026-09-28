@@ -112,3 +112,38 @@ def test_place_entry_handles_broker_exception():
         order_type="LIMIT", current_price=2500,
     )
     assert order_id is None
+
+
+def test_shadow_mode_reduces_quantity():
+    client = MagicMock()
+    client.place_order.return_value = "ORD_SHADOW"
+    cap_mgr = MagicMock()
+    cap_mgr.check_margin.return_value = (True, "")
+    executor = KiteExecutor(client, cap_mgr, max_drift_pct=2.0,
+                            execution_mode="shadow", shadow_fraction=0.1)
+
+    order_id = executor.place_entry(
+        symbol="RELIANCE", exchange="NSE", direction="long",
+        entry_price=2500, stop_loss=2480, quantity=100,
+        order_type="LIMIT", current_price=2500,
+    )
+    assert order_id == "ORD_SHADOW"
+    call_kwargs = client.place_order.call_args
+    assert call_kwargs.kwargs.get("quantity", call_kwargs[1].get("quantity", 100)) == 10  # 100 * 0.1
+
+
+def test_live_mode_keeps_full_quantity():
+    client = MagicMock()
+    client.place_order.return_value = "ORD_LIVE"
+    cap_mgr = MagicMock()
+    cap_mgr.check_margin.return_value = (True, "")
+    executor = KiteExecutor(client, cap_mgr, max_drift_pct=2.0,
+                            execution_mode="live", shadow_fraction=0.1)
+
+    executor.place_entry(
+        symbol="TCS", exchange="NSE", direction="long",
+        entry_price=3500, stop_loss=3470, quantity=50,
+        order_type="LIMIT", current_price=3500,
+    )
+    call_kwargs = client.place_order.call_args
+    assert call_kwargs.kwargs.get("quantity", call_kwargs[1].get("quantity", 50)) == 50

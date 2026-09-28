@@ -16,10 +16,14 @@ class KiteExecutor:
         client: Any,
         capital_manager: Any,
         max_drift_pct: float = 2.0,
+        execution_mode: str = "live",
+        shadow_fraction: float = 0.1,
     ):
         self._client = client
         self._capital = capital_manager
         self._max_drift = max_drift_pct
+        self._mode = execution_mode
+        self._shadow_fraction = shadow_fraction
 
     def place_entry(
         self,
@@ -41,7 +45,13 @@ class KiteExecutor:
             log.warning("%s: price drifted %.1f%%, skipping", symbol, drift)
             return None
 
-        ok, reason = self._capital.check_margin(entry_price, quantity)
+        # Shadow mode: scale quantity down for low-risk validation
+        actual_qty = quantity
+        if self._mode == "shadow":
+            actual_qty = max(1, int(quantity * self._shadow_fraction))
+            log.info("%s: shadow mode, qty %d -> %d", symbol, quantity, actual_qty)
+
+        ok, reason = self._capital.check_margin(entry_price, actual_qty)
         if not ok:
             log.warning("%s: %s", symbol, reason)
             return None
@@ -53,13 +63,13 @@ class KiteExecutor:
                 exchange=exchange,
                 tradingsymbol=symbol,
                 transaction_type=transaction_type,
-                quantity=quantity,
+                quantity=actual_qty,
                 product="MIS",
                 order_type=order_type,
                 price=entry_price,
                 validity="DAY",
             )
-            self._capital.add_deployed(entry_price * quantity)
+            self._capital.add_deployed(entry_price * actual_qty)
             log.info("%s: entry order placed %s", symbol, order_id)
             return order_id
         except Exception:

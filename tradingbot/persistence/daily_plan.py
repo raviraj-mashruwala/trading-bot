@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from tradingbot.persistence.run_store import RunStore
 from tradingbot.persistence.setup_store import SetupStore
@@ -19,6 +20,15 @@ class DailyPlanBuilder:
 
     def build(self, trade_date: date) -> dict[str, Any]:
         runs = self._runs.list_for_date(trade_date)
+
+        # Mark stale setups based on latest run's regime
+        if runs:
+            latest_regime = runs[-1].get("market_regime", "range_bound")
+            self._setups.mark_stale(
+                latest_regime,
+                datetime.now(tz=ZoneInfo("Asia/Kolkata")),
+            )
+
         active = self._setups.get_active(trade_date)
         all_setups_today = self._setups.get_all_for_date(trade_date)
 

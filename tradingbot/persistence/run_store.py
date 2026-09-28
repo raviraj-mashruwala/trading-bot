@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -65,6 +65,54 @@ class RunStore:
             (str(trade_date),),
         ).fetchall()
         return [dict(r) for r in rows]
+
+    def archive_old(self, days: int = 7, setup_store: Any = None) -> int:
+        """Move analysis runs older than `days` to archive table.
+
+        Skips runs with active/approved setups when setup_store provided.
+        Returns count of archived rows.
+        """
+        cutoff = (date.today() - timedelta(days=days)).isoformat()
+
+        # Create archive table mirroring schema
+        self._conn.execute("""
+            CREATE TABLE IF NOT EXISTS analysis_runs_archive AS
+            SELECT * FROM analysis_runs WHERE 0
+        """)
+
+        # Find old rows
+        rows = self._conn.execute(
+            "SELECT * FROM analysis_runs WHERE trade_date < ?", (cutoff,)
+        ).fetchall()
+
+        if not rows:
+            return 0
+
+        # Filter out runs with active setups
+        if setup_store:
+            active_run_ids = {
+                row["run_id"] for row in
+                setup_store._conn.execute(
+                    "SELECT DISTINCT run_id FROM setups WHERE status IN ('active', 'approved')"
+                ).fetchall()
+            }
+            to_archive = [r for r in rows if dict(r)["run_id"] not in active_run_ids]
+        else:
+            to_archive = list(rows)
+
+        if not to_archive:
+            return 0
+
+        for row in to_archive:
+            d = dict(row)
+            self._conn.execute(
+                "INSERT OR REPLACE INTO analysis_runs_archive VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                tuple(d.values()),
+            )
+            self._conn.execute("DELETE FROM analysis_runs WHERE run_id = ?", (d["run_id"],))
+
+        self._conn.commit()
+        return len(to_archive)
 
     def close(self) -> None:
         self._conn.close()

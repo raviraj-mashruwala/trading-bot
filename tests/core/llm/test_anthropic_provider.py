@@ -60,7 +60,7 @@ async def test_analyze_returns_the_tool_input(tmp_path):
         input_schema=SCHEMA,
     )
 
-    assert result == {"picks": ["RELIANCE", "TCS"]}
+    assert result["picks"] == ["RELIANCE", "TCS"]
 
 
 async def test_analyze_sends_the_configured_model_and_tool(tmp_path):
@@ -91,7 +91,7 @@ async def test_a_transient_failure_is_retried_once(tmp_path):
 
     result = await provider.analyze("sys", "user", "emit_result", "desc", SCHEMA)
 
-    assert result == {"picks": ["INFY"]}
+    assert result["picks"] == ["INFY"]
     assert len(client.messages.calls) == 2
 
 

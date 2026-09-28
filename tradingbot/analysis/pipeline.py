@@ -17,6 +17,7 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from tradingbot.core.llm.provider import LLMUsage
 from tradingbot.core.models import AnalysisRun, MarketRegime
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -69,6 +70,7 @@ class AnalysisPipeline:
         start = time.monotonic()
         run_id = f"run_{trade_date:%Y%m%d}_{datetime.now(tz=IST):%H%M%S}_{uuid.uuid4().hex[:6]}"
         llm_calls = 0
+        total_cost = 0.0
 
         self._bus.emit("analysis.started", {"run_id": run_id})
 
@@ -91,9 +93,13 @@ class AnalysisPipeline:
             sector_data=sector_data,
         )
         llm_calls += 1
+        if isinstance(regime.get("_usage"), LLMUsage):
+            total_cost += regime.pop("_usage").cost_usd()
 
         sectors = await self._tier2.analyze_sectors(regime, {}, {})
         llm_calls += 1
+        if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
+            total_cost += sectors.pop("_usage").cost_usd()
 
         scored_dicts = [
             {
@@ -107,6 +113,8 @@ class AnalysisPipeline:
         ]
         shortlist_result = await self._tier2.shortlist(regime, sectors, scored_dicts)
         llm_calls += 1
+        if isinstance(shortlist_result.get("_usage"), LLMUsage):
+            total_cost += shortlist_result.pop("_usage").cost_usd()
         shortlist = shortlist_result.get("shortlist", [])
 
         self._bus.emit("analysis.tier2_complete", {"shortlisted": len(shortlist)})
@@ -136,6 +144,8 @@ class AnalysisPipeline:
                 price_action=f"{sym} analysis",
             )
             llm_calls += 1
+            if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
+                total_cost += deep.pop("_usage").cost_usd()
             all_setups.append(deep)
 
         # --- Adversarial validation ---
@@ -148,6 +158,8 @@ class AnalysisPipeline:
                 setups_with_data, regime, sectors
             )
             llm_calls += 1
+            if isinstance(validation.get("_usage") if isinstance(validation, dict) else None, LLMUsage):
+                total_cost += validation.pop("_usage").cost_usd()
 
             for approved in validation.get("approved", []):
                 sym = approved["symbol"]
@@ -189,7 +201,7 @@ class AnalysisPipeline:
             setups_proposed=setups_proposed,
             setups_approved=setups_approved,
             llm_calls=llm_calls,
-            llm_cost_usd=0,
+            llm_cost_usd=total_cost,
             duration_seconds=duration,
         )
         self._runs.save(analysis_run)
@@ -239,6 +251,15 @@ class AnalysisPipeline:
             atr = float(true_range.tail(min(14, len(df))).mean())
             atr_pct = (atr / last_price * 100) if last_price > 0 else 0
 
+            # Gap analysis: compare today's open vs yesterday's close
+            gap_score = 0.0
+            if len(df) >= 2:
+                prev_close = float(df["close"].iloc[-2])
+                today_open = float(df["open"].iloc[-1])
+                if prev_close > 0:
+                    gap_pct = abs(today_open - prev_close) / prev_close * 100
+                    gap_score = min(100.0, gap_pct * 33.3)  # 3% gap = 100 score
+
             market_cap_cr = last_price * avg_volume / 1_00_00_000
 
             metrics.append({
@@ -250,7 +271,7 @@ class AnalysisPipeline:
                 "atr_pct": atr_pct,
                 "sector": "unknown",
                 "trading_days": trading_days,
-                "factor_scores": {},
+                "factor_scores": {"gap_analysis": gap_score},
             })
 
         return metrics
