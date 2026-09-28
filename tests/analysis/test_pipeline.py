@@ -428,3 +428,58 @@ def test_single_symbol_unchanged(pipeline_deps):
     p = AnalysisPipeline(**pipeline_deps)
     result = p._drop_correlated_setups([_setup_entry("TCS", 0.8)])
     assert len(result) == 1 and result[0]["symbol"] == "TCS"
+
+
+def test_hub_and_spoke_drops_hub_not_spokes():
+    """A(conf=0.90) is hub: ρ(A,B)>0.7 and ρ(A,C)>0.7 but ρ(B,C)≤0.7.
+    C(0.92) is highest confidence. A must be dropped (correlated with C).
+    B must survive — it has no qualifying correlation with C.
+    Greedy pair-iteration bug: B dropped via A→B pair before A itself is dropped.
+    Correct fix: confidence-sorted greedy (keep highest-conf first).
+    """
+    rng = np.random.default_rng(7)
+    n = 25
+    # Construct returns via 3-factor model: ρ(A,B)=ρ(A,C)=0.8, ρ(B,C)=0.64<0.7
+    a_ret = rng.standard_normal(n)
+    e1 = rng.standard_normal(n)
+    e2 = rng.standard_normal(n)
+    b_ret = 0.8 * a_ret + 0.6 * e1   # ρ(A,B) ≈ 0.8
+    c_ret = 0.8 * a_ret + 0.6 * e2   # ρ(A,C) ≈ 0.8; ρ(B,C) ≈ 0.64
+
+    # Verify the construction before asserting pipeline behavior
+    rho_ab = float(np.corrcoef(a_ret, b_ret)[0, 1])
+    rho_ac = float(np.corrcoef(a_ret, c_ret)[0, 1])
+    rho_bc = float(np.corrcoef(b_ret, c_ret)[0, 1])
+    assert rho_ab > 0.7 and rho_ac > 0.7 and rho_bc <= 0.7, (
+        f"Test construction invalid: ρ(A,B)={rho_ab:.2f} ρ(A,C)={rho_ac:.2f} ρ(B,C)={rho_bc:.2f}"
+    )
+
+    # Build price series as cumsum of returns
+    make = lambda ret: _make_close_df(100 + np.cumsum(ret))
+    dfs = {"A": make(a_ret), "B": make(b_ret), "C": make(c_ret)}
+
+    candle_store = MagicMock()
+    candle_store.read.side_effect = lambda sym, *a, **kw: dfs[sym]
+
+    from tradingbot.persistence.run_store import RunStore
+    from tradingbot.persistence.setup_store import SetupStore
+    import tempfile, pathlib
+    with tempfile.TemporaryDirectory() as tmp:
+        db = pathlib.Path(tmp) / "t.db"
+        deps = {
+            "data_sync": MagicMock(), "candle_store": candle_store,
+            "screener": MagicMock(), "tier2": MagicMock(), "tier3": MagicMock(),
+            "backtest_engine": MagicMock(), "monte_carlo": MagicMock(),
+            "quality_gates": MagicMock(), "run_store": RunStore(db),
+            "setup_store": SetupStore(db), "event_bus": MagicMock(), "capital": 100_000,
+        }
+        p = AnalysisPipeline(**deps)
+        result = p._drop_correlated_setups([
+            _setup_entry("A", 0.90),   # hub — correlated with both, mid confidence
+            _setup_entry("B", 0.85),   # spoke — correlated with A, not with C
+            _setup_entry("C", 0.92),   # spoke — correlated with A, highest confidence
+        ])
+        syms = {s["symbol"] for s in result}
+        assert "C" in syms, "Highest-confidence symbol must always survive"
+        assert "A" not in syms, "A must be dropped (correlated with C, lower confidence)"
+        assert "B" in syms, "B must survive — not correlated with C; only correlated with dropped A"

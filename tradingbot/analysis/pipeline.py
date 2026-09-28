@@ -438,15 +438,26 @@ class AnalysisPipeline:
         )
 
     def _drop_correlated_setups(self, setups_with_data: list[dict]) -> list[dict]:
-        """Drop lower-confidence setup when two symbols have ρ > 0.7 on 20d returns.
+        """Drop lower-confidence setups when two symbols have ρ > 0.7 on 20d returns.
 
-        Deterministic pre-filter before the adversarial LLM call. Single symbol
-        input is returned unchanged.
+        Uses confidence-sorted greedy: process symbols highest-confidence first,
+        keep a symbol if it is not correlated with any already-kept symbol.
+        This avoids the greedy pair-iteration bug where a symbol is dropped via a
+        hub that itself gets dropped (hub-and-spoke over-drop).
         """
         import numpy as np
 
         if len(setups_with_data) <= 1:
             return setups_with_data
+
+        def _max_conf(sym_: str) -> float:
+            return max(
+                (st.get("confidence", 0)
+                 for st in next(
+                     (x["setups"] for x in setups_with_data if x["symbol"] == sym_), []
+                 )),
+                default=0.0,
+            )
 
         symbol_returns: dict[str, list[float]] = {}
         for s in setups_with_data:
@@ -462,30 +473,37 @@ class AnalysisPipeline:
             except Exception:
                 pass
 
-        symbols = list(symbol_returns.keys())
-        to_drop: set[str] = set()
+        # Sort highest-confidence first; symbols with no return data pass through
+        all_syms = [s["symbol"] for s in setups_with_data]
+        with_data = sorted(
+            [s for s in all_syms if s in symbol_returns],
+            key=_max_conf,
+            reverse=True,
+        )
+        no_data = [s for s in all_syms if s not in symbol_returns]
 
-        for i, s1 in enumerate(symbols):
-            for s2 in symbols[i + 1:]:
-                r1, r2 = symbol_returns[s1], symbol_returns[s2]
-                n = min(len(r1), len(r2))
+        kept: list[str] = []
+        for candidate in with_data:
+            r_cand = symbol_returns[candidate]
+            correlated_with_kept = False
+            for kept_sym in kept:
+                r_kept = symbol_returns[kept_sym]
+                n = min(len(r_cand), len(r_kept))
                 if n < 10:
                     continue
-                rho = float(np.corrcoef(r1[-n:], r2[-n:])[0, 1])
+                rho = float(np.corrcoef(r_cand[-n:], r_kept[-n:])[0, 1])
                 if rho > 0.7:
-                    def _max_conf(sym_: str) -> float:
-                        return max(
-                            (st.get("confidence", 0) for st in next(
-                                (x["setups"] for x in setups_with_data if x["symbol"] == sym_),
-                                []
-                            )),
-                            default=0.0,
-                        )
-                    drop = s2 if _max_conf(s1) >= _max_conf(s2) else s1
-                    to_drop.add(drop)
-                    log.info("Correlation drop: ρ=%.2f %s↔%s → drop %s", rho, s1, s2, drop)
+                    correlated_with_kept = True
+                    log.info(
+                        "Correlation drop: ρ=%.2f %s↔%s (kept) → drop %s",
+                        rho, candidate, kept_sym, candidate,
+                    )
+                    break
+            if not correlated_with_kept:
+                kept.append(candidate)
 
-        return [s for s in setups_with_data if s["symbol"] not in to_drop]
+        survivors = set(kept) | set(no_data)
+        return [s for s in setups_with_data if s["symbol"] in survivors]
 
     def _get_regime_eligible_strategies(self, regime: dict) -> frozenset[StrategyName]:
         """Return strategy names valid for the current regime. Fail-open on unknown."""
