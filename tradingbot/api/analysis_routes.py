@@ -260,6 +260,49 @@ async def get_setups(
     return state.setup_store.get_active(d)
 
 
+# ---------------------------------------------------------------------------
+# Kite OAuth endpoints
+# ---------------------------------------------------------------------------
+
+
+def _ensure_kite_auth(state: AppState) -> "KiteAuth":
+    if state.kite_auth is None:
+        from tradingbot.execution.kite_auth import KiteAuth
+
+        state.kite_auth = KiteAuth(
+            api_key=state.config.secrets.kite_api_key,
+            api_secret=state.config.secrets.kite_api_secret,
+        )
+    return state.kite_auth
+
+
+@router.get("/auth/kite/login")
+async def kite_login(request: Request):
+    state: AppState = request.app.state.app_state
+    auth = _ensure_kite_auth(state)
+    return {"login_url": auth.get_login_url()}
+
+
+@router.get("/auth/kite/callback")
+async def kite_callback(request: Request, request_token: str | None = None):
+    if not request_token:
+        raise HTTPException(status_code=400, detail="request_token required")
+    state: AppState = request.app.state.app_state
+    auth = _ensure_kite_auth(state)
+    try:
+        data = auth.generate_session(request_token)
+        return {"authenticated": True, "user_id": data.get("user_id", "")}
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"Token exchange failed: {exc}")
+
+
+@router.get("/auth/kite/status")
+async def kite_status(request: Request):
+    state: AppState = request.app.state.app_state
+    auth = state.kite_auth
+    return {"authenticated": auth.is_authenticated() if auth else False}
+
+
 @router.patch("/setups/{setup_id}")
 async def update_setup(setup_id: int, request: Request):
     state: AppState = request.app.state.app_state

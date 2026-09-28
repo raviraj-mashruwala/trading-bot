@@ -38,6 +38,19 @@ class KiteAuth:
         kite = KiteConnect(api_key=self._api_key)
         return kite.login_url()
 
+    def generate_session(self, request_token: str) -> dict:
+        """Exchange request_token for access_token via Kite API."""
+        from kiteconnect import KiteConnect
+
+        kite = KiteConnect(api_key=self._api_key)
+        data = kite.generate_session(request_token, api_secret=self._api_secret)
+        access_token = data["access_token"]
+        kite.set_access_token(access_token)
+        self._access_token = access_token
+        self._kite = kite
+        log.info("Kite session generated for user %s", data.get("user_id", "?"))
+        return data
+
     @property
     def api_key(self) -> str:
         return self._api_key
