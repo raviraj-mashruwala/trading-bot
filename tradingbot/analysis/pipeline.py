@@ -17,6 +17,7 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from tradingbot.core.llm.provider import LLMUsage
 from tradingbot.core.models import AnalysisRun, MarketRegime
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -69,6 +70,7 @@ class AnalysisPipeline:
         start = time.monotonic()
         run_id = f"run_{trade_date:%Y%m%d}_{datetime.now(tz=IST):%H%M%S}_{uuid.uuid4().hex[:6]}"
         llm_calls = 0
+        total_cost = 0.0
 
         self._bus.emit("analysis.started", {"run_id": run_id})
 
@@ -91,9 +93,13 @@ class AnalysisPipeline:
             sector_data=sector_data,
         )
         llm_calls += 1
+        if isinstance(regime.get("_usage"), LLMUsage):
+            total_cost += regime.pop("_usage").cost_usd()
 
         sectors = await self._tier2.analyze_sectors(regime, {}, {})
         llm_calls += 1
+        if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
+            total_cost += sectors.pop("_usage").cost_usd()
 
         scored_dicts = [
             {
@@ -107,6 +113,8 @@ class AnalysisPipeline:
         ]
         shortlist_result = await self._tier2.shortlist(regime, sectors, scored_dicts)
         llm_calls += 1
+        if isinstance(shortlist_result.get("_usage"), LLMUsage):
+            total_cost += shortlist_result.pop("_usage").cost_usd()
         shortlist = shortlist_result.get("shortlist", [])
 
         self._bus.emit("analysis.tier2_complete", {"shortlisted": len(shortlist)})
@@ -136,6 +144,8 @@ class AnalysisPipeline:
                 price_action=f"{sym} analysis",
             )
             llm_calls += 1
+            if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
+                total_cost += deep.pop("_usage").cost_usd()
             all_setups.append(deep)
 
         # --- Adversarial validation ---
@@ -148,6 +158,8 @@ class AnalysisPipeline:
                 setups_with_data, regime, sectors
             )
             llm_calls += 1
+            if isinstance(validation.get("_usage") if isinstance(validation, dict) else None, LLMUsage):
+                total_cost += validation.pop("_usage").cost_usd()
 
             for approved in validation.get("approved", []):
                 sym = approved["symbol"]
@@ -189,7 +201,7 @@ class AnalysisPipeline:
             setups_proposed=setups_proposed,
             setups_approved=setups_approved,
             llm_calls=llm_calls,
-            llm_cost_usd=0,
+            llm_cost_usd=total_cost,
             duration_seconds=duration,
         )
         self._runs.save(analysis_run)
