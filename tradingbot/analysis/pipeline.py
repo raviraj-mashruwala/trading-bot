@@ -177,6 +177,7 @@ class AnalysisPipeline:
 
         # --- Adversarial validation ---
         setups_with_data = [s for s in all_setups if s.get("setups")]
+        setups_with_data = self._drop_correlated_setups(setups_with_data)
         setups_proposed = sum(len(s.get("setups", [])) for s in setups_with_data)
         setups_approved = 0
 
@@ -435,6 +436,56 @@ class AnalysisPipeline:
             f"Supertrend: {snap.supertrend:.2f} "
             f"({'up' if snap.supertrend_direction == 1 else 'down'})"
         )
+
+    def _drop_correlated_setups(self, setups_with_data: list[dict]) -> list[dict]:
+        """Drop lower-confidence setup when two symbols have ρ > 0.7 on 20d returns.
+
+        Deterministic pre-filter before the adversarial LLM call. Single symbol
+        input is returned unchanged.
+        """
+        import numpy as np
+
+        if len(setups_with_data) <= 1:
+            return setups_with_data
+
+        symbol_returns: dict[str, list[float]] = {}
+        for s in setups_with_data:
+            sym = s["symbol"]
+            try:
+                df = self._candles.read(
+                    sym, "day",
+                    datetime(2025, 1, 1, tzinfo=IST),
+                    datetime.now(tz=IST),
+                )
+                if len(df) >= 20:
+                    symbol_returns[sym] = df["close"].tail(20).pct_change().dropna().tolist()
+            except Exception:
+                pass
+
+        symbols = list(symbol_returns.keys())
+        to_drop: set[str] = set()
+
+        for i, s1 in enumerate(symbols):
+            for s2 in symbols[i + 1:]:
+                r1, r2 = symbol_returns[s1], symbol_returns[s2]
+                n = min(len(r1), len(r2))
+                if n < 10:
+                    continue
+                rho = float(np.corrcoef(r1[-n:], r2[-n:])[0, 1])
+                if rho > 0.7:
+                    def _max_conf(sym_: str) -> float:
+                        return max(
+                            (st.get("confidence", 0) for st in next(
+                                (x["setups"] for x in setups_with_data if x["symbol"] == sym_),
+                                []
+                            )),
+                            default=0.0,
+                        )
+                    drop = s2 if _max_conf(s1) >= _max_conf(s2) else s1
+                    to_drop.add(drop)
+                    log.info("Correlation drop: ρ=%.2f %s↔%s → drop %s", rho, s1, s2, drop)
+
+        return [s for s in setups_with_data if s["symbol"] not in to_drop]
 
     def _get_regime_eligible_strategies(self, regime: dict) -> frozenset[StrategyName]:
         """Return strategy names valid for the current regime. Fail-open on unknown."""

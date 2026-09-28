@@ -374,3 +374,57 @@ def test_fetch_indicators_price_action_contains_key_levels(pipeline_deps):
     _, price_action = p._fetch_indicators_for_symbol("TCS")
     assert "VWAP" in price_action or "vwap" in price_action.lower()
     assert "RSI" in price_action or "rsi" in price_action.lower()
+
+
+# ── Correlation filter tests ──────────────────────────────────────────────────
+
+def _make_close_df(closes):
+    n = len(closes)
+    return pd.DataFrame({
+        "open": closes - 0.3, "high": closes + 1,
+        "low": closes - 1, "close": closes, "volume": [1_000_000] * n,
+    })
+
+
+def _setup_entry(symbol, confidence):
+    return {"symbol": symbol, "setups": [{"confidence": confidence}]}
+
+
+def test_correlated_pair_drops_lower_confidence(pipeline_deps):
+    rng = np.random.default_rng(42)
+    base = rng.standard_normal(25)
+    c1 = 100 + np.cumsum(base)
+    c2 = 100 + np.cumsum(base + rng.standard_normal(25) * 0.01)  # ρ ≈ 1.0
+
+    pipeline_deps["candle_store"].read.side_effect = (
+        lambda sym, *a, **kw: _make_close_df(c1) if sym == "TCS" else _make_close_df(c2)
+    )
+    p = AnalysisPipeline(**pipeline_deps)
+    result = p._drop_correlated_setups([
+        _setup_entry("TCS", 0.85),
+        _setup_entry("INFY", 0.65),
+    ])
+    syms = [s["symbol"] for s in result]
+    assert "TCS" in syms and "INFY" not in syms
+
+
+def test_uncorrelated_pair_both_kept(pipeline_deps):
+    c_a = 100 + np.cumsum(np.random.default_rng(0).standard_normal(25))
+    c_b = 200 + np.cumsum(np.random.default_rng(99).standard_normal(25))
+    pipeline_deps["candle_store"].read.side_effect = (
+        lambda sym, *a, **kw: _make_close_df(c_a) if sym == "HDFC" else _make_close_df(c_b)
+    )
+    p = AnalysisPipeline(**pipeline_deps)
+    result = p._drop_correlated_setups([
+        _setup_entry("HDFC", 0.8),
+        _setup_entry("ONGC", 0.75),
+    ])
+    assert len(result) == 2
+
+
+def test_single_symbol_unchanged(pipeline_deps):
+    closes = 100 + np.cumsum(np.random.default_rng(7).standard_normal(25))
+    pipeline_deps["candle_store"].read.return_value = _make_close_df(closes)
+    p = AnalysisPipeline(**pipeline_deps)
+    result = p._drop_correlated_setups([_setup_entry("TCS", 0.8)])
+    assert len(result) == 1 and result[0]["symbol"] == "TCS"
