@@ -176,3 +176,13 @@ def test_build_deep_analysis_user_prompt():
     assert "rsi_14" in prompt
     assert "vwap_mean_reversion" in prompt
     assert "1.5:1" in prompt or "confluence" in prompt.lower()
+
+
+def test_adversarial_system_contains_final_check_questions():
+    for phrase in [
+        "What am I missing",
+        "truly independent",
+        "invalidate this trade",
+        "Downgrade",
+    ]:
+        assert phrase in ADVERSARIAL_SYSTEM, f"Missing final_check phrase: {phrase!r}"

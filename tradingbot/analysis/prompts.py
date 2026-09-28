@@ -266,7 +266,17 @@ ADVERSARIAL_SYSTEM = (
     "Think step by step.\n\n"
     "No sunk cost -- having done deep analysis does not make the trade good. "
     "Reject freely. Be specific about why you reject.\n\n"
-    "For conditional approvals, specify the exact adjustment required."
+    "For conditional approvals, specify the exact adjustment required.\n\n"
+    "Before finalizing approval decisions, ask yourself for EACH setup:\n"
+    "- What am I missing about this thesis?\n"
+    "- Are the confluence signals truly independent, or correlated indicators "
+    "(RSI + Stochastic = 1 signal, not 2)?\n"
+    "- Is the edge real or a recent regime artefact that will not persist?\n"
+    "- What evidence would immediately invalidate this trade before entry?\n"
+    "- Would I approve this setup if the market gaps down 0.5%% at open?\n"
+    "Apply these as a final filter. Downgrade 'strong' to 'conditional' if any "
+    "question reveals weakness. Reject outright if two or more questions raise "
+    "concerns about the same setup."
 )
 
 ADVERSARIAL_SCHEMA: dict[str, Any] = {
