@@ -1,7 +1,7 @@
 import type {
   HealthStatus, ConfigResponse, Provider, PlanSummary, TradePlan,
   Trade, TradeStats, AnalysisStatus, ExecutionPosition,
-  KiteAuthStatus, AnalysisRun, Setup, DailyPlan,
+  KiteAuthStatus, AnalysisRun, Setup, DailyPlan, SyncStatus,
 } from "@/types";
 
 async function get<T>(url: string): Promise<T> {
@@ -85,4 +85,8 @@ export const api = {
       if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
       return r.json() as Promise<{ ok: boolean }>;
     }),
+
+  // Data Sync
+  postSync: () => post<{ status: string }>("/api/sync"),
+  getSyncStatus: () => get<SyncStatus>("/api/sync/status"),
 };

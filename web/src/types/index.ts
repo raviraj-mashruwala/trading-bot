@@ -191,3 +191,8 @@ export interface DailyPlan {
   active_setups: Setup[];
   ranked_suggestions: RankedSuggestion[];
 }
+
+export interface SyncStatus {
+  status: "idle" | "running" | "complete" | "failed";
+  progress: string;
+}
