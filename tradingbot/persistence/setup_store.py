@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
+
+STALE_HOURS_VOLATILE = 2
+STALE_HOURS_NORMAL = 4
 
 
 class SetupStore:
@@ -111,6 +114,22 @@ class SetupStore:
             (status, reason, now, setup_id),
         )
         self._conn.commit()
+
+    def mark_stale(self, regime: str, now: datetime) -> int:
+        """Mark approved/active setups older than threshold as stale.
+
+        Threshold: >2h for volatile regime, >4h otherwise.
+        Returns count of setups marked stale.
+        """
+        threshold_hours = STALE_HOURS_VOLATILE if regime == "volatile" else STALE_HOURS_NORMAL
+        cutoff = (now - timedelta(hours=threshold_hours)).isoformat()
+        cursor = self._conn.execute(
+            "UPDATE setups SET status = 'stale', updated_at = ? "
+            "WHERE status IN ('approved', 'active') AND created_at < ?",
+            (now.isoformat(), cutoff),
+        )
+        self._conn.commit()
+        return cursor.rowcount
 
     def close(self) -> None:
         self._conn.close()
