@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { ConfigSection } from "@/components/settings/config-section";
 import { LlmTestButton } from "@/components/settings/llm-test-button";
 
-const SECTION_ORDER = ["general", "scanner", "strategy", "risk", "execution", "llm", "paper"];
+const SECTION_ORDER = ["general", "screening", "backtest", "risk", "execution", "kite", "llm", "paper"];
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
@@ -29,11 +29,14 @@ export default function SettingsPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Settings</h1>
 
-      {SECTION_ORDER.map((section) => (
+      {SECTION_ORDER.map((section) => {
+        const fields = config[section as keyof typeof config] as Record<string, unknown> | undefined;
+        if (!fields) return null;
+        return (
         <div key={section}>
           <ConfigSection
             name={section}
-            fields={config[section as keyof typeof config] as Record<string, unknown>}
+            fields={fields}
             onSave={(changed) => handleSave(section, changed)}
           />
           {section === "llm" && (
@@ -42,7 +45,8 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
 
       <div className="rounded-lg border border-border/30 bg-card/40 p-4">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">Secrets (read-only)</div>
