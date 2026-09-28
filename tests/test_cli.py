@@ -254,18 +254,17 @@ def test_a_missing_api_key_is_reported_cleanly(tmp_path, monkeypatch):
     assert "Traceback" not in result.output
 
 
-def test_analyze_refuses_a_non_trading_day_without_a_traceback(tmp_path, monkeypatch):
+def test_analyze_prints_retirement_message(tmp_path, monkeypatch):
     write_env(monkeypatch)
     config_path = write_config(tmp_path)
 
     result = CliRunner().invoke(
         cli,
-        ["--config", str(config_path), "--data-dir", str(tmp_path), "analyze", "--date", "2026-09-26"],
+        ["--config", str(config_path), "--data-dir", str(tmp_path), "analyze"],
     )
 
-    assert result.exit_code != 0
-    assert "not an NSE trading day" in result.output
-    assert "Traceback" not in result.output
+    assert result.exit_code == 0
+    assert "retired" in result.output.lower()
 
 
 def test_execute_without_a_plan_fails_cleanly(tmp_path, monkeypatch):

@@ -130,7 +130,6 @@ class Secrets:
     anthropic_api_key: str = field(repr=False)
     kite_api_key: str = field(repr=False)
     kite_api_secret: str = field(repr=False)
-    openai_api_key: str = field(default="", repr=False)
 
     def __repr__(self) -> str:  # pragma: no cover - trivial
         return "Secrets(<redacted>)"
@@ -190,7 +189,6 @@ def load_config(config_path: Path | None = None) -> Config:
             f"general.mode must be 'paper' or 'live', got {general_raw['mode']!r}"
         ) from exc
 
-    scanner_raw = _section(data, "scanner")
     strategy_raw = _section(data, "strategy")
     risk_raw = _section(data, "risk")
     execution_raw = _section(data, "execution")
@@ -198,6 +196,7 @@ def load_config(config_path: Path | None = None) -> Config:
     paper_raw = _section(data, "paper")
 
     # Optional sections — backward compatible with defaults
+    scanner_raw = data.get("scanner", {})
     screening_raw = data.get("screening", {})
     backtest_raw = data.get("backtest", {})
     kite_raw = data.get("kite", {})
@@ -209,13 +208,13 @@ def load_config(config_path: Path | None = None) -> Config:
             log_level=general_raw["log_level"],
         ),
         scanner=ScannerConfig(
-            min_volume=int(scanner_raw["min_volume"]),
-            min_price=float(scanner_raw["min_price"]),
-            max_price=float(scanner_raw["max_price"]),
-            min_market_cap_cr=float(scanner_raw["min_market_cap_cr"]),
-            min_atr_pct=float(scanner_raw["min_atr_pct"]),
-            max_stocks_to_llm=int(scanner_raw["max_stocks_to_llm"]),
-            llm_pick_count=int(scanner_raw["llm_pick_count"]),
+            min_volume=int(scanner_raw.get("min_volume", 500000)),
+            min_price=float(scanner_raw.get("min_price", 50)),
+            max_price=float(scanner_raw.get("max_price", 5000)),
+            min_market_cap_cr=float(scanner_raw.get("min_market_cap_cr", 5000)),
+            min_atr_pct=float(scanner_raw.get("min_atr_pct", 0.5)),
+            max_stocks_to_llm=int(scanner_raw.get("max_stocks_to_llm", 100)),
+            llm_pick_count=int(scanner_raw.get("llm_pick_count", 15)),
         ),
         strategy=StrategyConfig(
             backtest_days=int(strategy_raw["backtest_days"]),
@@ -257,7 +256,6 @@ def load_config(config_path: Path | None = None) -> Config:
             anthropic_api_key=_require_env("ANTHROPIC_API_KEY"),
             kite_api_key=_require_env("KITE_API_KEY"),
             kite_api_secret=_require_env("KITE_API_SECRET"),
-            openai_api_key=os.environ.get("OPENAI_API_KEY", "").strip(),
         ),
         screening=ScreeningConfig(
             min_volume=int(screening_raw.get("min_volume", 500000)),

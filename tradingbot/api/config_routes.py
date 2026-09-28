@@ -17,7 +17,6 @@ router = APIRouter(prefix="/api")
 
 PROVIDERS = [
     {"name": "anthropic", "models": ["claude-sonnet-5", "claude-haiku-4-5"]},
-    {"name": "openai", "models": ["gpt-4o", "gpt-4o-mini", "openai/gpt-oss-120b"]},
 ]
 
 
@@ -66,7 +65,6 @@ def _config_to_dict(state: AppState) -> dict[str, Any]:
             "anthropic_api_key": _mask_secret(config.secrets.anthropic_api_key),
             "kite_api_key": _mask_secret(config.secrets.kite_api_key),
             "kite_api_secret": _mask_secret(config.secrets.kite_api_secret),
-            "openai_api_key": _mask_secret(config.secrets.openai_api_key),
         },
     }
 
@@ -131,7 +129,7 @@ async def get_providers(request: Request):
         if p["name"] == "anthropic":
             key = state.config.secrets.anthropic_api_key
         else:
-            key = state.config.secrets.openai_api_key
+            key = ""
         result.append({"name": p["name"], "has_key": bool(key), "models": p["models"]})
     return result
 

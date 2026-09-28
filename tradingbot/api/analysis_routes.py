@@ -19,79 +19,12 @@ router = APIRouter(prefix="/api")
 
 
 # ---------------------------------------------------------------------------
-# V1: Legacy PlanGenerator path (backward compat)
+# Analysis pipeline
 # ---------------------------------------------------------------------------
 
 
-async def _run_analysis_v1(state: AppState, trade_date: date) -> None:
-    try:
-        from tradingbot.core.llm.anthropic_provider import build_provider
-        from tradingbot.core.risk_manager import RiskManager
-        from tradingbot.scanner.data_fetcher import DataFetcher
-        from tradingbot.scanner.market_analyzer import MarketAnalyzer
-        from tradingbot.scanner.market_context import MarketContextFetcher
-        from tradingbot.scanner.scanner import Scanner
-        from tradingbot.strategy.plan_generator import PlanGenerator
-        from tradingbot.strategy.strategy_selector import StrategySelector
-
-        config = state.config
-        log_dir = Path(state.data_dir) / "logs"
-
-        provider = build_provider(config.llm, config.secrets, log_dir=log_dir / "llm")
-        fetcher = DataFetcher()
-        risk_manager = RiskManager(
-            config.risk, config.strategy, capital=config.general.capital,
-            plan_max_age_hours=config.execution.plan_max_age_hours,
-            max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
-        )
-
-        scanner = Scanner(
-            fetcher=fetcher,
-            context_fetcher=MarketContextFetcher(),
-            analyzer=MarketAnalyzer(provider, config.scanner),
-            config=config.scanner,
-        )
-
-        generator = PlanGenerator(
-            scanner=scanner,
-            fetcher=fetcher,
-            selector=StrategySelector(provider, config.strategy),
-            risk_manager=risk_manager,
-            plan_store=state.plan_store,
-            strategy_config=config.strategy,
-            capital=config.general.capital,
-        )
-
-        await state.event_bus.emit("analysis.started", {"trade_date": trade_date.isoformat()})
-        plan = await generator.generate(trade_date)
-
-        state.database.save_plan_snapshot(plan)
-        state.analysis_status = "complete"
-        state.analysis_error = None
-
-        await state.event_bus.emit("analysis.complete", {
-            "trade_date": plan.trade_date,
-            "legs_count": len(plan.legs),
-            "plan_summary": plan.market_summary,
-        })
-
-    except asyncio.CancelledError:
-        state.analysis_status = "idle"
-        raise
-    except Exception as exc:  # noqa: BLE001
-        logger.error("analysis failed: %s", exc, exc_info=True)
-        state.analysis_status = "failed"
-        state.analysis_error = str(exc)
-        await state.event_bus.emit("analysis.failed", {"error": str(exc)})
-
-
-# ---------------------------------------------------------------------------
-# V2: New AnalysisPipeline path (opt-in via pipeline=v2)
-# ---------------------------------------------------------------------------
-
-
-async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
-    """Run the redesigned 3-tier analysis pipeline."""
+async def _run_analysis(state: AppState, trade_date: date) -> None:
+    """Run the 3-tier analysis pipeline."""
     try:
         from tradingbot.analysis.pipeline import AnalysisPipeline
         from tradingbot.analysis.tier2_analyzer import Tier2Analyzer
@@ -151,7 +84,6 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
 
         await state.event_bus.emit("analysis.started", {
             "trade_date": trade_date.isoformat(),
-            "pipeline": "v2",
         })
 
         analysis_run = await pipeline.run(trade_date)
@@ -162,19 +94,17 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
         await state.event_bus.emit("analysis.complete", {
             "trade_date": trade_date.isoformat(),
             "run_id": analysis_run.run_id,
-            "pipeline": "v2",
         })
 
     except asyncio.CancelledError:
         state.analysis_status = "idle"
         raise
     except Exception as exc:  # noqa: BLE001
-        logger.error("analysis v2 failed: %s", exc, exc_info=True)
+        logger.error("analysis failed: %s", exc, exc_info=True)
         state.analysis_status = "failed"
         state.analysis_error = str(exc)
         await state.event_bus.emit("analysis.failed", {
             "error": str(exc),
-            "pipeline": "v2",
         })
 
 
@@ -200,11 +130,7 @@ async def start_analysis(request: Request):
     state.analysis_trade_date = trade_date.isoformat()
     state.analysis_error = None
 
-    pipeline_version = body.get("pipeline", "v1")
-    if pipeline_version == "v2":
-        state.analysis_task = asyncio.create_task(_run_analysis_v2(state, trade_date))
-    else:
-        state.analysis_task = asyncio.create_task(_run_analysis_v1(state, trade_date))
+    state.analysis_task = asyncio.create_task(_run_analysis(state, trade_date))
 
     return {"status": "started", "trade_date": trade_date.isoformat()}
 

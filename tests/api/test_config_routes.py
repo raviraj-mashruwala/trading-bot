@@ -24,7 +24,6 @@ async def test_get_config_providers_lists_available(api_client):
     assert response.status_code == 200
     names = [p["name"] for p in response.json()]
     assert "anthropic" in names
-    assert "openai" in names
 
 
 async def test_put_config_updates_a_section(api_client):

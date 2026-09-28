@@ -3,15 +3,6 @@ mode = "paper"
 capital = 400000
 log_level = "INFO"
 
-[scanner]
-min_volume = 500000
-min_price = 50
-max_price = 5000
-min_market_cap_cr = 5000
-min_atr_pct = 0.5
-max_stocks_to_llm = 100
-llm_pick_count = 15
-
 [strategy]
 backtest_days = 30
 candle_interval = "15minute"

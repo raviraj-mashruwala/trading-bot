@@ -14,21 +14,14 @@ import click
 from tradingbot.core.broker import BrokerInterface
 from tradingbot.core.config import Config, ConfigError, load_config
 from tradingbot.core.database import Database
-from tradingbot.core.llm.anthropic_provider import build_provider
 from tradingbot.core.models import Mode, now_ist
 from tradingbot.core.plan_store import PlanCorruptError, PlanNotFoundError, PlanStore
 from tradingbot.core.risk_manager import RiskManager
 from tradingbot.executor.executor import Executor
 from tradingbot.paper.virtual_broker import VirtualBroker
 from tradingbot.scanner.calendar import NotATradingDayError, next_trading_day
-from tradingbot.scanner.data_fetcher import DataFetcher
-from tradingbot.scanner.market_analyzer import MarketAnalyzer
-from tradingbot.scanner.market_context import MarketContextFetcher
-from tradingbot.scanner.scanner import Scanner
 from tradingbot.strategy.backtester import Backtester
-from tradingbot.strategy.plan_generator import PlanGenerator
 from tradingbot.strategy.strategies import STRATEGY_REGISTRY
-from tradingbot.strategy.strategy_selector import StrategySelector
 
 TICK_SECONDS = 5
 
@@ -48,33 +41,20 @@ def build_risk_manager(config: Config) -> RiskManager:
     )
 
 
-def build_analysis_stack(config: Config, plan_dir: Path, log_dir: Path) -> PlanGenerator:
-    provider = build_provider(config.llm, config.secrets, log_dir=log_dir / "llm")
-    fetcher = DataFetcher()
-    scanner = Scanner(
-        fetcher=fetcher,
-        context_fetcher=MarketContextFetcher(),
-        analyzer=MarketAnalyzer(provider, config.scanner),
-        config=config.scanner,
-    )
-    return PlanGenerator(
-        scanner=scanner,
-        fetcher=fetcher,
-        selector=StrategySelector(provider, config.strategy),
-        risk_manager=build_risk_manager(config),
-        plan_store=PlanStore(plan_dir),
-        strategy_config=config.strategy,
-        capital=config.general.capital,
-    )
-
-
 def build_broker(config: Config, mode: Mode) -> BrokerInterface:
     if mode is Mode.PAPER:
-        fetcher = DataFetcher()
+        from tradingbot.data.kite_client import KiteClient as DataKiteClient
+        from kiteconnect import KiteConnect
+
+        token_path = Path.home() / ".tradingbot" / "kite_token"
+        kite = KiteConnect(api_key=config.secrets.kite_api_key)
+        if token_path.exists():
+            kite.set_access_token(token_path.read_text().strip())
+        kite_client = DataKiteClient(kite, rate_limit_per_sec=config.kite.rate_limit_per_sec)
 
         def price_feed(symbol: str) -> float:
-            candles = fetcher.fetch_candles(symbol, days=1, interval="5m")
-            return float(candles["close"].iloc[-1])
+            ltp = kite_client.get_ltp([f"NSE:{symbol}"])
+            return float(ltp[f"NSE:{symbol}"]["last_price"])
 
         return VirtualBroker(config.paper, price_feed=price_feed)
 
@@ -120,36 +100,11 @@ def cli(ctx: click.Context, config_path: Path, data_dir: Path) -> None:
 @click.option("--date", "target", default=None, help="Trade date as YYYY-MM-DD. Defaults to the next session.")
 @click.pass_obj
 def analyze(obj: dict, target: str | None) -> None:
-    """Scan the market and write a trade plan."""
-    config: Config = obj["config"]
-    trade_date = date.fromisoformat(target) if target else next_trading_day(now_ist().date())
-
-    generator = build_analysis_stack(config, obj["plan_dir"], obj["log_dir"])
-
-    try:
-        plan = asyncio.run(generator.generate(trade_date))
-    except NotATradingDayError as exc:
-        _fail(str(exc))
-    except Exception as exc:  # noqa: BLE001 - surfaced as a clean CLI error
-        _fail(f"analysis failed: {exc}")
-
-    database = Database(obj["db_path"])
-    database.initialise()
-    database.save_plan_snapshot(plan)
-    database.close()
-
-    click.echo(f"Trade plan for {plan.trade_date} ({len(plan.legs)} legs)")
-    click.echo(f"  Regime: {plan.market_regime.value} | {plan.market_summary}")
-    for leg in plan.legs:
-        click.echo(
-            f"  {leg.symbol} {leg.direction.value.upper()} x{leg.quantity} "
-            f"@ {leg.entry_price:.2f} | SL {leg.stop_loss:.2f} | "
-            f"T1 {leg.target_1:.2f} | T2 {leg.target_2:.2f} | "
-            f"R:R {leg.reward_risk:.2f} | confidence {leg.confidence:.2f}"
-        )
-        click.echo(f"    {leg.reasoning}")
-    if not plan.legs:
-        click.echo("  No setup met the risk criteria. No trading tomorrow.")
+    """Scan the market and run the analysis pipeline (v2)."""
+    click.echo(
+        "The CLI analyze command has been retired. "
+        "Use the web UI (tradingbot serve) and POST /api/analyze instead."
+    )
 
 
 @cli.command()
@@ -294,13 +249,24 @@ def plan_show(obj: dict, target: str | None) -> None:
 @click.pass_obj
 def backtest(obj: dict, strategy_name: str, symbol: str, days: int) -> None:
     """Replay one or every strategy over recent history."""
+    from tradingbot.data.candle_store import CandleStore
+
     config: Config = obj["config"]
-    fetcher = DataFetcher()
+    data_dir = Path("data")
+    store = CandleStore(data_dir / "candles.db")
 
     try:
-        candles = fetcher.fetch_candles(symbol, days=days, interval="15m")
+        from_date = date.today().replace(year=date.today().year)
+        import datetime as _dt
+        to_date = date.today()
+        from_date = to_date - _dt.timedelta(days=days)
+        candles = store.get_candles(symbol, "15minute", from_date, to_date)
+        if candles.empty:
+            _fail(f"no candle data for {symbol}. Run 'tradingbot sync' first.")
     except Exception as exc:  # noqa: BLE001
-        _fail(f"could not fetch candles for {symbol}: {exc}")
+        _fail(f"could not load candles for {symbol}: {exc}")
+    finally:
+        store.close()
 
     runner = Backtester()
 
@@ -332,23 +298,22 @@ def backtest(obj: dict, strategy_name: str, symbol: str, days: int) -> None:
 def auth(obj: dict) -> None:
     """Complete the Kite Connect login and store the access token."""
     config: Config = obj["config"]
-    from tradingbot.core.kite_client import KiteClient
+    from tradingbot.execution.kite_auth import KiteAuth
 
-    client = KiteClient(config.secrets.kite_api_key, config.secrets.kite_api_secret)
+    kite_auth = KiteAuth(
+        api_key=config.secrets.kite_api_key,
+        api_secret=config.secrets.kite_api_secret,
+    )
     click.echo("Open this URL, log in, then copy the request_token from the redirect URL:")
-    click.echo(f"  {client.login_url()}")
+    click.echo(f"  {kite_auth.get_login_url()}")
     request_token = click.prompt("request_token").strip()
 
     try:
-        access_token = client.complete_login(request_token)
+        data = kite_auth.generate_session(request_token)
     except Exception as exc:  # noqa: BLE001
         _fail(f"login failed: {exc}")
 
-    token_path = Path.home() / ".tradingbot" / "kite_token"
-    token_path.parent.mkdir(parents=True, exist_ok=True)
-    token_path.write_text(access_token)
-    token_path.chmod(0o600)
-    click.echo(f"Access token saved to {token_path}. It expires at the next market open.")
+    click.echo(f"Authenticated as {data.get('user_id', '?')}. Token saved. It expires at the next market open.")
 
 
 @cli.command()

@@ -25,12 +25,19 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
         if mode is Mode.PAPER:
             from tradingbot.paper.virtual_broker import VirtualBroker
-            from tradingbot.scanner.nse_live import NseLiveFetcher
 
-            nse = NseLiveFetcher()
+            from tradingbot.data.kite_client import KiteClient as DataKiteClient
+            from kiteconnect import KiteConnect
+
+            token_path = Path.home() / ".tradingbot" / "kite_token"
+            kite = KiteConnect(api_key=config.secrets.kite_api_key)
+            if token_path.exists():
+                kite.set_access_token(token_path.read_text().strip())
+            kite_client = DataKiteClient(kite, rate_limit_per_sec=config.kite.rate_limit_per_sec)
 
             def price_feed(symbol: str) -> float:
-                return nse.get_ltp(symbol)
+                ltp = kite_client.get_ltp([f"NSE:{symbol}"])
+                return float(ltp[f"NSE:{symbol}"]["last_price"])
 
             broker = VirtualBroker(config.paper, price_feed=price_feed)
         else:
