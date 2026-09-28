@@ -239,6 +239,15 @@ class AnalysisPipeline:
             atr = float(true_range.tail(min(14, len(df))).mean())
             atr_pct = (atr / last_price * 100) if last_price > 0 else 0
 
+            # Gap analysis: compare today's open vs yesterday's close
+            gap_score = 0.0
+            if len(df) >= 2:
+                prev_close = float(df["close"].iloc[-2])
+                today_open = float(df["open"].iloc[-1])
+                if prev_close > 0:
+                    gap_pct = abs(today_open - prev_close) / prev_close * 100
+                    gap_score = min(100.0, gap_pct * 33.3)  # 3% gap = 100 score
+
             market_cap_cr = last_price * avg_volume / 1_00_00_000
 
             metrics.append({
@@ -250,7 +259,7 @@ class AnalysisPipeline:
                 "atr_pct": atr_pct,
                 "sector": "unknown",
                 "trading_days": trading_days,
-                "factor_scores": {},
+                "factor_scores": {"gap_analysis": gap_score},
             })
 
         return metrics

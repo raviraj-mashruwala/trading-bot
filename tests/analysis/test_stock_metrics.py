@@ -94,3 +94,28 @@ def test_build_stock_metrics_skips_empty_candles():
     pipeline = _make_pipeline(cache, store)
     result = pipeline._build_stock_metrics()
     assert result == []
+
+
+def test_build_stock_metrics_includes_gap_score():
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "GAPPER", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05},
+    ]
+    store = MagicMock()
+    n = 30
+    dates = [datetime.now(tz=IST) - timedelta(days=n - i) for i in range(n)]
+    close = np.full(n, 500.0)
+    close[-1] = 502.0  # today's close
+    opens = np.full(n, 500.0)
+    opens[-1] = 510.0  # today opened with a 2% gap
+    df = pd.DataFrame({
+        "open": opens, "high": close + 5, "low": close - 5,
+        "close": close, "volume": np.full(n, 600000),
+    }, index=pd.DatetimeIndex(dates, name="date"))
+    store.read.return_value = df
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics()
+    assert len(result) == 1
+    assert "gap_analysis" in result[0]["factor_scores"]
+    assert result[0]["factor_scores"]["gap_analysis"] > 0
