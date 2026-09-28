@@ -402,6 +402,69 @@ async def sync_status(request: Request):
     return {"status": state.sync_status, "progress": state.sync_progress}
 
 
+# ---------------------------------------------------------------------------
+# Emergency stop
+# ---------------------------------------------------------------------------
+
+
+@router.post("/emergency-stop")
+async def emergency_stop(request: Request):
+    """Kill switch — cancel all pending orders and square off all positions."""
+    state: AppState = request.app.state.app_state
+    auth = _ensure_kite_auth(state)
+    if not auth or not auth.is_authenticated():
+        raise HTTPException(status_code=400, detail="Kite not authenticated")
+
+    from tradingbot.data.kite_client import KiteClient
+    from tradingbot.execution.capital_manager import CapitalManager
+    from tradingbot.execution.kite_executor import KiteExecutor
+    from tradingbot.execution.safety import SafetyManager
+
+    kite_client = KiteClient(
+        auth.kite, rate_limit_per_sec=state.config.kite.rate_limit_per_sec,
+    )
+
+    # Gather pending orders
+    try:
+        orders = kite_client.kite.orders()
+        pending = [
+            o["order_id"]
+            for o in orders
+            if o.get("status") in ("OPEN", "TRIGGER PENDING")
+        ]
+    except Exception:
+        logger.exception("Failed to fetch orders during emergency stop")
+        pending = []
+
+    # Gather open positions
+    try:
+        positions = kite_client.kite.positions().get("net", [])
+        open_pos = [
+            {
+                "symbol": p["tradingsymbol"],
+                "exchange": p["exchange"],
+                "direction": "long" if p["quantity"] > 0 else "short",
+                "quantity": abs(p["quantity"]),
+            }
+            for p in positions
+            if p.get("quantity", 0) != 0
+        ]
+    except Exception:
+        logger.exception("Failed to fetch positions during emergency stop")
+        open_pos = []
+
+    cap_mgr = CapitalManager(kite_client, deployed=0)
+    executor = KiteExecutor(kite_client, cap_mgr)
+    safety = SafetyManager(
+        capital=state.config.general.capital,
+        max_daily_loss_pct=state.config.risk.max_daily_loss_pct,
+    )
+
+    result = safety.emergency_stop(executor, pending, open_pos)
+    await state.event_bus.emit("emergency.stop", result)
+    return result
+
+
 @router.patch("/setups/{setup_id}")
 async def update_setup(setup_id: int, request: Request):
     state: AppState = request.app.state.app_state

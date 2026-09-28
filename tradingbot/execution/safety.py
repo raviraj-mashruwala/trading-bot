@@ -39,10 +39,53 @@ class SafetyManager:
         """Return True when another position can be opened."""
         return current_positions < self._max_positions
 
-    def emergency_stop(self, executor: Any) -> None:
-        """Kill switch -- cancel all pending, square off all positions.
+    def emergency_stop(
+        self,
+        executor: Any,
+        pending_orders: list[str],
+        open_positions: list[dict],
+    ) -> dict:
+        """Kill switch -- cancel all pending orders, square off all positions.
 
-        Actual implementation depends on position tracking; this logs
-        the critical event and calls executor if wired.
+        Args:
+            executor: Object with cancel_order(order_id) and
+                place_exit(symbol, exchange, direction, quantity, order_type).
+            pending_orders: List of order IDs to cancel.
+            open_positions: List of dicts with keys: symbol, direction,
+                quantity, and optionally exchange (defaults to "NSE").
+
+        Returns:
+            Dict with counts: cancelled, squared_off, errors.
         """
-        log.critical("EMERGENCY STOP triggered — cancelling all orders")
+        log.critical(
+            "EMERGENCY STOP triggered — cancelling %d orders, squaring %d positions",
+            len(pending_orders),
+            len(open_positions),
+        )
+
+        cancelled = 0
+        errors = 0
+        for order_id in pending_orders:
+            try:
+                executor.cancel_order(order_id)
+                cancelled += 1
+            except Exception:
+                log.exception("Failed to cancel order %s", order_id)
+                errors += 1
+
+        squared = 0
+        for pos in open_positions:
+            try:
+                executor.place_exit(
+                    symbol=pos["symbol"],
+                    exchange=pos.get("exchange", "NSE"),
+                    direction=pos["direction"],
+                    quantity=pos["quantity"],
+                    order_type="MARKET",
+                )
+                squared += 1
+            except Exception:
+                log.exception("Failed to square off %s", pos["symbol"])
+                errors += 1
+
+        return {"cancelled": cancelled, "squared_off": squared, "errors": errors}
