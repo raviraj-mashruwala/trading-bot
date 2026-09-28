@@ -547,6 +547,7 @@ class BacktestReport:
     avg_hold_minutes: float
     oos_degradation: float
     calmar_ratio: float
+    regime_performance: dict[str, dict] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
