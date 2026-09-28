@@ -352,8 +352,9 @@ async def kite_test(request: Request):
             "available_cash": available.get("live_balance", 0),
             "available_margin": available.get("intraday_payin", 0),
         }
-    except Exception as exc:
-        return {"ok": False, "error": str(exc)}
+    except Exception:
+        logger.exception("Kite connection test failed")
+        return {"ok": False, "error": "Connection test failed. Check server logs."}
 
 
 # ---------------------------------------------------------------------------
