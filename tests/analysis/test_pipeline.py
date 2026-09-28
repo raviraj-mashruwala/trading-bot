@@ -346,3 +346,31 @@ def test_run_backtests_uses_injected_engine(pipeline_deps):
     p._run_backtests("TCS", results, regime={"regime": "trending_up"})
 
     assert wf_engine.run.called
+
+
+# ── Indicator fetch tests ─────────────────────────────────────────────────────
+
+def test_fetch_indicators_returns_dict_with_rsi(pipeline_deps):
+    pipeline_deps["candle_store"].read.return_value = _make_candle_df(300)
+    p = AnalysisPipeline(**pipeline_deps)
+    indicators, price_action = p._fetch_indicators_for_symbol("TCS")
+    assert "rsi_14" in indicators
+    assert "vwap" in indicators
+    assert "TCS" in price_action
+
+
+def test_fetch_indicators_returns_empty_on_empty_df(pipeline_deps):
+    """Empty candle df must not propagate — returns ({}, fallback string)."""
+    pipeline_deps["candle_store"].read.return_value = pd.DataFrame()
+    p = AnalysisPipeline(**pipeline_deps)
+    indicators, price_action = p._fetch_indicators_for_symbol("TCS")
+    assert indicators == {}
+    assert "TCS" in price_action
+
+
+def test_fetch_indicators_price_action_contains_key_levels(pipeline_deps):
+    pipeline_deps["candle_store"].read.return_value = _make_candle_df(300)
+    p = AnalysisPipeline(**pipeline_deps)
+    _, price_action = p._fetch_indicators_for_symbol("TCS")
+    assert "VWAP" in price_action or "vwap" in price_action.lower()
+    assert "RSI" in price_action or "rsi" in price_action.lower()

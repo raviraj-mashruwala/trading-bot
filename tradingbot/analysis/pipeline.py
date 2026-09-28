@@ -158,14 +158,17 @@ class AnalysisPipeline:
             bt_results: list[Any] = []
             self._run_backtests(sym, bt_results, regime=regime)
 
+            # Fetch real indicators and price action for Claude's context
+            indicators, price_action = self._fetch_indicators_for_symbol(sym)
+
             # Tier 3 deep analysis
             deep = await self._tier3.deep_analyze(
                 symbol=sym,
                 direction=direction,
                 regime=regime,
-                indicators={},
+                indicators=indicators,
                 backtest_results=bt_results,
-                price_action=f"{sym} analysis",
+                price_action=price_action,
             )
             llm_calls += 1
             if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
@@ -382,6 +385,48 @@ class AnalysisPipeline:
             india_vix=15.0, fii_net_cr=0, dii_net_cr=0,
             global_cues="unavailable", sector_leaders=[], sector_laggards=[],
             regime=MarketRegime.RANGE_BOUND,
+        )
+
+    def _fetch_indicators_for_symbol(self, symbol: str) -> tuple[dict, str]:
+        """Compute IndicatorSnapshot and price action summary for one symbol.
+
+        Returns (indicators_dict, price_action_str). Returns ({}, fallback) on failure
+        so a single bad symbol never aborts the whole shortlist loop.
+        """
+        from tradingbot.strategy.indicators import compute_snapshot, InsufficientDataError
+
+        try:
+            df = self._candles.read(
+                symbol, "15minute",
+                datetime(2025, 1, 1, tzinfo=IST),
+                datetime.now(tz=IST),
+            )
+            if df.empty or len(df) < 30:
+                return {}, f"{symbol}: insufficient candle data for indicators"
+
+            snap = compute_snapshot(symbol, df)
+            indicators = snap.to_dict()
+            price_action = self._build_price_action_summary(symbol, df, snap)
+            return indicators, price_action
+
+        except InsufficientDataError:
+            return {}, f"{symbol}: insufficient data for indicators"
+        except Exception as exc:
+            log.warning("Indicator fetch failed for %s: %s", symbol, exc)
+            return {}, f"{symbol}: indicator computation failed"
+
+    def _build_price_action_summary(self, symbol: str, df: Any, snap: Any) -> str:
+        """Build compact price action narrative for Claude's deep analysis context."""
+        last_5 = df.tail(5)[["open", "high", "low", "close", "volume"]].to_dict("records")
+        return (
+            f"{symbol} last 5 candles (15m): {last_5}\n"
+            f"VWAP: {snap.vwap:.2f} | RSI14: {snap.rsi_14:.1f} | "
+            f"ATR14: {snap.atr_14:.2f} | ADX14: {snap.adx_14:.1f}\n"
+            f"BB: [{snap.bb_lower:.2f}, {snap.bb_middle:.2f}, {snap.bb_upper:.2f}] "
+            f"BW: {snap.bb_bandwidth:.3f}\n"
+            f"Support: {snap.support_levels} | Resistance: {snap.resistance_levels}\n"
+            f"Supertrend: {snap.supertrend:.2f} "
+            f"({'up' if snap.supertrend_direction == 1 else 'down'})"
         )
 
     def _get_regime_eligible_strategies(self, regime: dict) -> frozenset[StrategyName]:
