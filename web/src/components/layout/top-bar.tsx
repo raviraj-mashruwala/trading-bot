@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { KiteConnectButton } from "@/components/auth/kite-connect-button";
 
 export function TopBar() {
   const { data: health } = useQuery({
@@ -14,7 +15,10 @@ export function TopBar() {
 
   return (
     <header className="flex h-12 items-center justify-end border-b border-border/50 px-6">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
+        <KiteConnectButton />
+      </div>
+      <div className="flex items-center gap-2 ml-4">
         <span className="relative flex h-2 w-2">
           {isHealthy && (
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2da44e] opacity-75" />

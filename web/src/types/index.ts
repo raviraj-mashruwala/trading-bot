@@ -1,7 +1,7 @@
 export type Direction = "long" | "short";
 export type EntryType = "limit" | "stop";
-export type StrategyName = "breakout" | "momentum" | "mean_reversion" | "vwap_bounce" | "orb";
-export type MarketRegime = "trending" | "ranging" | "volatile" | "low_vol";
+export type StrategyName = "breakout" | "momentum" | "mean_reversion" | "vwap_bounce" | "orb" | "gap_and_go" | "pivot_point" | "relative_strength" | "bollinger_squeeze" | "supply_demand";
+export type MarketRegime = "trending_up" | "trending_down" | "range_bound" | "volatile" | "low_vol_squeeze";
 export type TradeStatus = "pending" | "open" | "closed" | "cancelled" | "skipped";
 export type Mode = "paper" | "live";
 
@@ -131,4 +131,63 @@ export interface SessionResult {
   total_pnl: number;
   trades_count: number;
   mode: string;
+}
+
+export interface KiteAuthStatus {
+  authenticated: boolean;
+  user_id?: string;
+}
+
+export interface AnalysisRun {
+  run_id: string;
+  trade_date: string;
+  timestamp: string;
+  market_regime: string;
+  regime_confidence: number;
+  total_scanned: number;
+  tier1_passed: number;
+  tier2_shortlisted: number;
+  setups_proposed: number;
+  setups_approved: number;
+  llm_calls: number;
+  llm_cost_usd: number;
+  duration_seconds: number;
+}
+
+export interface Setup {
+  id: number;
+  run_id: string;
+  trade_date: string;
+  symbol: string;
+  strategy: string;
+  direction: "long" | "short";
+  entry_price: number;
+  stop_loss: number;
+  target_1: number;
+  target_2: number | null;
+  confidence: number;
+  status: "proposed" | "approved" | "rejected" | "active" | "filled" | "expired" | "closed";
+  reasoning: string;
+  rejection_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RankedSuggestion {
+  rank: number;
+  symbol: string;
+  direction: string;
+  confidence: number;
+  consistency: number;
+  run_count: number;
+  recommendation: "execute" | "watch" | "conflicting" | "stale";
+  best_setup: Setup;
+}
+
+export interface DailyPlan {
+  date: string;
+  runs: AnalysisRun[];
+  total_runs: number;
+  active_setups: Setup[];
+  ranked_suggestions: RankedSuggestion[];
 }
