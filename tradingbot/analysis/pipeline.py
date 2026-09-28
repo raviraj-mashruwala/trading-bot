@@ -78,9 +78,17 @@ class AnalysisPipeline:
         self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
         # --- Tier 2: LLM market + sector + shortlist ---
+        market_ctx = self._fetch_market_context()
+        sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
         regime = await self._tier2.analyze_regime(
-            nifty=0, banknifty=0, vix=0, nifty_5d_change=0,
-            fii_5d_net=0, dii_5d_net=0, advance_decline=0, sector_data={},
+            nifty=market_ctx.nifty_level,
+            banknifty=0,
+            vix=market_ctx.india_vix,
+            nifty_5d_change=0,
+            fii_5d_net=market_ctx.fii_net_cr,
+            dii_5d_net=market_ctx.dii_net_cr,
+            advance_decline=0,
+            sector_data=sector_data,
         )
         llm_calls += 1
 
@@ -246,6 +254,28 @@ class AnalysisPipeline:
             })
 
         return metrics
+
+    def _fetch_market_context(self) -> "MarketContext":
+        """Fetch real market data, with safe defaults on failure."""
+        from tradingbot.core.models import MarketContext
+
+        if self._context_fetcher is None:
+            return self._default_context()
+        try:
+            return self._context_fetcher.fetch()
+        except Exception:
+            log.warning("MarketContextFetcher failed, using defaults")
+            return self._default_context()
+
+    def _default_context(self) -> "MarketContext":
+        from tradingbot.core.models import MarketContext
+
+        return MarketContext(
+            nifty_level=0, nifty_trend="unknown", banknifty_trend="unknown",
+            india_vix=15.0, fii_net_cr=0, dii_net_cr=0,
+            global_cues="unavailable", sector_leaders=[], sector_laggards=[],
+            regime=MarketRegime.RANGE_BOUND,
+        )
 
     def _run_backtests(self, symbol: str, results: list) -> None:
         """Run backtest across registered strategies for one symbol.
