@@ -352,6 +352,53 @@ def auth(obj: dict) -> None:
 
 
 @cli.command()
+@click.option("--daily-days", default=365, type=int, help="Daily candle lookback in days.")
+@click.option("--intraday-days", default=60, type=int, help="Intraday candle lookback in days.")
+@click.pass_obj
+def sync(obj: dict, daily_days: int, intraday_days: int) -> None:
+    """Sync market data from Kite Connect to local cache."""
+    from tradingbot.data.candle_store import CandleStore
+    from tradingbot.data.data_sync import DataSync
+    from tradingbot.data.instrument_cache import InstrumentCache
+    from tradingbot.data.kite_client import KiteClient
+
+    config: Config = obj["config"]
+    data_dir = Path("data")
+    data_dir.mkdir(exist_ok=True)
+
+    token_path = Path.home() / ".tradingbot" / "kite_token"
+    if not token_path.exists():
+        _fail("No Kite token found. Run 'tradingbot auth' first.")
+
+    access_token = token_path.read_text().strip()
+    if not access_token:
+        _fail("Kite token is empty. Run 'tradingbot auth' to re-authenticate.")
+
+    from kiteconnect import KiteConnect
+
+    kite = KiteConnect(api_key=config.secrets.kite_api_key)
+    kite.set_access_token(access_token)
+
+    client = KiteClient(kite, rate_limit_per_sec=config.kite.rate_limit_per_sec)
+    cache = InstrumentCache(data_dir / "instruments.db")
+    store = CandleStore(data_dir / "candles.db")
+    sync_mgr = DataSync(client, cache, store)
+
+    click.echo(f"Syncing: instruments + {daily_days}d daily + {intraday_days}d intraday candles...")
+    try:
+        stats = sync_mgr.full_sync(daily_lookback=daily_days, intraday_lookback=intraday_days)
+    except Exception as exc:
+        _fail(f"Sync failed: {exc}")
+
+    click.echo(
+        f"Done: {stats['instruments']} instruments, {stats['symbols']} symbols, "
+        f"{stats['daily_candles']} daily candles, {stats['intraday_candles']} intraday candles"
+    )
+    cache.close()
+    store.close()
+
+
+@cli.command()
 @click.option("--port", default=8000, type=int, help="Port to listen on.")
 @click.option("--reload", "use_reload", is_flag=True, help="Enable auto-reload for development.")
 @click.pass_obj

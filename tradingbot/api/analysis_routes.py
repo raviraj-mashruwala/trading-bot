@@ -101,23 +101,39 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
         from tradingbot.backtest.walk_forward import WalkForwardEngine
         from tradingbot.core.llm.anthropic_provider import build_provider
         from tradingbot.data.candle_store import CandleStore
+        from tradingbot.data.instrument_cache import InstrumentCache
+        from tradingbot.scanner.market_context import MarketContextFetcher
         from tradingbot.screening.screener import Tier1Screener
 
         config = state.config
-        log_dir = Path(state.data_dir) / "logs"
+        data_dir = Path(state.data_dir) if state.data_dir else Path("data")
+        data_dir.mkdir(exist_ok=True)
+        log_dir = data_dir / "logs"
 
         _ensure_stores(state)
 
         provider = build_provider(config.llm, config.secrets, log_dir=log_dir / "llm")
 
-        candle_db = Path(state.data_dir) / "candles.db"
-        candle_store = CandleStore(candle_db)
+        instrument_cache = InstrumentCache(data_dir / "instruments.db")
+        candle_store = CandleStore(data_dir / "candles.db")
 
-        # data_sync=None is safe: _build_stock_metrics() returns [] (stub),
-        # and the deep_fetch call is guarded by hasattr(). Real DataSync
-        # needs KiteClient + InstrumentCache which require auth setup.
+        data_sync = None
+        if state.kite_auth and state.kite_auth.is_authenticated():
+            from tradingbot.data.data_sync import DataSync
+            from tradingbot.data.kite_client import KiteClient
+
+            kite_client = KiteClient(
+                state.kite_auth.kite,
+                rate_limit_per_sec=config.kite.rate_limit_per_sec,
+            )
+            data_sync = DataSync(kite_client, instrument_cache, candle_store)
+
+            if not instrument_cache.get_all():
+                logger.info("InstrumentCache empty, running initial sync...")
+                data_sync.full_sync(daily_lookback=30, intraday_lookback=7)
+
         pipeline = AnalysisPipeline(
-            data_sync=None,
+            data_sync=data_sync,
             candle_store=candle_store,
             screener=Tier1Screener(config.screening, candle_store),
             tier2=Tier2Analyzer(provider),
@@ -129,6 +145,8 @@ async def _run_analysis_v2(state: AppState, trade_date: date) -> None:
             setup_store=state.setup_store,
             event_bus=state.event_bus,
             capital=config.general.capital,
+            instrument_cache=instrument_cache,
+            context_fetcher=MarketContextFetcher(),
         )
 
         await state.event_bus.emit("analysis.started", {
@@ -258,6 +276,49 @@ async def get_setups(
     if symbol:
         return state.setup_store.get_for_symbol(symbol, d)
     return state.setup_store.get_active(d)
+
+
+# ---------------------------------------------------------------------------
+# Kite OAuth endpoints
+# ---------------------------------------------------------------------------
+
+
+def _ensure_kite_auth(state: AppState) -> "KiteAuth":
+    if state.kite_auth is None:
+        from tradingbot.execution.kite_auth import KiteAuth
+
+        state.kite_auth = KiteAuth(
+            api_key=state.config.secrets.kite_api_key,
+            api_secret=state.config.secrets.kite_api_secret,
+        )
+    return state.kite_auth
+
+
+@router.get("/auth/kite/login")
+async def kite_login(request: Request):
+    state: AppState = request.app.state.app_state
+    auth = _ensure_kite_auth(state)
+    return {"login_url": auth.get_login_url()}
+
+
+@router.get("/auth/kite/callback")
+async def kite_callback(request: Request, request_token: str | None = None):
+    if not request_token:
+        raise HTTPException(status_code=400, detail="request_token required")
+    state: AppState = request.app.state.app_state
+    auth = _ensure_kite_auth(state)
+    try:
+        data = auth.generate_session(request_token)
+        return {"authenticated": True, "user_id": data.get("user_id", "")}
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"Token exchange failed: {exc}")
+
+
+@router.get("/auth/kite/status")
+async def kite_status(request: Request):
+    state: AppState = request.app.state.app_state
+    auth = state.kite_auth
+    return {"authenticated": auth.is_authenticated() if auth else False}
 
 
 @router.patch("/setups/{setup_id}")

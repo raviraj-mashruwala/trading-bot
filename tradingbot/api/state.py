@@ -35,3 +35,6 @@ class AppState:
     # Persistence stores (initialised lazily by plan endpoints)
     run_store: object | None = None
     setup_store: object | None = None
+
+    # Kite authentication (initialised lazily)
+    kite_auth: object | None = None
