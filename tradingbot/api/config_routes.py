@@ -30,16 +30,33 @@ def _config_to_dict(state: AppState) -> dict[str, Any]:
     config = state.config
     return {
         "general": {"mode": config.general.mode.value, "capital": config.general.capital, "log_level": config.general.log_level},
-        "scanner": {
-            "min_volume": config.scanner.min_volume, "min_price": config.scanner.min_price,
-            "max_price": config.scanner.max_price, "min_market_cap_cr": config.scanner.min_market_cap_cr,
-            "min_atr_pct": config.scanner.min_atr_pct, "max_stocks_to_llm": config.scanner.max_stocks_to_llm,
-            "llm_pick_count": config.scanner.llm_pick_count,
+        "screening": {
+            "min_volume": config.screening.min_volume, "min_price": config.screening.min_price,
+            "max_price": config.screening.max_price, "min_market_cap_cr": config.screening.min_market_cap_cr,
+            "min_atr_pct": config.screening.min_atr_pct, "min_trading_days": config.screening.min_trading_days,
+            "max_per_sector": config.screening.max_per_sector,
+            "volume_surge_weight": config.screening.volume_surge_weight,
+            "relative_strength_weight": config.screening.relative_strength_weight,
+            "atr_expansion_weight": config.screening.atr_expansion_weight,
+            "price_structure_weight": config.screening.price_structure_weight,
+            "delivery_pct_weight": config.screening.delivery_pct_weight,
+            "sector_momentum_weight": config.screening.sector_momentum_weight,
+            "gap_analysis_weight": config.screening.gap_analysis_weight,
+            "candlestick_pattern_weight": config.screening.candlestick_pattern_weight,
+            "volume_profile_weight": config.screening.volume_profile_weight,
         },
-        "strategy": {
-            "backtest_days": config.strategy.backtest_days, "candle_interval": config.strategy.candle_interval,
-            "min_confidence": config.strategy.min_confidence, "min_reward_risk": config.strategy.min_reward_risk,
-            "max_trades_per_day": config.strategy.max_trades_per_day,
+        "backtest": {
+            "lookback_days": config.backtest.lookback_days,
+            "walk_forward_windows": config.backtest.walk_forward_windows,
+            "train_pct": config.backtest.train_pct,
+            "monte_carlo_simulations": config.backtest.monte_carlo_simulations,
+            "min_trades": config.backtest.min_trades,
+            "min_win_rate": config.backtest.min_win_rate,
+            "min_profit_factor": config.backtest.min_profit_factor,
+            "min_expectancy_r": config.backtest.min_expectancy_r,
+            "max_oos_degradation": config.backtest.max_oos_degradation,
+            "max_risk_of_ruin": config.backtest.max_risk_of_ruin,
+            "max_consecutive_losses": config.backtest.max_consecutive_losses,
         },
         "risk": {
             "max_risk_per_trade_pct": config.risk.max_risk_per_trade_pct,
@@ -48,17 +65,20 @@ def _config_to_dict(state: AppState) -> dict[str, Any]:
             "max_concurrent_positions": config.risk.max_concurrent_positions,
         },
         "execution": {
+            "mode": config.execution.mode,
             "entry_slippage_pct": config.execution.entry_slippage_pct,
             "square_off_time": config.execution.square_off_time.strftime("%H:%M"),
-            "connection_timeout_sec": config.execution.connection_timeout_sec,
-            "heartbeat_interval_sec": config.execution.heartbeat_interval_sec,
-            "plan_max_age_hours": config.execution.plan_max_age_hours,
             "max_entry_price_drift_pct": config.execution.max_entry_price_drift_pct,
+            "shadow_fraction": config.execution.shadow_fraction,
+        },
+        "kite": {
+            "sync_hour": config.kite.sync_hour,
+            "sync_minute": config.kite.sync_minute,
+            "rate_limit_per_sec": config.kite.rate_limit_per_sec,
         },
         "llm": {
             "provider": config.llm.provider, "model": config.llm.model,
             "timeout_sec": config.llm.timeout_sec, "max_retries": config.llm.max_retries,
-            "base_url": config.llm.base_url,
         },
         "paper": {"slippage_pct": config.paper.slippage_pct, "initial_capital": config.paper.initial_capital},
         "secrets": {

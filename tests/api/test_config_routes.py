@@ -7,7 +7,7 @@ async def test_get_config_returns_all_sections(api_client):
     body = response.json()
     assert body["general"]["mode"] == "paper"
     assert body["general"]["capital"] == 400000
-    assert body["scanner"]["min_volume"] == 500000
+    assert body["screening"]["min_volume"] == 500000
     assert body["llm"]["provider"] == "anthropic"
 
 
