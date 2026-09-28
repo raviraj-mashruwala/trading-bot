@@ -43,9 +43,13 @@ class AnalysisPipeline:
         setup_store: Any,
         event_bus: Any,
         capital: float,
+        instrument_cache: Any = None,
+        context_fetcher: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
+        self._instrument_cache = instrument_cache
+        self._context_fetcher = context_fetcher
         self._screener = screener
         self._tier2 = tier2
         self._tier3 = tier3
@@ -192,14 +196,56 @@ class AnalysisPipeline:
         return analysis_run
 
     def _build_stock_metrics(self) -> list[dict]:
-        """Reads from candle store to compute metrics for all instruments.
+        """Compute screening metrics for all cached instruments."""
+        if self._instrument_cache is None:
+            return []
 
-        TODO: Real implementation needs InstrumentCache populated by DataSync.
-        For now returns empty list — Tier 1 screen produces zero candidates,
-        and the pipeline proceeds with Tier 2 LLM analysis using whatever
-        scored stocks came through (none in this case).
-        """
-        return []
+        instruments = self._instrument_cache.get_all()
+        if not instruments:
+            return []
+
+        import pandas as pd
+        from datetime import timedelta
+
+        now = datetime.now(tz=IST)
+        from_dt = now - timedelta(days=30)
+        metrics = []
+
+        for inst in instruments:
+            symbol = inst["symbol"]
+            df = self._candles.read(symbol, "day", from_dt, now)
+            if df.empty or len(df) < 5:
+                continue
+
+            close = df["close"]
+            volume = df["volume"]
+            last_price = float(close.iloc[-1])
+            avg_volume = float(volume.tail(20).mean())
+            trading_days = len(df)
+
+            high, low, prev_close = df["high"], df["low"], close.shift(1)
+            true_range = pd.concat(
+                [high - low, (high - prev_close).abs(), (low - prev_close).abs()],
+                axis=1,
+            ).max(axis=1)
+            atr = float(true_range.tail(min(14, len(df))).mean())
+            atr_pct = (atr / last_price * 100) if last_price > 0 else 0
+
+            market_cap_cr = last_price * avg_volume / 1_00_00_000
+
+            metrics.append({
+                "symbol": symbol,
+                "token": inst["token"],
+                "last_price": last_price,
+                "avg_volume": avg_volume,
+                "market_cap_cr": market_cap_cr,
+                "atr_pct": atr_pct,
+                "sector": "unknown",
+                "trading_days": trading_days,
+                "factor_scores": {},
+            })
+
+        return metrics
 
     def _run_backtests(self, symbol: str, results: list) -> None:
         """Run backtest across registered strategies for one symbol.
