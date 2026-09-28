@@ -144,5 +144,7 @@ async def test_llm(request: Request):
         provider = build_provider(state.config.llm, state.config.secrets)
         ok = await provider.health_check()
         return {"ok": ok}
-    except Exception as exc:  # noqa: BLE001
-        return {"ok": False, "error": str(exc)}
+    except Exception:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).exception("LLM test failed")
+        return {"ok": False, "error": "LLM connection test failed. Check API key and server logs."}
