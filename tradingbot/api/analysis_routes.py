@@ -333,6 +333,29 @@ async def kite_status(request: Request):
     return {"authenticated": auth.is_authenticated() if auth else False}
 
 
+@router.get("/auth/kite/test")
+async def kite_test(request: Request):
+    state: AppState = request.app.state.app_state
+    auth = _ensure_kite_auth(state)
+    if not auth.is_authenticated():
+        return {"ok": False, "error": "Not authenticated. Connect Kite first."}
+    try:
+        profile = auth.kite.profile()
+        margins = auth.kite.margins("equity")
+        available = margins.get("available", {})
+        return {
+            "ok": True,
+            "user_name": profile.get("user_name", ""),
+            "user_id": profile.get("user_id", ""),
+            "email": profile.get("email", ""),
+            "broker": profile.get("broker", ""),
+            "available_cash": available.get("live_balance", 0),
+            "available_margin": available.get("intraday_payin", 0),
+        }
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
 # ---------------------------------------------------------------------------
 # Data sync endpoints
 # ---------------------------------------------------------------------------

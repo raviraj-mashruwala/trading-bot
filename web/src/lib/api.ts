@@ -60,6 +60,11 @@ export const api = {
   // Kite Auth
   getKiteLoginUrl: () => get<{ login_url: string }>("/api/auth/kite/login"),
   getKiteStatus: () => get<KiteAuthStatus>("/api/auth/kite/status"),
+  testKiteConnection: () =>
+    get<{
+      ok: boolean; error?: string; user_name?: string; user_id?: string;
+      email?: string; broker?: string; available_cash?: number; available_margin?: number;
+    }>("/api/auth/kite/test"),
   kiteCallback: (requestToken: string) =>
     get<{ authenticated: boolean; user_id: string }>(
       `/api/auth/kite/callback?request_token=${encodeURIComponent(requestToken)}`
