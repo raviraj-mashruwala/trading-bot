@@ -75,18 +75,19 @@ class AnalysisPipeline:
         self._bus.emit("analysis.started", {"run_id": run_id})
 
         # --- Tier 1: Deterministic screen ---
-        stock_metrics = self._build_stock_metrics()
+        market_ctx = self._fetch_market_context()
+        nifty_5d_change = self._compute_nifty_5d_change_from_store()
+        stock_metrics = self._build_stock_metrics(nifty_5d_change=nifty_5d_change)
         scored = self._screener.screen(stock_metrics)
         self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
         # --- Tier 2: LLM market + sector + shortlist ---
-        market_ctx = self._fetch_market_context()
         sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
         regime = await self._tier2.analyze_regime(
             nifty=market_ctx.nifty_level,
             banknifty=0,
             vix=market_ctx.india_vix,
-            nifty_5d_change=0,
+            nifty_5d_change=nifty_5d_change,
             fii_5d_net=market_ctx.fii_net_cr,
             dii_5d_net=market_ctx.dii_net_cr,
             advance_decline=0,
@@ -215,8 +216,8 @@ class AnalysisPipeline:
         )
         return analysis_run
 
-    def _build_stock_metrics(self) -> list[dict]:
-        """Compute screening metrics for all cached instruments."""
+    def _build_stock_metrics(self, nifty_5d_change: float = 0.0) -> list[dict]:
+        """Compute all 9 screening factor scores for cached instruments."""
         if self._instrument_cache is None:
             return []
 
@@ -224,11 +225,14 @@ class AnalysisPipeline:
         if not instruments:
             return []
 
+        import statistics
         import pandas as pd
         from datetime import timedelta
 
         now = datetime.now(tz=IST)
         from_dt = now - timedelta(days=30)
+
+        sector_returns: dict[str, list[float]] = {}
         metrics = []
 
         for inst in instruments:
@@ -243,22 +247,45 @@ class AnalysisPipeline:
             avg_volume = float(volume.tail(20).mean())
             trading_days = len(df)
 
-            high, low, prev_close = df["high"], df["low"], close.shift(1)
+            high, low, prev_close_s = df["high"], df["low"], close.shift(1)
             true_range = pd.concat(
-                [high - low, (high - prev_close).abs(), (low - prev_close).abs()],
+                [high - low, (high - prev_close_s).abs(), (low - prev_close_s).abs()],
                 axis=1,
             ).max(axis=1)
             atr = float(true_range.tail(min(14, len(df))).mean())
             atr_pct = (atr / last_price * 100) if last_price > 0 else 0
 
-            # Gap analysis: compare today's open vs yesterday's close
+            # Gap analysis: today open vs yesterday close
             gap_score = 0.0
             if len(df) >= 2:
-                prev_close = float(df["close"].iloc[-2])
+                prev_c = float(close.iloc[-2])
                 today_open = float(df["open"].iloc[-1])
-                if prev_close > 0:
-                    gap_pct = abs(today_open - prev_close) / prev_close * 100
-                    gap_score = min(100.0, gap_pct * 33.3)  # 3% gap = 100 score
+                if prev_c > 0:
+                    gap_pct = abs(today_open - prev_c) / prev_c * 100
+                    gap_score = min(100.0, gap_pct * 33.3)
+
+            # Volume surge: today vs 20d avg
+            vol_today = float(volume.iloc[-1])
+            vol_surge_pct = ((vol_today / avg_volume) - 1) * 100 if avg_volume > 0 else 0
+            volume_surge_score = min(100.0, max(0.0, vol_surge_pct * 2))
+
+            # Relative strength vs Nifty (5d return excess)
+            stock_5d_return = 0.0
+            if len(close) >= 6:
+                stock_5d_return = (float(close.iloc[-1]) / float(close.iloc[-6]) - 1) * 100
+            rs_excess = stock_5d_return - nifty_5d_change
+            relative_strength_score = min(100.0, max(0.0, 50.0 + rs_excess * 5.0))
+
+            # ATR expansion (2% ATR = 100 score)
+            atr_expansion_score = min(100.0, max(0.0, atr_pct * 50.0))
+
+            # Price structure: close vs SMA20
+            sma20 = float(close.tail(20).mean()) if len(close) >= 20 else last_price
+            pct_above = ((last_price - sma20) / sma20 * 100) if sma20 > 0 else 0
+            price_structure_score = min(100.0, max(0.0, 50.0 + pct_above * 5.0))
+
+            sector = inst.get("sector", "unknown")
+            sector_returns.setdefault(sector, []).append(stock_5d_return)
 
             market_cap_cr = last_price * avg_volume / 1_00_00_000
 
@@ -269,12 +296,48 @@ class AnalysisPipeline:
                 "avg_volume": avg_volume,
                 "market_cap_cr": market_cap_cr,
                 "atr_pct": atr_pct,
-                "sector": "unknown",
+                "sector": sector,
                 "trading_days": trading_days,
-                "factor_scores": {"gap_analysis": gap_score},
+                "_stock_5d_return": stock_5d_return,
+                "factor_scores": {
+                    "gap_analysis": gap_score,
+                    "volume_surge": volume_surge_score,
+                    "relative_strength": relative_strength_score,
+                    "atr_expansion": atr_expansion_score,
+                    "price_structure": price_structure_score,
+                    "delivery_pct": 50.0,
+                    "candlestick_pattern": 50.0,
+                    "volume_profile": 50.0,
+                    "sector_momentum": 50.0,  # filled in second pass
+                },
             })
 
+        # Second pass: fill sector_momentum from median sector 5d return
+        sector_median: dict[str, float] = {
+            s: statistics.median(returns)
+            for s, returns in sector_returns.items()
+            if returns
+        }
+        for m in metrics:
+            med = sector_median.get(m["sector"], 0.0)
+            m["factor_scores"]["sector_momentum"] = min(100.0, max(0.0, 50.0 + med * 5.0))
+            del m["_stock_5d_return"]
+
         return metrics
+
+    def _compute_nifty_5d_change_from_store(self) -> float:
+        """5-day Nifty50 return from CandleStore. Zero on failure. No yfinance."""
+        try:
+            df = self._candles.read(
+                "NIFTY 50", "day",
+                datetime(2025, 1, 1, tzinfo=IST),
+                datetime.now(tz=IST),
+            )
+            if len(df) >= 6:
+                return float((df["close"].iloc[-1] / df["close"].iloc[-6] - 1) * 100)
+        except Exception:
+            pass
+        return 0.0
 
     def _fetch_market_context(self) -> "MarketContext":
         """Fetch real market data, with safe defaults on failure."""

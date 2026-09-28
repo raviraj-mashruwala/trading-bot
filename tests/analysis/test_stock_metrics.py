@@ -119,3 +119,99 @@ def test_build_stock_metrics_includes_gap_score():
     assert len(result) == 1
     assert "gap_analysis" in result[0]["factor_scores"]
     assert result[0]["factor_scores"]["gap_analysis"] > 0
+
+
+# ── New tests for 9-factor completeness ──────────────────────────────────────
+
+NINE_FACTOR_KEYS = {
+    "volume_surge", "relative_strength", "atr_expansion",
+    "price_structure", "delivery_pct", "sector_momentum",
+    "gap_analysis", "candlestick_pattern", "volume_profile",
+}
+
+
+def test_all_nine_factor_keys_present():
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05},
+    ]
+    store = MagicMock()
+    store.read.return_value = _make_daily_df(30)
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics()
+    assert len(result) == 1
+    assert NINE_FACTOR_KEYS == set(result[0]["factor_scores"].keys())
+
+
+def test_volume_surge_score_in_range():
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05},
+    ]
+    store = MagicMock()
+    store.read.return_value = _make_daily_df(30)
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics()
+    score = result[0]["factor_scores"]["volume_surge"]
+    assert 0.0 <= score <= 100.0
+
+
+def test_relative_strength_score_in_range():
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05},
+    ]
+    store = MagicMock()
+    store.read.return_value = _make_daily_df(30)
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics(nifty_5d_change=0.0)
+    score = result[0]["factor_scores"]["relative_strength"]
+    assert 0.0 <= score <= 100.0
+
+
+def test_price_structure_above_50_for_uptrend():
+    """Close > SMA20 in uptrend must score above 50."""
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05},
+    ]
+    store = MagicMock()
+    n = 30
+    # Strict uptrend: close rises 1 each day, so last close > SMA20
+    close = np.arange(480.0, 480.0 + n)
+    df = pd.DataFrame({
+        "open": close - 0.5, "high": close + 1, "low": close - 1,
+        "close": close, "volume": np.full(n, 600000),
+    })
+    store.read.return_value = df
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics()
+    assert result[0]["factor_scores"]["price_structure"] > 50.0
+
+
+def test_sector_momentum_populated_for_all_stocks():
+    """sector_momentum must not be the default 50.0 when sector has multiple stocks."""
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "sector": "IT"},
+        {"token": 2, "symbol": "INFY", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "sector": "IT"},
+    ]
+    store = MagicMock()
+    # Uptrending stock — 5d return positive → sector_momentum > 50
+    n = 30
+    close = np.arange(480.0, 480.0 + n)
+    df = pd.DataFrame({
+        "open": close - 0.5, "high": close + 1, "low": close - 1,
+        "close": close, "volume": np.full(n, 600000),
+    })
+    store.read.return_value = df
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics()
+    assert len(result) == 2
+    # sector_momentum should reflect positive sector return, not stuck at 50
+    assert result[0]["factor_scores"]["sector_momentum"] > 50.0
