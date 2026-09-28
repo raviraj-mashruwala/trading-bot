@@ -46,14 +46,32 @@ class SetupStore:
         self._conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_setup_symbol ON setups(symbol, trade_date)"
         )
+        # Idempotent migrations for analytics columns
+        for col, coltype in [
+            ("thesis", "TEXT"),
+            ("invalidation_condition", "TEXT"),
+            ("bear_case", "TEXT"),
+            ("confluence_count", "INTEGER"),
+            ("entry_trigger", "TEXT"),
+            ("regime_at_generation", "TEXT"),
+            ("timeframe_alignment", "TEXT"),
+        ]:
+            try:
+                self._conn.execute(f"ALTER TABLE setups ADD COLUMN {col} {coltype}")
+            except sqlite3.OperationalError:
+                pass  # column already exists
         self._conn.commit()
 
     def save(self, setup: dict[str, Any]) -> int:
+        import json
         now = datetime.now(tz=IST).isoformat()
+        tfa = setup.get("timeframe_alignment", [])
         cursor = self._conn.execute(
             "INSERT INTO setups (run_id, trade_date, symbol, strategy, direction, "
             "entry_price, stop_loss, target_1, target_2, confidence, status, reasoning, "
-            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "thesis, invalidation_condition, bear_case, confluence_count, "
+            "entry_trigger, regime_at_generation, timeframe_alignment, "
+            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 setup["run_id"],
                 setup["trade_date"],
@@ -67,6 +85,13 @@ class SetupStore:
                 setup["confidence"],
                 setup.get("status", "proposed"),
                 setup.get("reasoning", ""),
+                setup.get("thesis", ""),
+                setup.get("invalidation_condition", ""),
+                setup.get("bear_case", ""),
+                setup.get("confluence_count", 0),
+                setup.get("entry_trigger", ""),
+                setup.get("regime_at_generation", ""),
+                json.dumps(tfa) if isinstance(tfa, list) else (tfa or "[]"),
                 now,
                 now,
             ),

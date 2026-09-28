@@ -209,6 +209,13 @@ class AnalysisPipeline:
                         "confidence": setup_data["confidence"],
                         "status": "approved",
                         "reasoning": setup_data.get("edge_description", ""),
+                        "thesis": setup_data.get("edge_description", ""),
+                        "invalidation_condition": setup_data.get("invalidation", ""),
+                        "bear_case": setup_data.get("bear_case", ""),
+                        "confluence_count": setup_data.get("confluence_count", 0),
+                        "entry_trigger": setup_data.get("entry_trigger", ""),
+                        "regime_at_generation": regime.get("regime", ""),
+                        "timeframe_alignment": setup_data.get("timeframe_alignment", []),
                     })
                     setups_approved += 1
 
