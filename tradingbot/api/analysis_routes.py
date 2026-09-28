@@ -291,6 +291,18 @@ def _ensure_kite_auth(state: AppState) -> "KiteAuth":
             api_key=state.config.secrets.kite_api_key,
             api_secret=state.config.secrets.kite_api_secret,
         )
+        saved_token = KiteAuth.load_saved_token()
+        if saved_token:
+            try:
+                from kiteconnect import KiteConnect
+                kite = KiteConnect(api_key=state.config.secrets.kite_api_key)
+                kite.set_access_token(saved_token)
+                kite.profile()
+                state.kite_auth._access_token = saved_token
+                state.kite_auth._kite = kite
+                logger.info("Loaded saved Kite token from file")
+            except Exception:
+                logger.info("Saved Kite token expired or invalid")
     return state.kite_auth
 
 

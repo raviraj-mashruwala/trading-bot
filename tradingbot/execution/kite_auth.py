@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 log = logging.getLogger(__name__)
+
+TOKEN_DIR = Path.home() / ".tradingbot"
 
 
 class KiteAuth:
@@ -48,8 +51,24 @@ class KiteAuth:
         kite.set_access_token(access_token)
         self._access_token = access_token
         self._kite = kite
+        self._save_token(access_token)
         log.info("Kite session generated for user %s", data.get("user_id", "?"))
         return data
+
+    def _save_token(self, token: str) -> None:
+        TOKEN_DIR.mkdir(parents=True, exist_ok=True)
+        token_file = TOKEN_DIR / "kite_token"
+        token_file.write_text(token)
+        token_file.chmod(0o600)
+        log.info("Token saved to %s", token_file)
+
+    @staticmethod
+    def load_saved_token() -> str | None:
+        token_file = TOKEN_DIR / "kite_token"
+        if not token_file.exists():
+            return None
+        token = token_file.read_text().strip()
+        return token if token else None
 
     @property
     def api_key(self) -> str:
