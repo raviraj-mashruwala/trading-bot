@@ -18,10 +18,33 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from tradingbot.core.llm.provider import LLMUsage
-from tradingbot.core.models import AnalysisRun, MarketRegime
+from tradingbot.core.models import AnalysisRun, MarketRegime, StrategyName
 
 IST = ZoneInfo("Asia/Kolkata")
 log = logging.getLogger(__name__)
+
+REGIME_STRATEGY_GATE: dict[str, frozenset[StrategyName]] = {
+    "trending_up": frozenset({
+        StrategyName.MOMENTUM, StrategyName.BREAKOUT, StrategyName.GAP_AND_GO,
+        StrategyName.RELATIVE_STRENGTH, StrategyName.ORB,
+    }),
+    "trending_down": frozenset({
+        StrategyName.MEAN_REVERSION, StrategyName.VWAP_BOUNCE,
+        StrategyName.RELATIVE_STRENGTH, StrategyName.ORB,
+    }),
+    "range_bound": frozenset({
+        StrategyName.MEAN_REVERSION, StrategyName.VWAP_BOUNCE,
+        StrategyName.PIVOT_POINT, StrategyName.BOLLINGER_SQUEEZE,
+        StrategyName.SUPPLY_DEMAND,
+    }),
+    "volatile": frozenset({
+        StrategyName.ORB, StrategyName.GAP_AND_GO,
+        StrategyName.VWAP_BOUNCE, StrategyName.BREAKOUT,
+    }),
+    "low_vol_squeeze": frozenset({
+        StrategyName.BOLLINGER_SQUEEZE, StrategyName.BREAKOUT,
+    }),
+}
 
 
 class AnalysisPipeline:
@@ -131,9 +154,9 @@ class AnalysisPipeline:
             sym = pick["symbol"]
             direction = pick.get("direction", "long")
 
-            # Run backtest across all registered strategies
+            # Run backtest for regime-eligible strategies only
             bt_results: list[Any] = []
-            self._run_backtests(sym, bt_results)
+            self._run_backtests(sym, bt_results, regime=regime)
 
             # Tier 3 deep analysis
             deep = await self._tier3.deep_analyze(
@@ -361,14 +384,25 @@ class AnalysisPipeline:
             regime=MarketRegime.RANGE_BOUND,
         )
 
-    def _run_backtests(self, symbol: str, results: list) -> None:
-        """Run backtest across registered strategies for one symbol.
+    def _get_regime_eligible_strategies(self, regime: dict) -> frozenset[StrategyName]:
+        """Return strategy names valid for the current regime. Fail-open on unknown."""
+        from tradingbot.strategy.strategies import STRATEGY_REGISTRY
+        regime_name = regime.get("regime", "range_bound")
+        return REGIME_STRATEGY_GATE.get(regime_name, frozenset(STRATEGY_REGISTRY.keys()))
 
-        Appends passing BacktestReports to results list.
+    def _run_backtests(self, symbol: str, results: list, regime: dict | None = None) -> None:
+        """Run backtest for regime-eligible strategies on one symbol.
+
+        Uses self._backtest (injected WalkForwardEngine). Appends passing
+        BacktestReports to results list.
         """
         from tradingbot.strategy.strategies import STRATEGY_REGISTRY
 
-        for _name, strategy in STRATEGY_REGISTRY.items():
+        eligible = self._get_regime_eligible_strategies(regime or {})
+
+        for strategy_name, strategy in STRATEGY_REGISTRY.items():
+            if strategy_name not in eligible:
+                continue
             df = self._candles.read(
                 symbol, "15minute",
                 datetime(2025, 1, 1, tzinfo=IST),
@@ -377,8 +411,6 @@ class AnalysisPipeline:
             if len(df) > 0:
                 report = self._backtest.run(symbol, df, strategy)
                 if report.total_trades >= 5:
-                    # Reconstruct approximate trade PnLs from report stats
-                    # so Monte Carlo gets real variance (winners vs losers)
                     trade_pnls = (
                         [report.avg_winner] * report.winners
                         + [report.avg_loser] * report.losers

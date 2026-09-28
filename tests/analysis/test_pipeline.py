@@ -266,3 +266,83 @@ async def test_pipeline_range_bound_regime(pipeline_deps):
     run = await pipeline.run(date(2026, 9, 27))
 
     assert run.market_regime == MarketRegime.RANGE_BOUND
+
+
+# ── Regime strategy gate tests ────────────────────────────────────────────────
+
+import numpy as np
+import pandas as pd
+from tradingbot.core.models import StrategyName
+
+
+def _make_minimal_pipeline(deps):
+    return AnalysisPipeline(**deps)
+
+
+def test_trending_up_excludes_mean_reversion(pipeline_deps):
+    p = _make_minimal_pipeline(pipeline_deps)
+    eligible = p._get_regime_eligible_strategies({"regime": "trending_up"})
+    assert StrategyName.MEAN_REVERSION not in eligible
+    assert StrategyName.MOMENTUM in eligible
+
+
+def test_range_bound_excludes_momentum(pipeline_deps):
+    p = _make_minimal_pipeline(pipeline_deps)
+    eligible = p._get_regime_eligible_strategies({"regime": "range_bound"})
+    assert StrategyName.MOMENTUM not in eligible
+    assert StrategyName.MEAN_REVERSION in eligible
+
+
+def test_unknown_regime_returns_all_strategies(pipeline_deps):
+    """Fail-open: unknown regime must not produce empty strategy set."""
+    from tradingbot.strategy.strategies import STRATEGY_REGISTRY
+    p = _make_minimal_pipeline(pipeline_deps)
+    eligible = p._get_regime_eligible_strategies({"regime": "alien_regime"})
+    assert eligible == frozenset(STRATEGY_REGISTRY.keys())
+
+
+def test_volatile_includes_orb_and_gap_and_go(pipeline_deps):
+    p = _make_minimal_pipeline(pipeline_deps)
+    eligible = p._get_regime_eligible_strategies({"regime": "volatile"})
+    assert StrategyName.ORB in eligible
+    assert StrategyName.GAP_AND_GO in eligible
+
+
+def test_low_vol_squeeze_includes_bollinger(pipeline_deps):
+    p = _make_minimal_pipeline(pipeline_deps)
+    eligible = p._get_regime_eligible_strategies({"regime": "low_vol_squeeze"})
+    assert StrategyName.BOLLINGER_SQUEEZE in eligible
+
+
+# ── WalkForwardEngine usage test ──────────────────────────────────────────────
+
+def _make_candle_df(n=300):
+    closes = 100 + np.cumsum(np.random.randn(n) * 0.5)
+    return pd.DataFrame({
+        "open": closes - 0.3, "high": closes + 1,
+        "low": closes - 1, "close": closes,
+        "volume": [1_000_000] * n,
+    })
+
+
+def test_run_backtests_uses_injected_engine(pipeline_deps):
+    """_run_backtests must call self._backtest.run(), not import Backtester internally."""
+    from tradingbot.backtest.walk_forward import WalkForwardEngine
+
+    wf_engine = MagicMock(spec=WalkForwardEngine)
+    mock_report = MagicMock()
+    mock_report.total_trades = 10
+    mock_report.winners = 6
+    mock_report.losers = 4
+    mock_report.avg_winner = 2.0
+    mock_report.avg_loser = -1.0
+    wf_engine.run.return_value = mock_report
+
+    pipeline_deps["backtest_engine"] = wf_engine
+    pipeline_deps["candle_store"].read.return_value = _make_candle_df(300)
+
+    p = AnalysisPipeline(**pipeline_deps)
+    results = []
+    p._run_backtests("TCS", results, regime={"regime": "trending_up"})
+
+    assert wf_engine.run.called
