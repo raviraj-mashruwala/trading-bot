@@ -38,3 +38,8 @@ class AppState:
 
     # Kite authentication (initialised lazily)
     kite_auth: object | None = None
+
+    # Data sync
+    sync_status: str = "idle"
+    sync_task: asyncio.Task | None = None
+    sync_progress: str = ""

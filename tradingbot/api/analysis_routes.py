@@ -333,6 +333,75 @@ async def kite_status(request: Request):
     return {"authenticated": auth.is_authenticated() if auth else False}
 
 
+# ---------------------------------------------------------------------------
+# Data sync endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/sync")
+async def start_sync(request: Request):
+    state: AppState = request.app.state.app_state
+    if state.sync_status == "running":
+        raise HTTPException(status_code=409, detail="Sync already running")
+
+    auth = _ensure_kite_auth(state)
+    if not auth.is_authenticated():
+        raise HTTPException(status_code=400, detail="Kite not authenticated. Connect Kite first.")
+
+    state.sync_status = "running"
+    state.sync_progress = "Starting..."
+
+    async def _run_sync() -> None:
+        try:
+            from tradingbot.data.candle_store import CandleStore
+            from tradingbot.data.data_sync import DataSync
+            from tradingbot.data.instrument_cache import InstrumentCache
+            from tradingbot.data.kite_client import KiteClient
+
+            data_dir = Path(state.data_dir) if state.data_dir else Path("data")
+            data_dir.mkdir(exist_ok=True)
+
+            kite_client = KiteClient(
+                auth.kite,
+                rate_limit_per_sec=state.config.kite.rate_limit_per_sec,
+            )
+            cache = InstrumentCache(data_dir / "instruments.db")
+            store = CandleStore(data_dir / "candles.db")
+            sync = DataSync(kite_client, cache, store)
+
+            state.sync_progress = "Syncing instruments..."
+            await state.event_bus.emit("sync.started", {})
+
+            import asyncio as _aio
+
+            stats = await _aio.to_thread(sync.full_sync, 30, 7)
+
+            state.sync_status = "complete"
+            state.sync_progress = (
+                f"{stats['instruments']} instruments, "
+                f"{stats['daily_candles']} daily, "
+                f"{stats['intraday_candles']} intraday candles"
+            )
+            await state.event_bus.emit("sync.complete", stats)
+            cache.close()
+            store.close()
+
+        except Exception as exc:
+            logger.error("Sync failed: %s", exc, exc_info=True)
+            state.sync_status = "failed"
+            state.sync_progress = str(exc)
+            await state.event_bus.emit("sync.failed", {"error": str(exc)})
+
+    state.sync_task = asyncio.create_task(_run_sync())
+    return {"status": "started"}
+
+
+@router.get("/sync/status")
+async def sync_status(request: Request):
+    state: AppState = request.app.state.app_state
+    return {"status": state.sync_status, "progress": state.sync_progress}
+
+
 @router.patch("/setups/{setup_id}")
 async def update_setup(setup_id: int, request: Request):
     state: AppState = request.app.state.app_state
