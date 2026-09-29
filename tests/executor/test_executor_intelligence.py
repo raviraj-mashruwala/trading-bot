@@ -460,3 +460,47 @@ def test_legstate_waiting_not_finished():
     leg = make_leg()
     ls = LegState(leg=leg, waiting=True)
     assert ls.is_finished is False
+
+
+# ---------------------------------------------------------------------------
+# WAIT timeout
+# ---------------------------------------------------------------------------
+
+def test_wait_leg_times_out_at_max_entry_wait(tmp_path):
+    """A WAIT leg that never clears gets cancelled at max_entry_wait."""
+    clock = Clock()
+    intel = MockIntelligence()
+    # Always return WAIT so conditions never clear
+    intel.entry_guard.evaluate.return_value = EntryVerdict("WAIT", "Low volume", 0.7, 60)
+    executor, broker, _, _, _ = build(tmp_path, [make_leg()], clock=clock, intel=intel)
+    executor.start()
+
+    state = executor.states[0]
+    assert state.waiting is True
+    assert not state.cancelled
+
+    # Advance past max_entry_wait (11:00)
+    clock.advance_to(11, 5)
+    executor.tick()
+
+    assert state.cancelled is True
+    assert state.skipped_reason == "Wait timeout — conditions never cleared"
+
+
+def test_wait_leg_times_out_at_entry_window_end(tmp_path):
+    """A WAIT leg that never clears gets cancelled at entry_window_end."""
+    clock = Clock()
+    intel = MockIntelligence()
+    intel.entry_guard.evaluate.return_value = EntryVerdict("WAIT", "Choppy", 0.6, 60)
+    executor, broker, _, _, _ = build(tmp_path, [make_leg()], clock=clock, intel=intel)
+    executor.start()
+
+    state = executor.states[0]
+    assert state.waiting is True
+
+    # Advance past entry_window_end (10:30)
+    clock.advance_to(10, 35)
+    executor.tick()
+
+    assert state.cancelled is True
+    assert "Wait timeout" in state.skipped_reason

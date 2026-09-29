@@ -2,6 +2,10 @@ from datetime import date, datetime, time
 
 import pytest
 
+# Existing tests run Executor without intelligence (classic mode).
+# Suppress the deprecation warning so test output stays clean.
+pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
+
 from tradingbot.core.broker import OrderSide, OrderType
 from tradingbot.core.config import ExecutionConfig, PaperConfig, RiskConfig, StrategyConfig
 from tradingbot.core.database import Database

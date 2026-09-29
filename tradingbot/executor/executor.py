@@ -85,6 +85,14 @@ class Executor:
         self.event_bus = event_bus
         self._intelligence = intelligence
 
+        if intelligence is None:
+            import warnings
+            warnings.warn(
+                "Executor without intelligence is deprecated — classic mode will be removed",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         self.orders = OrderManager(broker)
         self.monitor = PositionMonitor(broker)
         self.exits = ExitManager(execution_config.square_off_time)
@@ -165,10 +173,19 @@ class Executor:
 
             if state.filled_quantity == 0:
                 # Re-evaluate WAIT legs through the guard on each heartbeat
-                if state.waiting and self._intelligence is not None:
-                    self._evaluate_entry(state, now)
-                    if state.waiting:
-                        continue  # still waiting, skip poll
+                if state.waiting and not state.cancelled:
+                    now_time = now.timetz().replace(tzinfo=None)
+                    if now_time >= state.leg.max_entry_wait or now_time >= state.leg.entry_window_end:
+                        state.skipped_reason = "Wait timeout — conditions never cleared"
+                        state.cancelled = True
+                        logger.info(
+                            "%s wait timed out at %s", state.leg.symbol, now_time,
+                        )
+                        continue
+                    if self._intelligence is not None:
+                        self._evaluate_entry(state, now)
+                        if state.waiting:
+                            continue  # still waiting, skip poll
                 self._poll_entry(state, now)
                 continue
 
@@ -201,15 +218,15 @@ class Executor:
                 try:
                     import asyncio
                     loop = asyncio.get_event_loop()
-                    coro = intel.escalator.evaluate_entry(
-                        state.leg,
-                        symbol_state,
-                        intel.aggregator.get_candles(state.leg.symbol, "1min"),
-                        intel.aggregator.get_candles(state.leg.symbol, "5min"),
-                    )
                     if loop.is_running():
-                        pass  # Inside async context — skip sync escalation
+                        pass  # Async context handles escalation natively
                     else:
+                        coro = intel.escalator.evaluate_entry(
+                            state.leg,
+                            symbol_state,
+                            intel.aggregator.get_candles(state.leg.symbol, "1min"),
+                            intel.aggregator.get_candles(state.leg.symbol, "5min"),
+                        )
                         result = loop.run_until_complete(coro)
                         if result.action == "VETO":
                             state.skipped_reason = f"LLM veto: {result.reasoning}"
@@ -222,7 +239,7 @@ class Executor:
                             state.waiting = True
                             return
                 except Exception:
-                    pass  # Fallback: proceed with algorithmic ENTER
+                    logger.debug("LLM escalation skipped", exc_info=True)
             state.waiting = False
             self._submit_entry(state)
 
