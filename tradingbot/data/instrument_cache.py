@@ -24,6 +24,10 @@ class InstrumentCache:
         self._conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_symbol ON instruments(symbol)"
         )
+        try:
+            self._conn.execute("ALTER TABLE instruments ADD COLUMN sector TEXT NOT NULL DEFAULT 'unknown'")
+        except sqlite3.OperationalError:
+            pass  # column already exists
         self._conn.commit()
 
     def refresh(self, raw_instruments: list[dict[str, Any]]) -> int:
@@ -33,10 +37,11 @@ class InstrumentCache:
         ]
         self._conn.execute("DELETE FROM instruments")
         self._conn.executemany(
-            "INSERT INTO instruments (token, symbol, exchange, lot_size, tick_size) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO instruments (token, symbol, exchange, lot_size, tick_size, sector) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
             [(i["instrument_token"], i["tradingsymbol"], i["exchange"],
-              i["lot_size"], i["tick_size"]) for i in equities],
+              i["lot_size"], i["tick_size"],
+              i.get("industry_type") or "unknown") for i in equities],
         )
         self._conn.commit()
         return len(equities)
@@ -45,7 +50,8 @@ class InstrumentCache:
         rows = self._conn.execute("SELECT * FROM instruments").fetchall()
         return [{"token": r["token"], "symbol": r["symbol"],
                  "exchange": r["exchange"], "lot_size": r["lot_size"],
-                 "tick_size": r["tick_size"]} for r in rows]
+                 "tick_size": r["tick_size"],
+                 "sector": r["sector"]} for r in rows]
 
     def get_token(self, symbol: str) -> int:
         row = self._conn.execute(

@@ -193,6 +193,33 @@ def test_price_structure_above_50_for_uptrend():
     assert result[0]["factor_scores"]["price_structure"] > 50.0
 
 
+def test_delivery_pct_uses_fetched_data():
+    """delivery_pct must use real delivery data when provided, not hardcoded 50.0."""
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "sector": "IT"},
+    ]
+    store = MagicMock()
+    store.read.return_value = _make_daily_df(30)
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics(delivery_data={"TCS": 78.5})
+    assert result[0]["factor_scores"]["delivery_pct"] == pytest.approx(78.5)
+
+
+def test_delivery_pct_defaults_50_when_symbol_missing():
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "sector": "IT"},
+    ]
+    store = MagicMock()
+    store.read.return_value = _make_daily_df(30)
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics(delivery_data={})  # TCS not in data
+    assert result[0]["factor_scores"]["delivery_pct"] == pytest.approx(50.0)
+
+
 def test_volume_profile_not_always_neutral():
     """volume_profile factor must use real score, not hardcoded 50.0."""
     cache = MagicMock()

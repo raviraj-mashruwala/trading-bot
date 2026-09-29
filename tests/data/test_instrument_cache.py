@@ -67,3 +67,43 @@ def test_filters_non_equity(cache):
     ])
     result = cache.get_all()
     assert len(result) == 1
+
+
+def test_sector_stored_from_industry_type(cache):
+    """Kite's industry_type field must be stored as sector."""
+    cache.refresh([
+        {"instrument_token": 738561, "tradingsymbol": "RELIANCE",
+         "exchange": "NSE", "lot_size": 1, "tick_size": 0.05,
+         "instrument_type": "EQ", "segment": "NSE",
+         "industry_type": "Petroleum Products"},
+        {"instrument_token": 341249, "tradingsymbol": "HDFCBANK",
+         "exchange": "NSE", "lot_size": 1, "tick_size": 0.05,
+         "instrument_type": "EQ", "segment": "NSE",
+         "industry_type": "Banks"},
+    ])
+    result = {r["symbol"]: r for r in cache.get_all()}
+    assert result["RELIANCE"]["sector"] == "Petroleum Products"
+    assert result["HDFCBANK"]["sector"] == "Banks"
+
+
+def test_sector_defaults_unknown_when_missing(cache):
+    """Instruments without industry_type get sector='unknown'."""
+    cache.refresh([
+        {"instrument_token": 1, "tradingsymbol": "TEST",
+         "exchange": "NSE", "lot_size": 1, "tick_size": 0.05,
+         "instrument_type": "EQ", "segment": "NSE"},
+    ])
+    result = cache.get_all()
+    assert result[0]["sector"] == "unknown"
+
+
+def test_migration_idempotent(tmp_path):
+    """Opening InstrumentCache twice on same DB must not crash on duplicate column."""
+    db = tmp_path / "inst.db"
+    c1 = InstrumentCache(db)
+    c1.refresh([{"instrument_token": 1, "tradingsymbol": "X",
+                 "exchange": "NSE", "lot_size": 1, "tick_size": 0.05,
+                 "instrument_type": "EQ", "segment": "NSE"}])
+    c1.close()
+    c2 = InstrumentCache(db)  # must not raise
+    c2.close()

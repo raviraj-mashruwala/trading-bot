@@ -104,7 +104,10 @@ class AnalysisPipeline:
         # --- Tier 1: Deterministic screen ---
         market_ctx = self._fetch_market_context()
         nifty_5d_change = self._compute_nifty_5d_change_from_store()
-        stock_metrics = self._build_stock_metrics(nifty_5d_change=nifty_5d_change)
+        delivery_data = self._fetch_delivery_data(trade_date)
+        stock_metrics = self._build_stock_metrics(
+            nifty_5d_change=nifty_5d_change, delivery_data=delivery_data
+        )
         scored = self._screener.screen(stock_metrics)
         self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
@@ -254,7 +257,9 @@ class AnalysisPipeline:
         )
         return analysis_run
 
-    def _build_stock_metrics(self, nifty_5d_change: float = 0.0) -> list[dict]:
+    def _build_stock_metrics(
+        self, nifty_5d_change: float = 0.0, delivery_data: dict | None = None
+    ) -> list[dict]:
         """Compute all 9 screening factor scores for cached instruments."""
         if self._instrument_cache is None:
             return []
@@ -343,7 +348,7 @@ class AnalysisPipeline:
                     "relative_strength": relative_strength_score,
                     "atr_expansion": atr_expansion_score,
                     "price_structure": price_structure_score,
-                    "delivery_pct": 50.0,
+                    "delivery_pct": (delivery_data or {}).get(symbol, 50.0),
                     "candlestick_pattern": _score_candlestick(df),
                     "volume_profile": _score_volume_profile(df),
                     "sector_momentum": 50.0,  # filled in second pass
@@ -362,6 +367,15 @@ class AnalysisPipeline:
             del m["_stock_5d_return"]
 
         return metrics
+
+    def _fetch_delivery_data(self, trade_date: "date") -> dict[str, float]:
+        """Fetch NSE delivery % from bhav copy. Returns {} on failure."""
+        try:
+            from tradingbot.data.delivery_fetcher import fetch_delivery_pct
+            return fetch_delivery_pct(trade_date)
+        except Exception as exc:
+            log.warning("Delivery data fetch failed: %s", exc)
+            return {}
 
     def _compute_nifty_5d_change_from_store(self) -> float:
         """5-day Nifty50 return from CandleStore. Zero on failure. No yfinance."""
