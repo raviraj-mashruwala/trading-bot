@@ -514,29 +514,29 @@ class AnalysisPipeline:
     def _run_backtests(self, symbol: str, results: list, regime: dict | None = None) -> None:
         """Run backtest for regime-eligible strategies on one symbol.
 
-        Uses self._backtest (injected WalkForwardEngine). Appends passing
-        BacktestReports to results list.
+        Reads candles once outside the strategy loop. Uses self._backtest
+        (injected WalkForwardEngine). Appends passing BacktestReports to results.
         """
         from tradingbot.strategy.strategies import STRATEGY_REGISTRY
+        from datetime import timedelta
 
         eligible = self._get_regime_eligible_strategies(regime or {})
+
+        from_dt = datetime.now(tz=IST) - timedelta(days=365)
+        df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
+        if len(df) == 0:
+            return
 
         for strategy_name, strategy in STRATEGY_REGISTRY.items():
             if strategy_name not in eligible:
                 continue
-            df = self._candles.read(
-                symbol, "15minute",
-                datetime(2025, 1, 1, tzinfo=IST),
-                datetime.now(tz=IST),
-            )
-            if len(df) > 0:
-                report = self._backtest.run(symbol, df, strategy)
-                if report.total_trades >= 5:
-                    trade_pnls = (
-                        [report.avg_winner] * report.winners
-                        + [report.avg_loser] * report.losers
-                    )
-                    mc = self._mc.run(trade_pnls) if trade_pnls else None
-                    gate = self._gates.evaluate(report, mc)
-                    if gate.passed:
-                        results.append(report)
+            report = self._backtest.run(symbol, df, strategy)
+            if report.total_trades >= 5:
+                trade_pnls = (
+                    [report.avg_winner] * report.winners
+                    + [report.avg_loser] * report.losers
+                )
+                mc = self._mc.run(trade_pnls) if trade_pnls else None
+                gate = self._gates.evaluate(report, mc)
+                if gate.passed:
+                    results.append(report)

@@ -348,6 +348,32 @@ def test_run_backtests_uses_injected_engine(pipeline_deps):
     assert wf_engine.run.called
 
 
+def test_run_backtests_reads_candles_once_not_per_strategy(pipeline_deps):
+    """candle_store.read must be called exactly once per symbol, not once per strategy."""
+    from tradingbot.backtest.walk_forward import WalkForwardEngine
+
+    wf = MagicMock(spec=WalkForwardEngine)
+    mock_report = MagicMock()
+    mock_report.total_trades = 0  # gate rejects — not the point
+    wf.run.return_value = mock_report
+
+    pipeline_deps["backtest_engine"] = wf
+    pipeline_deps["candle_store"].read.return_value = _make_candle_df(300)
+
+    p = AnalysisPipeline(**pipeline_deps)
+    results = []
+    p._run_backtests("TCS", results, regime={"regime": "trending_up"})
+
+    # trending_up has 5 eligible strategies — read must still be called only once
+    read_calls = [
+        c for c in pipeline_deps["candle_store"].read.call_args_list
+        if c.args[0] == "TCS" and c.args[1] == "15minute"
+    ]
+    assert len(read_calls) == 1, (
+        f"Expected 1 candle read for TCS/15minute, got {len(read_calls)}"
+    )
+
+
 # ── Indicator fetch tests ─────────────────────────────────────────────────────
 
 def test_fetch_indicators_returns_dict_with_rsi(pipeline_deps):
