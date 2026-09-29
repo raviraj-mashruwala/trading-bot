@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { SessionResult, WsEvent } from "@/types";
+import type { SessionResult, WsEvent, TickerHealth, ExecutionDecision } from "@/types";
 
 interface Fill {
   symbol: string;
@@ -12,6 +12,8 @@ interface ExecutionStore {
   mode: string | null;
   fills: Fill[];
   sessionResult: SessionResult | null;
+  tickerHealth: TickerHealth | null;
+  recentDecisions: ExecutionDecision[];
   handleEvent: (event: WsEvent) => void;
   reset: () => void;
 }
@@ -21,6 +23,8 @@ export const useExecutionStore = create<ExecutionStore>((set) => ({
   mode: null,
   fills: [],
   sessionResult: null,
+  tickerHealth: null,
+  recentDecisions: [],
 
   handleEvent: (event: WsEvent) => {
     const { type, data } = event;
@@ -31,6 +35,7 @@ export const useExecutionStore = create<ExecutionStore>((set) => ({
         mode: (data.mode as string) ?? null,
         fills: [],
         sessionResult: null,
+        recentDecisions: [],
       });
       return;
     }
@@ -55,8 +60,29 @@ export const useExecutionStore = create<ExecutionStore>((set) => ({
           mode: data.mode as string,
         },
       });
+      return;
+    }
+
+    if (type === "ticker_health") {
+      set({ tickerHealth: data as unknown as TickerHealth });
+      return;
+    }
+
+    if (type === "decision") {
+      const decision = data as unknown as ExecutionDecision;
+      set((state) => ({
+        recentDecisions: [decision, ...state.recentDecisions].slice(0, 50),
+      }));
+      return;
     }
   },
 
-  reset: () => set({ status: "idle", mode: null, fills: [], sessionResult: null }),
+  reset: () => set({
+    status: "idle",
+    mode: null,
+    fills: [],
+    sessionResult: null,
+    tickerHealth: null,
+    recentDecisions: [],
+  }),
 }));

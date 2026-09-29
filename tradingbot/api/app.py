@@ -46,6 +46,7 @@ def create_app(
             plan_store=plan_store,
             config_path=str(config_path or "config.toml"),
             data_dir=str(resolved_data_dir),
+            ws_manager=manager,
         )
 
         yield
