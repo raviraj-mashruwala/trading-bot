@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo
 from tradingbot.core.llm.provider import LLMUsage
 from tradingbot.core.models import AnalysisRun, MarketRegime, StrategyName
 from tradingbot.screening.candlestick import score_patterns as _score_candlestick
+from tradingbot.screening.volume_profile_score import score_volume_profile as _score_volume_profile
 
 IST = ZoneInfo("Asia/Kolkata")
 log = logging.getLogger(__name__)
@@ -344,7 +345,7 @@ class AnalysisPipeline:
                     "price_structure": price_structure_score,
                     "delivery_pct": 50.0,
                     "candlestick_pattern": _score_candlestick(df),
-                    "volume_profile": 50.0,
+                    "volume_profile": _score_volume_profile(df),
                     "sector_momentum": 50.0,  # filled in second pass
                 },
             })

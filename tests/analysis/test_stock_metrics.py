@@ -193,6 +193,33 @@ def test_price_structure_above_50_for_uptrend():
     assert result[0]["factor_scores"]["price_structure"] > 50.0
 
 
+def test_volume_profile_not_always_neutral():
+    """volume_profile factor must use real score, not hardcoded 50.0."""
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05},
+    ]
+    store = MagicMock()
+    # Build df with volume concentrated in 90-105 range, last close at 130.
+    # volume_profile will compute POC ~95-100, VAH ~105, VAL ~90.
+    # close=130 > VAH → score > 70.
+    n = 30
+    closes = np.linspace(90, 105, n)   # prices spread 90-105 with even volume
+    closes[-1] = 130.0                 # last close well above value area
+    df = pd.DataFrame({
+        "open": closes - 1, "high": closes + 2,
+        "low": closes - 2, "close": closes,
+        "volume": np.full(n, 1_000_000),
+    })
+    store.read.return_value = df
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics()
+    score = result[0]["factor_scores"]["volume_profile"]
+    # close=130 above VAH (~105) → bullish breakout → score > 50
+    assert score > 50.0
+
+
 def test_candlestick_pattern_not_always_neutral():
     """candlestick_pattern must use real score, not hardcoded 50.0."""
     cache = MagicMock()
