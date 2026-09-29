@@ -17,6 +17,8 @@ from tradingbot.core.database import Database
 from tradingbot.core.models import Mode, now_ist
 from tradingbot.core.plan_store import PlanCorruptError, PlanNotFoundError, PlanStore
 from tradingbot.core.risk_manager import RiskManager
+from tradingbot.data.kite_ticker import LiveTickManager
+from tradingbot.executor.execution_intelligence import ExecutionIntelligence
 from tradingbot.executor.executor import Executor
 from tradingbot.paper.virtual_broker import VirtualBroker
 from tradingbot.scanner.calendar import NotATradingDayError, next_trading_day
@@ -126,6 +128,12 @@ def execute(obj: dict, paper: bool, target: str | None, once: bool) -> None:
     database = Database(obj["db_path"])
     database.initialise()
 
+    # Build execution intelligence (live tick feed + momentum scoring)
+    token_path = Path.home() / ".tradingbot" / "kite_token"
+    access_token = token_path.read_text().strip() if token_path.exists() else ""
+    ticker = LiveTickManager(api_key=config.secrets.kite_api_key, access_token=access_token)
+    intelligence = ExecutionIntelligence(ticker, config.execution)
+
     executor = Executor(
         broker=build_broker(config, mode),
         plan=plan,
@@ -133,6 +141,7 @@ def execute(obj: dict, paper: bool, target: str | None, once: bool) -> None:
         database=database,
         execution_config=config.execution,
         mode=mode,
+        intelligence=intelligence,
     )
 
     click.echo(f"Executing {plan.trade_date} in {mode.value} mode ({len(plan.legs)} legs)")

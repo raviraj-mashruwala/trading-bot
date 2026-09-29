@@ -28,6 +28,7 @@ class LiveTickManager:
         self._callbacks: dict[int, Callable[[int, float], None]] = {}
         self._subscribed: set[int] = set()
         self._thread: threading.Thread | None = None
+        self._full_tick_callback: Callable[[Any, list[dict]], None] | None = None
 
     @property
     def subscribed_tokens(self) -> set[int]:
@@ -38,13 +39,32 @@ class LiveTickManager:
 
     def subscribe(
         self,
-        tokens: list[int],
-        callback: Callable[[int, float], None],
+        tokens: list,
+        callback: Callable | None = None,
     ) -> None:
-        """Register *callback* for each instrument token in *tokens*."""
-        for token in tokens:
-            self._callbacks[token] = callback
-            self._subscribed.add(token)
+        """Register *callback* for each instrument token in *tokens*.
+
+        Two calling patterns are supported:
+
+        1. ``subscribe([int, ...], per_token_cb)`` — per-token (token, ltp) callback.
+        2. ``subscribe([str_or_int, ...], full_tick_cb)`` — full-tick (ws, ticks)
+           callback used by :class:`ExecutionIntelligence`.  String tokens are
+           stored as-is; real instrument-token resolution happens at runtime.
+        """
+        if callback is not None and tokens and isinstance(tokens[0], str):
+            # ExecutionIntelligence pattern — register as raw tick forwarder
+            self._full_tick_callback = callback
+            for token in tokens:
+                self._subscribed.add(token)
+            return
+
+        if callback is not None:
+            for token in tokens:
+                self._callbacks[token] = callback
+                self._subscribed.add(token)
+        else:
+            for token in tokens:
+                self._subscribed.add(token)
 
         if self._ticker is not None:
             self._ticker.subscribe(tokens)
@@ -82,6 +102,14 @@ class LiveTickManager:
     # -- Internal callbacks --------------------------------------------------
 
     def _on_ticks(self, ws: Any, ticks: list[dict]) -> None:
+        # Forward full tick list to ExecutionIntelligence-style callback
+        if self._full_tick_callback is not None:
+            try:
+                self._full_tick_callback(ws, ticks)
+            except Exception:
+                log.exception("Full tick callback error")
+
+        # Per-token dispatch
         for tick in ticks:
             token = tick.get("instrument_token")
             ltp = tick.get("last_price")

@@ -44,6 +44,22 @@ CREATE TABLE IF NOT EXISTS plan_snapshots (
     generated_at TEXT NOT NULL,
     payload TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS execution_decisions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_date TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    decision_type TEXT NOT NULL,
+    reason TEXT,
+    momentum_snapshot TEXT,
+    candle_snapshot TEXT,
+    escalated INTEGER DEFAULT 0,
+    llm_response TEXT,
+    outcome TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_execution_decisions_date ON execution_decisions (trade_date);
 """
 
 
@@ -129,6 +145,33 @@ class Database:
             (plan.trade_date, plan.generated_at.isoformat(), json.dumps(plan.to_dict())),
         )
         self.connection.commit()
+
+    def log_execution_decision(self, **kwargs) -> None:
+        self.connection.execute(
+            """INSERT INTO execution_decisions
+               (trade_date, timestamp, symbol, decision_type, reason,
+                momentum_snapshot, candle_snapshot, escalated, llm_response)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                kwargs["trade_date"],
+                kwargs["timestamp"],
+                kwargs["symbol"],
+                kwargs["decision_type"],
+                kwargs["reason"],
+                kwargs.get("momentum_snapshot"),
+                kwargs.get("candle_snapshot"),
+                kwargs.get("escalated", False),
+                kwargs.get("llm_response"),
+            ),
+        )
+        self.connection.commit()
+
+    def get_recent_execution_decisions(self, limit: int = 20) -> list[dict]:
+        rows = self.connection.execute(
+            "SELECT * FROM execution_decisions ORDER BY timestamp DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     @staticmethod
     def _row_to_trade(row: sqlite3.Row) -> ExecutedTrade:
