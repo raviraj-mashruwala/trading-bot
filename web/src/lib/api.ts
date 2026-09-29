@@ -40,11 +40,11 @@ export const api = {
   getTrades: (days = 30) => get<Trade[]>(`/api/trades?days=${days}`),
   getTradeStats: (days = 30) => get<TradeStats>(`/api/trades/stats?days=${days}`),
   getAnalysisStatus: () => get<AnalysisStatus>("/api/analyze/status"),
-  postAnalyze: (tradeDate?: string, pipeline: string = "v2") =>
-    post<{ status: string; trade_date: string }>("/api/analyze", {
-      ...(tradeDate ? { trade_date: tradeDate } : {}),
-      pipeline,
-    }),
+  postAnalyze: (tradeDate?: string) =>
+    post<{ status: string; trade_date: string }>(
+      "/api/analyze",
+      tradeDate ? { trade_date: tradeDate } : undefined,
+    ),
   cancelAnalysis: () => post<{ status: string }>("/api/analyze/cancel"),
   getExecutionStatus: () => get<{ status: string; mode: string | null; positions: ExecutionPosition[] }>("/api/execute/status"),
   postExecute: (mode?: string, date?: string) => {
