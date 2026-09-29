@@ -5,17 +5,18 @@ import { api } from "@/lib/api";
 import type { AnalysisRun } from "@/types";
 
 export function RunHistory() {
-  const { data: runs, isLoading } = useQuery({
+  const { data: runs, isLoading, isError } = useQuery({
     queryKey: ["analysis-runs"],
     queryFn: () => api.getAnalysisRuns(),
     refetchInterval: 10_000,
+    retry: false,
   });
 
   if (isLoading) {
     return <div className="text-[#5a6a7f] text-sm">Loading runs...</div>;
   }
 
-  if (!runs || runs.length === 0) {
+  if (!runs || runs.length === 0 || isError) {
     return (
       <div className="text-[#5a6a7f] text-sm py-4 text-center">
         No analysis runs today.

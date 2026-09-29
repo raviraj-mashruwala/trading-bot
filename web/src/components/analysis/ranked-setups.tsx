@@ -5,17 +5,18 @@ import { api } from "@/lib/api";
 import { SetupCard } from "./setup-card";
 
 export function RankedSetups() {
-  const { data: plan, isLoading } = useQuery({
+  const { data: plan, isLoading, isError } = useQuery({
     queryKey: ["daily-plan"],
     queryFn: api.getDailyPlan,
     refetchInterval: 10_000,
+    retry: false,
   });
 
   if (isLoading) {
     return <div className="text-[#5a6a7f] text-sm py-4">Loading setups...</div>;
   }
 
-  if (!plan || plan.ranked_suggestions.length === 0) {
+  if (!plan || plan.ranked_suggestions.length === 0 || isError) {
     return (
       <div className="bg-[#0f1419] rounded-lg border border-[#1c2736]/50 p-6 text-center">
         <p className="text-[#5a6a7f] text-sm">
