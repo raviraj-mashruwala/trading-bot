@@ -9,8 +9,12 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 
 from tradingbot.api.state import AppState
+from tradingbot.api.websocket import ConnectionManager
 from tradingbot.core.models import Direction, Mode
 from tradingbot.core.plan_store import PlanNotFoundError
+from tradingbot.data.kite_ticker import LiveTickManager
+from tradingbot.executor.decision_logger import DecisionLogger
+from tradingbot.executor.execution_intelligence import ExecutionIntelligence
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +63,15 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
         )
 
+        # Build execution intelligence (live tick feed + momentum scoring)
+        token_path = Path.home() / ".tradingbot" / "kite_token"
+        access_token = token_path.read_text().strip() if token_path.exists() else ""
+        ticker = LiveTickManager(
+            api_key=config.secrets.kite_api_key,
+            access_token=access_token,
+        )
+        intelligence = ExecutionIntelligence(ticker, config.execution)
+
         executor = Executor(
             broker=broker,
             plan=plan,
@@ -66,6 +79,7 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             database=state.database,
             execution_config=config.execution,
             mode=mode,
+            intelligence=intelligence,
         )
 
         state.executor_ref = executor
@@ -77,8 +91,42 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
         executor.start()
 
+        ws_mgr: ConnectionManager | None = getattr(state, "ws_manager", None)
+        last_decision_count = 0
+
         while not executor.is_done:
             executor.tick()
+
+            # Broadcast ticker health on every tick
+            if ws_mgr is not None and intelligence is not None:
+                try:
+                    health = intelligence.health
+                    await ws_mgr.broadcast_ticker_health({
+                        "status": health.status,
+                        "last_tick_at": (
+                            health.last_tick_at.isoformat()
+                            if health.last_tick_at
+                            else None
+                        ),
+                        "reconnect_count": health.reconnect_count,
+                        "gap_seconds_today": health.gap_seconds_today,
+                    })
+                except Exception:
+                    pass
+
+            # Broadcast new decisions since last tick
+            if ws_mgr is not None and state.database is not None:
+                try:
+                    dl = DecisionLogger(state.database)
+                    recent = dl.recent(limit=5)
+                    new_count = len(recent)
+                    if new_count > last_decision_count:
+                        for d in recent[: new_count - last_decision_count]:
+                            await ws_mgr.broadcast_decision(d)
+                    last_decision_count = new_count
+                except Exception:
+                    pass
+
             await asyncio.sleep(TICK_SECONDS)
 
         state.executor_status = "done"
@@ -166,8 +214,46 @@ async def execution_status(request: Request):
                     "unrealised_pnl": unrealised,
                 })
 
+    # Execution intelligence overlay
+    intel = executor._intelligence if executor is not None else None
+
+    ticker_health = {
+        "status": intel.health.status if intel else "unknown",
+        "last_tick_at": (
+            intel.health.last_tick_at.isoformat()
+            if intel and intel.health.last_tick_at
+            else None
+        ),
+        "reconnect_count": intel.health.reconnect_count if intel else 0,
+        "gap_seconds_today": intel.health.gap_seconds_today if intel else 0,
+    }
+
+    # Per-leg momentum scores
+    for pos in positions:
+        symbol = pos["symbol"]
+        ss = intel.scorer.get_state(symbol) if intel else None
+        if ss:
+            pos["momentum"] = {
+                "1m": ss.momentum_1m,
+                "5m": ss.momentum_5m,
+                "volume_ratio": ss.volume_ratio,
+                "vwap_position": ss.vwap_position,
+                "trend_alignment": ss.trend_alignment,
+            }
+
+    # Recent decision log
+    decision_log: list[dict] = []
+    if state.database is not None:
+        try:
+            dl = DecisionLogger(state.database)
+            decision_log = dl.recent(limit=20)
+        except Exception:
+            pass
+
     return {
         "status": state.executor_status,
         "mode": state.executor_mode,
         "positions": positions,
+        "ticker_health": ticker_health,
+        "decision_log": decision_log,
     }

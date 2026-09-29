@@ -43,6 +43,14 @@ class ConnectionManager:
         for ws in dead:
             self.disconnect(ws)
 
+    async def broadcast_decision(self, decision_data: dict[str, Any]) -> None:
+        """Push a decision event to all connected clients."""
+        await self.broadcast({"type": "decision", "data": decision_data})
+
+    async def broadcast_ticker_health(self, health_data: dict[str, Any]) -> None:
+        """Push a ticker health update to all connected clients."""
+        await self.broadcast({"type": "ticker_health", "data": health_data})
+
 
 async def websocket_endpoint(websocket: WebSocket, manager: ConnectionManager) -> None:
     await manager.connect(websocket)

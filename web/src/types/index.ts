@@ -115,6 +115,35 @@ export interface StepState {
 
 export type PipelineStatus = "idle" | "running" | "complete" | "failed";
 
+export interface MomentumData {
+  "1m": number;
+  "5m": number;
+  volume_ratio: number;
+  vwap_position: number;
+  trend_alignment: boolean;
+}
+
+export interface TickerHealth {
+  status: "healthy" | "reconnecting" | "degraded" | "unknown";
+  last_tick_at: string | null;
+  reconnect_count: number;
+  gap_seconds_today: number;
+}
+
+export interface ExecutionDecision {
+  id: number;
+  trade_date: string;
+  timestamp: string;
+  symbol: string;
+  decision_type: string;
+  reason: string | null;
+  momentum_snapshot: string | null;
+  candle_snapshot: string | null;
+  escalated: number;
+  llm_response: string | null;
+  outcome: string | null;
+}
+
 export interface ExecutionPosition {
   symbol: string;
   direction: Direction;
@@ -125,6 +154,18 @@ export interface ExecutionPosition {
   pnl: number;
   last_price: number;
   unrealised_pnl: number;
+  momentum?: MomentumData;
+  phase?: string;
+  last_decision?: { reason: string };
+  original_stop?: number;
+}
+
+export interface ExecutionStatusResponse {
+  status: string;
+  mode: string | null;
+  positions: ExecutionPosition[];
+  ticker_health: TickerHealth;
+  decision_log: ExecutionDecision[];
 }
 
 export interface SessionResult {

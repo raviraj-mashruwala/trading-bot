@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from tradingbot.core.broker import BrokerInterface, OrderStatus
 from tradingbot.core.config import ExecutionConfig
@@ -19,9 +20,13 @@ from tradingbot.core.models import (
     now_ist,
 )
 from tradingbot.core.risk_manager import RiskManager
-from tradingbot.executor.exit_manager import ExitDecision, ExitManager
+from tradingbot.executor.adaptive_exit_manager import ExitDecision
+from tradingbot.executor.exit_manager import ExitManager
 from tradingbot.executor.order_manager import OrderManager
 from tradingbot.executor.position_monitor import PositionMonitor
+
+if TYPE_CHECKING:
+    from tradingbot.executor.execution_intelligence import ExecutionIntelligence
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +47,7 @@ class LegState:
     skipped_reason: str | None = None
     entered_at: datetime | None = None
     realised_pnl: float = 0.0
+    waiting: bool = False
 
     def __post_init__(self) -> None:
         if self.current_stop == 0.0:
@@ -67,6 +73,7 @@ class Executor:
         mode: Mode,
         clock=now_ist,
         event_bus=None,
+        intelligence: ExecutionIntelligence | None = None,
     ) -> None:
         self.broker = broker
         self.plan = plan
@@ -76,6 +83,15 @@ class Executor:
         self.mode = mode
         self.clock = clock
         self.event_bus = event_bus
+        self._intelligence = intelligence
+
+        if intelligence is None:
+            import warnings
+            warnings.warn(
+                "Executor without intelligence is deprecated — classic mode will be removed",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
         self.orders = OrderManager(broker)
         self.monitor = PositionMonitor(broker)
@@ -106,6 +122,10 @@ class Executor:
                 "legs": [leg.to_dict() for leg in self.plan.legs],
             })
 
+        if self._intelligence is not None:
+            symbols = list({leg.symbol for leg in self.plan.legs})
+            self._intelligence.start(symbols)
+
         open_positions = self.monitor.snapshot()
 
         for leg in self.plan.legs:
@@ -124,7 +144,10 @@ class Executor:
                 state.skipped_reason = drift
                 continue
 
-            state.entry_order_id = self.orders.submit_entry(leg)
+            if self._intelligence is not None:
+                self._evaluate_entry(state, now)
+            else:
+                self._submit_entry(state)
 
     def tick(self) -> None:
         """One pass of the event loop. Safe to call as often as you like."""
@@ -149,6 +172,20 @@ class Executor:
                 continue
 
             if state.filled_quantity == 0:
+                # Re-evaluate WAIT legs through the guard on each heartbeat
+                if state.waiting and not state.cancelled:
+                    now_time = now.timetz().replace(tzinfo=None)
+                    if now_time >= state.leg.max_entry_wait or now_time >= state.leg.entry_window_end:
+                        state.skipped_reason = "Wait timeout — conditions never cleared"
+                        state.cancelled = True
+                        logger.info(
+                            "%s wait timed out at %s", state.leg.symbol, now_time,
+                        )
+                        continue
+                    if self._intelligence is not None:
+                        self._evaluate_entry(state, now)
+                        if state.waiting:
+                            continue  # still waiting, skip poll
                 self._poll_entry(state, now)
                 continue
 
@@ -162,6 +199,73 @@ class Executor:
         return all(state.is_finished for state in self.states)
 
     # ----- Entry handling ---------------------------------------------------------
+
+    def _evaluate_entry(self, state: LegState, now: datetime) -> None:
+        """Consult EntryGuard before placing an order. ENTER / WAIT / VETO."""
+        intel = self._intelligence
+        symbol_state = intel.scorer.get_state(state.leg.symbol)
+        if symbol_state is None:
+            # No candle data yet (pre-market). Submit immediately.
+            self._submit_entry(state)
+            return
+
+        price = intel.aggregator.last_price(state.leg.symbol) or state.leg.entry_price
+        verdict = intel.entry_guard.evaluate(state.leg, symbol_state, price, now)
+
+        if verdict.action == "ENTER":
+            if verdict.confidence < 0.4 and not intel.is_degraded:
+                # Gray zone: attempt LLM escalation (best-effort, async-safe)
+                try:
+                    import asyncio
+                    coro = intel.escalator.evaluate_entry(
+                        state.leg,
+                        symbol_state,
+                        intel.aggregator.get_candles(state.leg.symbol, "1min"),
+                        intel.aggregator.get_candles(state.leg.symbol, "5min"),
+                        ticker_degraded=intel.is_degraded,
+                    )
+                    try:
+                        loop = asyncio.get_running_loop()
+                        # API path: already in an async context
+                        import concurrent.futures
+                        future = asyncio.run_coroutine_threadsafe(coro, loop)
+                        result = future.result(timeout=12)
+                    except RuntimeError:
+                        # CLI path: no running loop
+                        result = asyncio.run(coro)
+
+                    if result.action == "VETO":
+                        state.skipped_reason = f"LLM veto: {result.reasoning}"
+                        state.cancelled = True
+                        logger.info(
+                            "%s vetoed by LLM: %s", state.leg.symbol, result.reasoning
+                        )
+                        return
+                    if result.action == "WAIT":
+                        state.waiting = True
+                        return
+                except Exception:
+                    logger.debug("LLM escalation skipped", exc_info=True)
+            state.waiting = False
+            self._submit_entry(state)
+
+        elif verdict.action == "VETO":
+            state.skipped_reason = verdict.reason
+            state.cancelled = True
+            logger.info(
+                "%s vetoed by EntryGuard: %s", state.leg.symbol, verdict.reason
+            )
+
+        else:  # WAIT
+            state.waiting = True
+            logger.info(
+                "%s waiting: %s (reassess in %ds)",
+                state.leg.symbol, verdict.reason, verdict.reassess_after,
+            )
+
+    def _submit_entry(self, state: LegState) -> None:
+        """Place the entry order via OrderManager."""
+        state.entry_order_id = self.orders.submit_entry(state.leg)
 
     def _poll_entry(self, state: LegState, now: datetime) -> None:
         if state.entry_order_id is None:
@@ -200,13 +304,22 @@ class Executor:
     # ----- Open position handling -------------------------------------------------
 
     def _manage_open_leg(self, state: LegState, now: datetime) -> None:
+        if self._intelligence is not None:
+            self._manage_open_leg_smart(state, now)
+        else:
+            self._manage_open_leg_classic(state, now)
+
+    def _manage_open_leg_classic(self, state: LegState, now: datetime) -> None:
+        """Original exit logic via ExitManager (no intelligence)."""
+        from tradingbot.executor.exit_manager import ExitDecision as ClassicDecision
+
         price = self.broker.get_ltp(state.leg.symbol)
         decision = self.exits.decide(state, price, now)
 
-        if decision is ExitDecision.HOLD:
+        if decision is ClassicDecision.HOLD:
             return
 
-        if decision is ExitDecision.BOOK_TARGET_1:
+        if decision is ClassicDecision.BOOK_TARGET_1:
             half = max(1, state.filled_quantity // 2)
             self._close(state, half, price, reason="target_1", now=now)
             state.target_1_booked = True
@@ -215,10 +328,71 @@ class Executor:
             return
 
         reason = {
+            ClassicDecision.BOOK_TARGET_2: "target_2",
+            ClassicDecision.STOP_HIT: "stop_hit",
+            ClassicDecision.SQUARE_OFF: "square_off",
+        }[decision]
+        self._close(state, state.filled_quantity, price, reason=reason, now=now)
+
+    def _manage_open_leg_smart(self, state: LegState, now: datetime) -> None:
+        """Intelligence-driven exit logic via AdaptiveExitManager."""
+        intel = self._intelligence
+        symbol = state.leg.symbol
+
+        # Price from tick stream first, REST fallback
+        price = intel.aggregator.last_price(symbol)
+        if price is None:
+            price = self.broker.get_ltp(symbol)
+
+        symbol_state = intel.scorer.get_state(symbol)
+        if symbol_state is None:
+            # No candle data — fall back to classic exit rules
+            self._manage_open_leg_classic(state, now)
+            return
+
+        candles_5m = intel.aggregator.get_candles(symbol, "5min")
+        candles_1m = intel.aggregator.get_candles(symbol, "1min")
+
+        decision = intel.adaptive_exit.decide(
+            state, symbol_state, price, now,
+            candles_5m=candles_5m, candles_1m=candles_1m,
+        )
+
+        if decision is ExitDecision.HOLD:
+            return
+
+        if decision is ExitDecision.BOOK_TARGET_1:
+            half = max(1, state.filled_quantity // 2)
+            self._close(state, half, price, reason="target_1", now=now)
+            state.target_1_booked = True
+            # Use adaptive trail instead of old breakeven trail
+            trail = intel.adaptive_exit.compute_trail_price(
+                state, symbol_state, candles_5m or [], candles_1m or [],
+            )
+            if trail is not None:
+                state.current_stop = trail
+            else:
+                state.current_stop = state.entry_fill_price  # breakeven floor
+            self._replace_stop(state)
+            return
+
+        if decision is ExitDecision.TRAIL_STOP:
+            new_stop = intel.adaptive_exit.compute_trail_price(
+                state, symbol_state, candles_5m or [], candles_1m or [],
+            )
+            if new_stop is not None and new_stop != state.current_stop:
+                state.current_stop = new_stop
+                self._replace_stop(state)
+            return
+
+        reason_map = {
             ExitDecision.BOOK_TARGET_2: "target_2",
             ExitDecision.STOP_HIT: "stop_hit",
             ExitDecision.SQUARE_OFF: "square_off",
-        }[decision]
+            ExitDecision.MOMENTUM_EXIT: "momentum_exit",
+            ExitDecision.PATTERN_EXIT: "pattern_exit",
+        }
+        reason = reason_map.get(decision, decision.value)
         self._close(state, state.filled_quantity, price, reason=reason, now=now)
 
     def _replace_stop(self, state: LegState) -> None:

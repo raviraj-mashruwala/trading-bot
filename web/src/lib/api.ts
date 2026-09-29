@@ -1,6 +1,6 @@
 import type {
   HealthStatus, ConfigResponse, Provider, PlanSummary, TradePlan,
-  Trade, TradeStats, AnalysisStatus, ExecutionPosition,
+  Trade, TradeStats, AnalysisStatus, ExecutionStatusResponse,
   KiteAuthStatus, AnalysisRun, Setup, DailyPlan, SyncStatus,
 } from "@/types";
 
@@ -46,7 +46,7 @@ export const api = {
       tradeDate ? { trade_date: tradeDate } : undefined,
     ),
   cancelAnalysis: () => post<{ status: string }>("/api/analyze/cancel"),
-  getExecutionStatus: () => get<{ status: string; mode: string | null; positions: ExecutionPosition[] }>("/api/execute/status"),
+  getExecutionStatus: () => get<ExecutionStatusResponse>("/api/execute/status"),
   postExecute: (mode?: string, date?: string) => {
     const body: Record<string, string> = {};
     if (mode) body.mode = mode;

@@ -39,6 +39,9 @@ class AppState:
     # Kite authentication (initialised lazily)
     kite_auth: object | None = None
 
+    # WebSocket manager (set by app.py after construction)
+    ws_manager: object | None = None
+
     # Data sync
     sync_status: str = "idle"
     sync_task: asyncio.Task | None = None
