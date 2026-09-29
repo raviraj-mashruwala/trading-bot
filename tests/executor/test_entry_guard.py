@@ -100,7 +100,7 @@ def test_gray_zone_low_confidence():
     # Mild positive momentum, nothing disqualifying, nothing strong
     v = guard.evaluate(leg, _state(momentum_1m=5.0, momentum_5m=8.0, volume_ratio=0.8, trend_alignment=True, body_dominance=0.4), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "ENTER"
-    assert v.confidence < 0.5
+    assert v.confidence < 0.4
 
 
 def test_verdict_is_frozen():

@@ -78,5 +78,6 @@ class EntryGuard:
             return EntryVerdict("ENTER", "Momentum aligned, volume adequate", 0.8, 0)
 
         # Rule 9: gray zone — nothing disqualifying but nothing strong
-        confidence = 0.3 + min(0.2, state.volume_ratio * 0.1) + min(0.1, state.body_dominance * 0.1)
+        # Capped at 0.39 so confidence < 0.4 triggers LLM escalation downstream
+        confidence = 0.2 + min(0.1, state.volume_ratio * 0.05) + min(0.09, state.body_dominance * 0.05)
         return EntryVerdict("ENTER", "No disqualifying signal, marginal conditions", confidence, 0)
