@@ -143,6 +143,94 @@ def test_hold_default():
     assert d == ExitDecision.HOLD
 
 
+def test_momentum_peak_not_overwritten_by_reversal():
+    """F1: abs() peak tracking bug — violent reversal should not clobber peak."""
+    mgr = AdaptiveExitManager(square_off_time=time(15, 15))
+    ls = FakeLegState(entry_fill_price=2450.0)
+    # Peak momentum at +55 during uptrend
+    mgr.track_peak_momentum("RELIANCE", 55.0)
+    # Violent reversal — momentum swings to -60
+    mgr.track_peak_momentum("RELIANCE", -60.0)
+    # Momentum exit should still fire for LONG (peak_high was 55 > 40)
+    st = _state(momentum_5m=-25.0, momentum_1m=-45.0, volume_ratio=1.3)
+    d = mgr.decide(ls, st, 2465.0, datetime(2026, 9, 29, 10, 30))
+    assert d == ExitDecision.MOMENTUM_EXIT
+
+
+def test_momentum_exit_short():
+    """F1 companion: SHORT momentum exit uses negative peak correctly."""
+    mgr = AdaptiveExitManager(square_off_time=time(15, 15))
+    ls = FakeLegState(direction="SHORT", entry_fill_price=2450.0, stop=2470.0,
+                      t1=2430.0, t2=2410.0)
+    # Peak negative momentum at -55 during downtrend
+    mgr.track_peak_momentum("RELIANCE", -55.0)
+    # Then positive spike — should not clobber negative peak
+    mgr.track_peak_momentum("RELIANCE", 50.0)
+    # Momentum reversal for SHORT
+    st = _state(momentum_5m=25.0, momentum_1m=45.0, volume_ratio=1.3)
+    d = mgr.decide(ls, st, 2435.0, datetime(2026, 9, 29, 10, 30))
+    assert d == ExitDecision.MOMENTUM_EXIT
+
+
+def test_trail_stop_returned_by_decide():
+    """F2: decide() should return TRAIL_STOP when trail tightens post-T1."""
+    mgr = AdaptiveExitManager(square_off_time=time(15, 15))
+    # Post-T1, current stop at breakeven 2450
+    ls = FakeLegState(entry_fill_price=2450.0, target_1_booked=True,
+                      stop=2450.0, t2=2490.0)
+    candles_5m = [
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 15), 2460, 2470, 2458, 2468, 5000, True),
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 20), 2468, 2475, 2462, 2472, 5000, True),
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 25), 2472, 2480, 2465, 2478, 5000, True),
+    ]
+    st = _state()
+    d = mgr.decide(ls, st, 2475.0, datetime(2026, 9, 29, 10, 30),
+                   candles_5m=candles_5m, candles_1m=[])
+    assert d == ExitDecision.TRAIL_STOP
+
+
+def test_trail_phase3_near_t2():
+    """F3: Phase 3 — price within 0.3% of T2, 1min candles tighten trail."""
+    mgr = AdaptiveExitManager(square_off_time=time(15, 15))
+    # T2 = 2490. Price at 2488 is ~0.08% away (< 0.3%)
+    ls = FakeLegState(entry_fill_price=2450.0, target_1_booked=True,
+                      stop=2460.0, t2=2490.0)
+    candles_1m = [
+        LiveCandle("RELIANCE", "1min", datetime(2026, 9, 29, 10, 28), 2485, 2489, 2483, 2487, 1000, True),
+        LiveCandle("RELIANCE", "1min", datetime(2026, 9, 29, 10, 29), 2487, 2490, 2485, 2488, 1000, True),
+    ]
+    candles_5m = [
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 15), 2460, 2470, 2455, 2468, 5000, True),
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 20), 2468, 2475, 2460, 2472, 5000, True),
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 25), 2472, 2480, 2465, 2478, 5000, True),
+    ]
+    trail = mgr.compute_trail_price(ls, _state(), candles_5m, candles_1m)
+    # Phase 3: min low of last 2 1min candles = min(2483, 2485) = 2483
+    # Floor = max(2483, 2450) = 2483; never-widen = max(2483, 2460) = 2483
+    assert trail == 2483.0
+
+
+def test_trail_phase3_boundary_beyond_0_3_pct():
+    """F3: Boundary — price >0.3% from T2 should NOT trigger phase 3, falls to phase 2."""
+    mgr = AdaptiveExitManager(square_off_time=time(15, 15))
+    # T2 = 2490. abs(2482 - 2490)/2490*100 = 0.321% > 0.3 — phase 3 skipped
+    ls = FakeLegState(entry_fill_price=2450.0, target_1_booked=True,
+                      stop=2455.0, t2=2490.0)
+    candles_1m = [
+        LiveCandle("RELIANCE", "1min", datetime(2026, 9, 29, 10, 28), 2480, 2484, 2478, 2481, 1000, True),
+        LiveCandle("RELIANCE", "1min", datetime(2026, 9, 29, 10, 29), 2481, 2483, 2479, 2482.0, 1000, True),
+    ]
+    candles_5m = [
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 15), 2460, 2470, 2458, 2468, 5000, True),
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 20), 2468, 2475, 2462, 2472, 5000, True),
+        LiveCandle("RELIANCE", "5min", datetime(2026, 9, 29, 10, 25), 2472, 2480, 2465, 2478, 5000, True),
+    ]
+    trail = mgr.compute_trail_price(ls, _state(), candles_5m, candles_1m)
+    # Should fall to phase 2: min low of 5m[-3:] = min(2458,2462,2465) = 2458
+    # Floor = max(2458, 2450) = 2458; never-widen = max(2458, 2455) = 2458
+    assert trail == 2458.0
+
+
 def test_exit_decision_has_new_variants():
     assert hasattr(ExitDecision, "TRAIL_STOP")
     assert hasattr(ExitDecision, "MOMENTUM_EXIT")

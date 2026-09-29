@@ -33,16 +33,26 @@ class AdaptiveExitManager:
 
     def __init__(self, square_off_time: time) -> None:
         self._square_off_time = square_off_time
-        self._peak_momentum: dict[str, float] = defaultdict(float)
+        self._peak_momentum_high: dict[str, float] = defaultdict(float)
+        self._peak_momentum_low: dict[str, float] = defaultdict(float)
 
     def track_peak_momentum(self, symbol: str, momentum_5m: float) -> None:
-        """Record high-water mark for momentum exit detection."""
-        current = self._peak_momentum[symbol]
-        if abs(momentum_5m) > abs(current):
-            self._peak_momentum[symbol] = momentum_5m
+        """Record high-water marks for momentum exit detection.
+
+        Tracks max positive and min negative separately so a violent
+        reversal (-60) cannot clobber a prior bullish peak (+55).
+        """
+        if momentum_5m > 0:
+            self._peak_momentum_high[symbol] = max(
+                self._peak_momentum_high.get(symbol, 0.0), momentum_5m)
+        if momentum_5m < 0:
+            self._peak_momentum_low[symbol] = min(
+                self._peak_momentum_low.get(symbol, 0.0), momentum_5m)
 
     def decide(self, state, symbol_state: SymbolState,
-               price: float, now: datetime) -> ExitDecision:
+               price: float, now: datetime, *,
+               candles_5m: list[LiveCandle] | None = None,
+               candles_1m: list[LiveCandle] | None = None) -> ExitDecision:
         """Evaluate exit priority chain, return highest-priority signal."""
         now_time = now.time() if isinstance(now, datetime) else now
         direction = state.leg.direction.value
@@ -79,6 +89,16 @@ class AdaptiveExitManager:
                 return ExitDecision.BOOK_TARGET_1
             if not is_long and price <= state.leg.target_1:
                 return ExitDecision.BOOK_TARGET_1
+
+        # P7: trailing stop tightened
+        if state.target_1_booked and candles_5m is not None:
+            trail = self.compute_trail_price(
+                state, symbol_state, candles_5m or [], candles_1m or [])
+            if trail is not None and trail != state.current_stop:
+                if is_long and trail > state.current_stop:
+                    return ExitDecision.TRAIL_STOP
+                if not is_long and trail < state.current_stop:
+                    return ExitDecision.TRAIL_STOP
 
         return ExitDecision.HOLD
 
@@ -133,14 +153,15 @@ class AdaptiveExitManager:
                              price: float, is_long: bool) -> bool:
         """Momentum reversal: profitable + peak >40 + now flipped + volume."""
         symbol = ss.symbol
-        peak = self._peak_momentum.get(symbol, 0.0)
         profitable = (price > state.entry_fill_price) if is_long else (price < state.entry_fill_price)
         if not profitable:
             return False
         if is_long:
-            return (peak > 40 and ss.momentum_5m < -20
+            peak_high = self._peak_momentum_high.get(symbol, 0.0)
+            return (peak_high > 40 and ss.momentum_5m < -20
                     and ss.momentum_1m < -40 and ss.volume_ratio > 1.0)
-        return (peak < -40 and ss.momentum_5m > 20
+        peak_low = self._peak_momentum_low.get(symbol, 0.0)
+        return (peak_low < -40 and ss.momentum_5m > 20
                 and ss.momentum_1m > 40 and ss.volume_ratio > 1.0)
 
     def _check_pattern_exit(self, state, ss: SymbolState,
