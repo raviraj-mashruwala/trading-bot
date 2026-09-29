@@ -418,6 +418,9 @@ def test_fetch_indicators_returns_empty_on_empty_df(pipeline_deps):
     indicators, price_action = p._fetch_indicators_for_symbol("TCS")
     assert indicators == {}
     assert "TCS" in price_action
+    assert "insufficient" in price_action.lower() or "failed" in price_action.lower(), (
+        f"Fallback message must say why it failed, got: {price_action!r}"
+    )
 
 
 def test_fetch_indicators_price_action_contains_key_levels(pipeline_deps):
