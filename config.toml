@@ -1,5 +1,5 @@
 [general]
-mode = "paper"
+mode = "live"
 capital = 400000
 log_level = "INFO"
 
@@ -55,7 +55,7 @@ sync_minute = 0
 rate_limit_per_sec = 3
 
 [execution]
-mode = "paper"
+mode = "live"
 entry_slippage_pct = 0.05
 square_off_time = "15:10"
 connection_timeout_sec = 30
