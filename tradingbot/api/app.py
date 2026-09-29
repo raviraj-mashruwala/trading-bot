@@ -6,7 +6,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from tradingbot.api.state import AppState
@@ -68,7 +68,7 @@ def create_app(
     )
 
     @app.websocket("/ws")
-    async def ws_endpoint(websocket):
+    async def ws_endpoint(websocket: WebSocket):
         await websocket_endpoint(websocket, manager)
 
     from tradingbot.api.health_routes import router as health_router
