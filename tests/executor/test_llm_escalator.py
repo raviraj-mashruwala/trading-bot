@@ -43,14 +43,14 @@ def _candle(minute, o, c, vol=1000):
 def mock_anthropic():
     with patch("tradingbot.executor.llm_escalator.anthropic") as m:
         client = MagicMock()
-        m.Anthropic.return_value = client
+        m.AsyncAnthropic.return_value = client
         response = MagicMock()
         response.content = [MagicMock(text=json.dumps({
             "action": "WAIT",
             "confidence": 0.6,
             "reasoning": "Volume declining suggests exhaustion but no reversal candle yet"
         }))]
-        client.messages.create.return_value = response
+        client.messages.create = AsyncMock(return_value=response)
         yield client
 
 
@@ -83,10 +83,10 @@ async def test_max_escalations_enforced(mock_anthropic):
 async def test_malformed_response_triggers_fallback():
     with patch("tradingbot.executor.llm_escalator.anthropic") as m:
         client = MagicMock()
-        m.Anthropic.return_value = client
+        m.AsyncAnthropic.return_value = client
         response = MagicMock()
         response.content = [MagicMock(text="not json at all")]
-        client.messages.create.return_value = response
+        client.messages.create = AsyncMock(return_value=response)
         esc = LLMEscalator()
         result = await esc.evaluate_entry(FakeLeg(), _state(), [], [])
         assert result.fallback_used
@@ -97,8 +97,8 @@ async def test_malformed_response_triggers_fallback():
 async def test_api_exception_triggers_fallback():
     with patch("tradingbot.executor.llm_escalator.anthropic") as m:
         client = MagicMock()
-        m.Anthropic.return_value = client
-        client.messages.create.side_effect = Exception("API down")
+        m.AsyncAnthropic.return_value = client
+        client.messages.create = AsyncMock(side_effect=Exception("API down"))
         esc = LLMEscalator()
         result = await esc.evaluate_entry(FakeLeg(), _state(), [], [])
         assert result.fallback_used

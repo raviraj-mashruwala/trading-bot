@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from dataclasses import dataclass
@@ -31,15 +32,15 @@ class LLMEscalator:
         self._max = max_escalations
         self._timeout = timeout
         self._count = 0
-        self._client: anthropic.Anthropic | None = None
+        self._client: anthropic.AsyncAnthropic | None = None
 
     @property
     def escalation_count(self) -> int:
         return self._count
 
-    def _get_client(self) -> anthropic.Anthropic:
+    def _get_client(self) -> anthropic.AsyncAnthropic:
         if self._client is None:
-            self._client = anthropic.Anthropic()
+            self._client = anthropic.AsyncAnthropic()
         return self._client
 
     async def evaluate_entry(self, leg, state: SymbolState,
@@ -63,10 +64,13 @@ class LLMEscalator:
                     fallback: str) -> EscalationResult:
         try:
             client = self._get_client()
-            response = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=200,
-                messages=[{"role": "user", "content": prompt}],
+            response = await asyncio.wait_for(
+                client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=200,
+                    messages=[{"role": "user", "content": prompt}],
+                ),
+                timeout=self._timeout,
             )
             text = response.content[0].text
             data = json.loads(text)
@@ -80,6 +84,9 @@ class LLMEscalator:
                 confidence=float(data.get("confidence", 0.5)),
                 fallback_used=False,
             )
+        except asyncio.TimeoutError:
+            logger.warning("LLM escalation timed out after %ss", self._timeout)
+            return EscalationResult(fallback, "LLM timeout", 0.0, True)
         except Exception:
             logger.warning("LLM escalation failed, using fallback", exc_info=True)
             return EscalationResult(fallback, "LLM unavailable", 0.0, True)

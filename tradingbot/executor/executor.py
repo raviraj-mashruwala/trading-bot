@@ -214,30 +214,36 @@ class Executor:
 
         if verdict.action == "ENTER":
             if verdict.confidence < 0.4 and not intel.is_degraded:
-                # Gray zone: attempt LLM escalation (best-effort, sync-safe)
+                # Gray zone: attempt LLM escalation (best-effort, async-safe)
                 try:
                     import asyncio
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        pass  # Async context handles escalation natively
-                    else:
-                        coro = intel.escalator.evaluate_entry(
-                            state.leg,
-                            symbol_state,
-                            intel.aggregator.get_candles(state.leg.symbol, "1min"),
-                            intel.aggregator.get_candles(state.leg.symbol, "5min"),
+                    coro = intel.escalator.evaluate_entry(
+                        state.leg,
+                        symbol_state,
+                        intel.aggregator.get_candles(state.leg.symbol, "1min"),
+                        intel.aggregator.get_candles(state.leg.symbol, "5min"),
+                        ticker_degraded=intel.is_degraded,
+                    )
+                    try:
+                        loop = asyncio.get_running_loop()
+                        # API path: already in an async context
+                        import concurrent.futures
+                        future = asyncio.run_coroutine_threadsafe(coro, loop)
+                        result = future.result(timeout=12)
+                    except RuntimeError:
+                        # CLI path: no running loop
+                        result = asyncio.run(coro)
+
+                    if result.action == "VETO":
+                        state.skipped_reason = f"LLM veto: {result.reasoning}"
+                        state.cancelled = True
+                        logger.info(
+                            "%s vetoed by LLM: %s", state.leg.symbol, result.reasoning
                         )
-                        result = loop.run_until_complete(coro)
-                        if result.action == "VETO":
-                            state.skipped_reason = f"LLM veto: {result.reasoning}"
-                            state.cancelled = True
-                            logger.info(
-                                "%s vetoed by LLM: %s", state.leg.symbol, result.reasoning
-                            )
-                            return
-                        if result.action == "WAIT":
-                            state.waiting = True
-                            return
+                        return
+                    if result.action == "WAIT":
+                        state.waiting = True
+                        return
                 except Exception:
                     logger.debug("LLM escalation skipped", exc_info=True)
             state.waiting = False
