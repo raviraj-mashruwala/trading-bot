@@ -193,6 +193,37 @@ def test_price_structure_above_50_for_uptrend():
     assert result[0]["factor_scores"]["price_structure"] > 50.0
 
 
+def test_candlestick_pattern_not_always_neutral():
+    """candlestick_pattern must use real score, not hardcoded 50.0."""
+    cache = MagicMock()
+    cache.get_all.return_value = [
+        {"token": 1, "symbol": "TCS", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05},
+    ]
+    store = MagicMock()
+    # Build df where last 3 candles form a bullish marubozu
+    n = 30
+    close = np.arange(480.0, 480.0 + n)
+    opens = close.copy()
+    highs = close + 1
+    lows = close - 1
+    # Last candle: bullish marubozu (open=low, close=high, no wicks)
+    opens[-1] = close[-2]        # open at prior close
+    highs[-1] = opens[-1] + 15   # high = close (no upper wick)
+    lows[-1] = opens[-1]         # low = open (no lower wick)
+    close[-1] = highs[-1]
+    df = pd.DataFrame({
+        "open": opens, "high": highs, "low": lows,
+        "close": close, "volume": np.full(n, 600000),
+    })
+    store.read.return_value = df
+
+    pipeline = _make_pipeline(cache, store)
+    result = pipeline._build_stock_metrics()
+    score = result[0]["factor_scores"]["candlestick_pattern"]
+    # Bullish marubozu → score should be > 50 (not the old hardcoded 50.0)
+    assert score > 50.0
+
+
 def test_sector_momentum_populated_for_all_stocks():
     """sector_momentum must not be the default 50.0 when sector has multiple stocks."""
     cache = MagicMock()
