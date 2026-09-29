@@ -37,12 +37,6 @@ tradingbot backtest --symbol TCS --days 90
 Going live is a deliberate act: run `tradingbot auth` to authorise Kite Connect,
 then change `mode = "live"` in `config.toml`.
 
-## Before you risk real money
-
-Paper trade for at least 30 sessions and check that win rate is above 50%, average
-reward:risk is above 1.5, and max drawdown stayed under 5% of capital. The bot will
-not promote itself to live trading.
-
 ## Risk controls
 
 - 1% of capital risked per trade, 2% daily loss kill switch
