@@ -67,21 +67,76 @@ class DataSync:
     def full_sync(
         self, daily_lookback: int = 365, intraday_lookback: int = 60,
     ) -> dict[str, int]:
-        """Run complete sync: instruments -> daily candles -> intraday candles."""
+        """Run complete sync: instruments -> index candles -> equity candles."""
         inst_count = self.sync_instruments()
         all_instruments = self._instruments.get_all()
         symbols = [i["symbol"] for i in all_instruments]
 
+        index_candles = self.sync_index_candles(lookback_days=daily_lookback)
         daily = self.sync_daily_candles(symbols, lookback_days=daily_lookback)
         intraday = self.sync_intraday_candles(
             symbols, interval="15minute", lookback_days=intraday_lookback,
         )
         return {
             "instruments": inst_count,
+            "index_candles": index_candles,
             "daily_candles": daily,
             "intraday_candles": intraday,
             "symbols": len(symbols),
         }
+
+    # Well-known Kite instrument tokens for NSE indices (stable, do not change)
+    _INDEX_INSTRUMENTS: dict[str, int] = {
+        "NIFTY 50":   256265,
+        "NIFTY BANK": 260105,
+        "INDIA VIX":  264969,
+    }
+
+    def sync_index_candles(self, lookback_days: int = 365) -> int:
+        """Sync daily candles for Nifty50, NiftyBank and India VIX.
+
+        Uses well-known Kite instrument tokens. These are not in the equity
+        InstrumentCache, so they must be fetched separately.
+        """
+        total = 0
+        for symbol, token in self._INDEX_INSTRUMENTS.items():
+            try:
+                total += self._sync_token(symbol, token, "day", lookback_days)
+            except Exception as exc:
+                log.warning("Index candle sync failed for %s: %s", symbol, exc)
+        return total
+
+    def _sync_token(
+        self, symbol: str, token: int, interval: str, lookback_days: int
+    ) -> int:
+        """Fetch and upsert candles for a known instrument token."""
+        from datetime import date as date_type
+
+        max_days = KITE_MAX_DAYS.get(interval, 365)
+        days = min(lookback_days, max_days)
+        to_date = date_type.today()
+        from_date = to_date - timedelta(days=days)
+        try:
+            raw = self._client.fetch_historical(token, interval, from_date, to_date)
+        except Exception as exc:
+            log.warning("fetch_historical failed for %s token=%d: %s", symbol, token, exc)
+            return 0
+        if not raw:
+            return 0
+        candles = [
+            {
+                "date": r["date"] if hasattr(r["date"], "isoformat") else r["date"],
+                "open": float(r["open"]),
+                "high": float(r["high"]),
+                "low": float(r["low"]),
+                "close": float(r["close"]),
+                "volume": int(r.get("volume", 0)),
+            }
+            for r in raw
+        ]
+        count = self._candles.upsert(symbol, interval, candles)
+        log.info("Synced %d %s candles for %s", count, interval, symbol)
+        return count
 
     def deep_fetch(self, symbols: list[str]) -> int:
         """Fetch 5-minute (100 days) and 1-minute (5 days) candles."""

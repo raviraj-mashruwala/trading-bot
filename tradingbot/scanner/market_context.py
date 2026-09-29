@@ -1,19 +1,23 @@
 """Macro backdrop for the scanner: index trend, volatility, institutional flows.
 
-The NSE JSON endpoints require a browser-like session: fetch the homepage first
-so the server sets its cookies, then call the API with those cookies attached.
+Index and VIX data are read from the local CandleStore (synced via DataSync).
+FII/DII institutional flow data is fetched from the NSE JSON API via httpx.
 """
 
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timedelta
+from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
-import yfinance as yf
 
 from tradingbot.core.models import MarketContext, MarketRegime
 
 logger = logging.getLogger(__name__)
+
+IST = ZoneInfo("Asia/Kolkata")
 
 NSE_HOME = "https://www.nseindia.com"
 NSE_FII_DII_URL = "https://www.nseindia.com/api/fiidiiTradeReact"
@@ -29,18 +33,29 @@ BROWSER_HEADERS = {
 
 VIX_VOLATILE_THRESHOLD = 20.0
 VIX_LOW_THRESHOLD = 11.0
+VIX_DEFAULT = 15.0
+INDEX_LOOKBACK_DAYS = 120
 
 
 class MarketContextFetcher:
-    """Assembles the MarketContext handed to the scanner LLM call."""
+    """Assembles the MarketContext handed to the scanner LLM call.
 
-    def __init__(self, http_client: httpx.Client | None = None) -> None:
+    Index and VIX data come from CandleStore (no yfinance dependency).
+    FII/DII data comes from the NSE public JSON API.
+    """
+
+    def __init__(
+        self,
+        http_client: httpx.Client | None = None,
+        candle_store: Any = None,
+    ) -> None:
         self.http_client = http_client or httpx.Client(headers=BROWSER_HEADERS, timeout=10.0)
+        self._candles = candle_store
 
     def fetch(self) -> MarketContext:
         fii_net, dii_net = self._fetch_fii_dii()
-        nifty_level, above_sma20, above_sma50 = self._fetch_index_trend("^NSEI")
-        _, bank_above_sma20, bank_above_sma50 = self._fetch_index_trend("^NSEBANK")
+        nifty_level, above_sma20, above_sma50 = self._fetch_index_trend("NIFTY 50")
+        _, bank_above_sma20, bank_above_sma50 = self._fetch_index_trend("NIFTY BANK")
         vix = self._fetch_vix()
 
         return MarketContext(
@@ -81,6 +96,46 @@ class MarketContextFetcher:
             return "bearish"
         return "mixed"
 
+    def _fetch_index_trend(self, symbol: str) -> tuple[float, bool, bool]:
+        """Return (last level, above SMA20, above SMA50) from CandleStore.
+
+        Returns (0.0, False, False) if candle_store is not injected or data
+        is unavailable — pipeline degrades to TRENDING_DOWN regime safely.
+        """
+        if self._candles is None:
+            logger.warning("No candle_store injected — index trend for %s unavailable", symbol)
+            return 0.0, False, False
+        try:
+            from_dt = datetime.now(tz=IST) - timedelta(days=INDEX_LOOKBACK_DAYS)
+            df = self._candles.read(symbol, "day", from_dt, datetime.now(tz=IST))
+            if df.empty or len(df) < 50:
+                logger.warning("Insufficient candle data for %s (%d rows)", symbol, len(df))
+                return 0.0, False, False
+            closes = df["close"]
+            last = float(closes.iloc[-1])
+            sma20 = float(closes.rolling(20).mean().iloc[-1])
+            sma50 = float(closes.rolling(50).mean().iloc[-1])
+            return last, last > sma20, last > sma50
+        except Exception as exc:
+            logger.warning("Index trend fetch failed for %s: %s", symbol, exc)
+            return 0.0, False, False
+
+    def _fetch_vix(self) -> float:
+        """Return India VIX last close from CandleStore. Defaults to 15.0 on failure."""
+        if self._candles is None:
+            logger.warning("No candle_store injected — VIX unavailable, defaulting to %.1f", VIX_DEFAULT)
+            return VIX_DEFAULT
+        try:
+            from_dt = datetime.now(tz=IST) - timedelta(days=10)
+            df = self._candles.read("INDIA VIX", "day", from_dt, datetime.now(tz=IST))
+            if df.empty:
+                logger.warning("No VIX candle data, defaulting to %.1f", VIX_DEFAULT)
+                return VIX_DEFAULT
+            return float(df["close"].iloc[-1])
+        except Exception as exc:
+            logger.warning("VIX fetch failed, defaulting to %.1f: %s", VIX_DEFAULT, exc)
+            return VIX_DEFAULT
+
     def _fetch_fii_dii(self) -> tuple[float, float]:
         """Return (FII net, DII net) in crore. Zeros when NSE is unreachable."""
         try:
@@ -88,7 +143,7 @@ class MarketContextFetcher:
             response = self.http_client.get(NSE_FII_DII_URL, headers=BROWSER_HEADERS)
             response.raise_for_status()
             rows = response.json()
-        except Exception as exc:  # noqa: BLE001 - macro data is nice to have, not required
+        except Exception as exc:  # noqa: BLE001
             logger.warning("FII/DII fetch failed, defaulting to zero: %s", exc)
             return 0.0, 0.0
 
@@ -104,28 +159,3 @@ class MarketContextFetcher:
             elif "DII" in category:
                 dii_net = net
         return fii_net, dii_net
-
-    @staticmethod
-    def _fetch_index_trend(ticker: str) -> tuple[float, bool, bool]:
-        """Return (last level, above 20 day SMA, above 50 day SMA)."""
-        try:
-            history = yf.Ticker(ticker).history(period="120d", interval="1d")
-            closes = history["Close"]
-            last = float(closes.iloc[-1])
-            return (
-                last,
-                last > float(closes.rolling(20).mean().iloc[-1]),
-                last > float(closes.rolling(50).mean().iloc[-1]),
-            )
-        except Exception as exc:  # noqa: BLE001 - fall back to a neutral reading
-            logger.warning("index trend fetch failed for %s: %s", ticker, exc)
-            return 0.0, False, False
-
-    @staticmethod
-    def _fetch_vix() -> float:
-        try:
-            history = yf.Ticker("^INDIAVIX").history(period="5d", interval="1d")
-            return float(history["Close"].iloc[-1])
-        except Exception as exc:  # noqa: BLE001 - a mid-range default keeps regime sane
-            logger.warning("VIX fetch failed, defaulting to 15.0: %s", exc)
-            return 15.0

@@ -91,3 +91,76 @@ def test_sync_handles_fetch_exception(components):
     client.fetch_historical.side_effect = ConnectionError("network down")
     count = sync.sync_daily_candles(["RELIANCE"])
     assert count == 0
+
+
+# ── Index candle sync tests ───────────────────────────────────────────────────
+
+def test_sync_index_candles_calls_fetch_historical_for_each_index(components):
+    """sync_index_candles must fetch NIFTY 50, NIFTY BANK, INDIA VIX."""
+    sync, client, _, _ = components
+    from tradingbot.data.data_sync import DataSync
+
+    client.fetch_historical.return_value = [
+        {"date": datetime(2026, 9, 26, tzinfo=IST),
+         "open": 24000, "high": 24100, "low": 23900, "close": 24050, "volume": 0},
+    ]
+    count = sync.sync_index_candles(lookback_days=30)
+
+    tokens_called = {c.args[0] for c in client.fetch_historical.call_args_list}
+    assert DataSync._INDEX_INSTRUMENTS["NIFTY 50"] in tokens_called
+    assert DataSync._INDEX_INSTRUMENTS["NIFTY BANK"] in tokens_called
+    assert DataSync._INDEX_INSTRUMENTS["INDIA VIX"] in tokens_called
+    assert count == 3  # 1 candle × 3 indices
+
+
+def test_sync_index_candles_stored_in_candle_store(components):
+    """After sync, CandleStore must have candle rows for NIFTY 50."""
+    sync, client, _, store = components
+    from datetime import timedelta
+    from zoneinfo import ZoneInfo
+
+    IST2 = ZoneInfo("Asia/Kolkata")
+    client.fetch_historical.return_value = [
+        {"date": datetime(2026, 9, 26, tzinfo=IST2),
+         "open": 24000, "high": 24100, "low": 23900, "close": 24050, "volume": 0},
+    ]
+    sync.sync_index_candles(lookback_days=30)
+
+    df = store.read(
+        "NIFTY 50", "day",
+        datetime(2026, 9, 25, tzinfo=IST2),
+        datetime(2026, 9, 27, tzinfo=IST2),
+    )
+    assert len(df) == 1
+    assert float(df["close"].iloc[0]) == pytest.approx(24050.0)
+
+
+def test_sync_index_candles_failure_does_not_crash(components):
+    """fetch_historical failure for one index must not abort others."""
+    sync, client, _, _ = components
+    from tradingbot.data.data_sync import DataSync
+
+    call_count = [0]
+    def side_effect(token, *args, **kwargs):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            raise ConnectionError("network down")
+        return [{"date": datetime(2026, 9, 26, tzinfo=IST),
+                 "open": 24000, "high": 24100, "low": 23900, "close": 24050, "volume": 0}]
+
+    client.fetch_historical.side_effect = side_effect
+    count = sync.sync_index_candles(lookback_days=30)
+    # 1 failed + 2 succeeded × 1 candle each
+    assert count == 2
+
+
+def test_full_sync_includes_index_candles(components):
+    """full_sync result dict must include index_candles key."""
+    sync, client, cache, _ = components
+    client.fetch_historical.return_value = [
+        {"date": datetime(2026, 9, 26, tzinfo=IST),
+         "open": 24000, "high": 24100, "low": 23900, "close": 24050, "volume": 0},
+    ]
+    result = sync.full_sync(daily_lookback=30, intraday_lookback=5)
+    assert "index_candles" in result
+    assert result["index_candles"] >= 0

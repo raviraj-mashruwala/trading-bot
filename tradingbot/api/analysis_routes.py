@@ -79,7 +79,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             event_bus=state.event_bus,
             capital=config.general.capital,
             instrument_cache=instrument_cache,
-            context_fetcher=MarketContextFetcher(),
+            context_fetcher=MarketContextFetcher(candle_store=candle_store),
             lookback_days=config.backtest.lookback_days,
         )
 
