@@ -80,6 +80,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             capital=config.general.capital,
             instrument_cache=instrument_cache,
             context_fetcher=MarketContextFetcher(),
+            lookback_days=config.backtest.lookback_days,
         )
 
         await state.event_bus.emit("analysis.started", {

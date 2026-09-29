@@ -374,6 +374,32 @@ def test_run_backtests_reads_candles_once_not_per_strategy(pipeline_deps):
     )
 
 
+# ── Lookback days tests ───────────────────────────────────────────────────────
+
+def test_pipeline_accepts_lookback_days_param(pipeline_deps):
+    """AnalysisPipeline must accept lookback_days kwarg without raising."""
+    p = AnalysisPipeline(**pipeline_deps, lookback_days=90)
+    assert p._lookback_days == 90
+
+
+def test_run_backtests_uses_lookback_days_for_from_dt(pipeline_deps):
+    """from_dt passed to candle_store.read must be approximately now - lookback_days."""
+    from datetime import timedelta
+
+    pipeline_deps["candle_store"].read.return_value = pd.DataFrame()
+    p = AnalysisPipeline(**pipeline_deps, lookback_days=60)
+    p._run_backtests("TCS", [], regime={"regime": "trending_up"})
+
+    call = next(
+        c for c in pipeline_deps["candle_store"].read.call_args_list
+        if c.args[0] == "TCS" and c.args[1] == "15minute"
+    )
+    from_dt = call.args[2]
+    expected_approx = datetime.now(tz=IST) - timedelta(days=60)
+    delta = abs((from_dt - expected_approx).total_seconds())
+    assert delta < 5, f"from_dt off by {delta:.1f}s — expected ~60 days ago"
+
+
 # ── Indicator fetch tests ─────────────────────────────────────────────────────
 
 def test_fetch_indicators_returns_dict_with_rsi(pipeline_deps):

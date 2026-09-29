@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -69,6 +69,7 @@ class AnalysisPipeline:
         capital: float,
         instrument_cache: Any = None,
         context_fetcher: Any = None,
+        lookback_days: int = 365,
     ):
         self._sync = data_sync
         self._candles = candle_store
@@ -80,6 +81,7 @@ class AnalysisPipeline:
         self._backtest = backtest_engine
         self._mc = monte_carlo
         self._gates = quality_gates
+        self._lookback_days = lookback_days
         self._runs = run_store
         self._setups = setup_store
         self._bus = event_bus
@@ -364,7 +366,7 @@ class AnalysisPipeline:
         try:
             df = self._candles.read(
                 "NIFTY 50", "day",
-                datetime(2025, 1, 1, tzinfo=IST),
+                datetime.now(tz=IST) - timedelta(days=self._lookback_days),
                 datetime.now(tz=IST),
             )
             if len(df) >= 6:
@@ -406,7 +408,7 @@ class AnalysisPipeline:
         try:
             df = self._candles.read(
                 symbol, "15minute",
-                datetime(2025, 1, 1, tzinfo=IST),
+                datetime.now(tz=IST) - timedelta(days=self._lookback_days),
                 datetime.now(tz=IST),
             )
             if df.empty or len(df) < 30:
@@ -465,7 +467,7 @@ class AnalysisPipeline:
             try:
                 df = self._candles.read(
                     sym, "day",
-                    datetime(2025, 1, 1, tzinfo=IST),
+                    datetime.now(tz=IST) - timedelta(days=self._lookback_days),
                     datetime.now(tz=IST),
                 )
                 if len(df) >= 20:
@@ -518,11 +520,10 @@ class AnalysisPipeline:
         (injected WalkForwardEngine). Appends passing BacktestReports to results.
         """
         from tradingbot.strategy.strategies import STRATEGY_REGISTRY
-        from datetime import timedelta
 
         eligible = self._get_regime_eligible_strategies(regime or {})
 
-        from_dt = datetime.now(tz=IST) - timedelta(days=365)
+        from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
         df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
         if len(df) == 0:
             return
