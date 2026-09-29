@@ -64,13 +64,28 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
         )
 
         # Build execution intelligence (live tick feed + momentum scoring)
+        from tradingbot.data.kite_client import KiteClient as DataKiteClient
+        from tradingbot.data.instrument_cache import InstrumentCache
+        from kiteconnect import KiteConnect
+
         token_path = Path.home() / ".tradingbot" / "kite_token"
         access_token = token_path.read_text().strip() if token_path.exists() else ""
         ticker = LiveTickManager(
             api_key=config.secrets.kite_api_key,
             access_token=access_token,
         )
-        intelligence = ExecutionIntelligence(ticker, config.execution)
+
+        instrument_cache = InstrumentCache(Path(state.data_dir) / "instruments.db")
+        kite = KiteConnect(api_key=config.secrets.kite_api_key)
+        if access_token:
+            kite.set_access_token(access_token)
+        data_kite_client = DataKiteClient(kite, rate_limit_per_sec=config.kite.rate_limit_per_sec)
+
+        intelligence = ExecutionIntelligence(
+            ticker, config.execution,
+            instrument_cache=instrument_cache,
+            kite_client=data_kite_client,
+        )
 
         executor = Executor(
             broker=broker,
