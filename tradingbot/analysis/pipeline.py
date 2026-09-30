@@ -88,6 +88,7 @@ class AnalysisPipeline:
         self._setups = setup_store
         self._bus = event_bus
         self._capital = capital
+        self._approved_setup_ids: dict[str, int] = {}
 
     async def run(self, trade_date: date) -> AnalysisRun:
         """Execute full analysis pipeline for a given trade date.
@@ -204,7 +205,7 @@ class AnalysisPipeline:
                 )
                 if source and idx < len(source.get("setups", [])):
                     setup_data = source["setups"][idx]
-                    self._setups.save({
+                    row_id = self._setups.save({
                         "run_id": run_id,
                         "trade_date": str(trade_date),
                         "symbol": sym,
@@ -225,6 +226,8 @@ class AnalysisPipeline:
                         "regime_at_generation": regime.get("regime", ""),
                         "timeframe_alignment": setup_data.get("timeframe_alignment", []),
                     })
+                    strategy_key = f"{sym}:{setup_data.get('strategy', 'unknown')}"
+                    self._approved_setup_ids[strategy_key] = row_id
                     setups_approved += 1
 
         # --- Persist and emit completion ---
