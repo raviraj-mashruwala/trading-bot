@@ -115,11 +115,15 @@ async def put_config(request: Request):
         except ValueError:
             raise HTTPException(status_code=400, detail=f"invalid mode: {body['general']['mode']!r}")
 
+    OPTIONAL_SECTIONS = {"risk", "scanner", "screening", "backtest", "kite"}
+
     for section, values in body.items():
         if section == "secrets":
             continue
         if section not in existing:
-            raise HTTPException(status_code=400, detail=f"unknown section: {section}")
+            if section not in OPTIONAL_SECTIONS:
+                raise HTTPException(status_code=400, detail=f"unknown section: {section}")
+            existing[section] = {}
         if isinstance(values, dict):
             existing[section].update(values)
 
