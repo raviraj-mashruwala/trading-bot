@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import sqlite3
+from tradingbot.core.db_factory import DatabaseKind, create_connection
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -14,8 +14,7 @@ class RunStore:
     """Persist and query AnalysisRun records."""
 
     def __init__(self, db_path: Path):
-        self._conn = sqlite3.connect(str(db_path))
-        self._conn.row_factory = sqlite3.Row
+        self._conn = create_connection(DatabaseKind.TRADING, Path(db_path))
         self._conn.execute("""
             CREATE TABLE IF NOT EXISTS analysis_runs (
                 run_id TEXT PRIMARY KEY,

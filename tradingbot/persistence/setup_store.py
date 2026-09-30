@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sqlite3
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -18,8 +17,8 @@ class SetupStore:
     """Persist and query trade setups across multiple analysis runs."""
 
     def __init__(self, db_path: Path):
-        self._conn = sqlite3.connect(str(db_path))
-        self._conn.row_factory = sqlite3.Row
+        from tradingbot.core.db_factory import DatabaseKind, create_connection
+        self._conn = create_connection(DatabaseKind.TRADING, Path(db_path))
         self._conn.execute("""
             CREATE TABLE IF NOT EXISTS setups (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -58,7 +57,7 @@ class SetupStore:
         ]:
             try:
                 self._conn.execute(f"ALTER TABLE setups ADD COLUMN {col} {coltype}")
-            except sqlite3.OperationalError:
+            except Exception:
                 pass  # column already exists
         self._conn.commit()
 
