@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 
 from tradingbot.api.state import AppState
-from tradingbot.core.config import ConfigError, load_config
+from tradingbot.core.config import ConfigError, RiskConfig, auto_risk_config, load_config
 from tradingbot.core.models import Mode
 
 router = APIRouter(prefix="/api")
@@ -24,6 +24,16 @@ def _mask_secret(value: str) -> str:
     if not value or len(value) <= 6:
         return "***"
     return "***" + value[-3:]
+
+
+def _risk_response(risk: RiskConfig, capital: float) -> dict[str, Any]:
+    """Risk config dict with auto_derived flags per field."""
+    from dataclasses import asdict
+    auto = auto_risk_config(capital)
+    auto_dict = asdict(auto)
+    risk_dict = asdict(risk)
+    auto_flags = {k: risk_dict[k] == auto_dict[k] for k in risk_dict}
+    return {**risk_dict, "auto_derived": auto_flags}
 
 
 def _config_to_dict(state: AppState) -> dict[str, Any]:
@@ -58,12 +68,7 @@ def _config_to_dict(state: AppState) -> dict[str, Any]:
             "max_risk_of_ruin": config.backtest.max_risk_of_ruin,
             "max_consecutive_losses": config.backtest.max_consecutive_losses,
         },
-        "risk": {
-            "max_risk_per_trade_pct": config.risk.max_risk_per_trade_pct,
-            "max_daily_loss_pct": config.risk.max_daily_loss_pct,
-            "max_capital_deployed_pct": config.risk.max_capital_deployed_pct,
-            "max_concurrent_positions": config.risk.max_concurrent_positions,
-        },
+        "risk": _risk_response(config.risk, config.general.capital),
         "execution": {
             "mode": config.execution.mode,
             "entry_slippage_pct": config.execution.entry_slippage_pct,
