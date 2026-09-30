@@ -207,6 +207,56 @@ async def get_setups(
 
 
 # ---------------------------------------------------------------------------
+# Plan generation
+# ---------------------------------------------------------------------------
+
+
+def _build_plan_builder(state: AppState):
+    """Construct a PlanBuilder from current config."""
+    from tradingbot.core.config import auto_risk_config
+    from tradingbot.core.plan_builder import PlanBuilder
+    from tradingbot.core.risk_manager import RiskManager
+
+    _ensure_stores(state)
+    config = state.config
+    risk_config = auto_risk_config(config.general.capital)
+    rm = RiskManager(
+        risk_config=risk_config,
+        strategy_config=config.strategy,
+        capital=config.general.capital,
+    )
+    return PlanBuilder(state.setup_store, rm)
+
+
+@router.post("/plans/generate")
+async def generate_plan(request: Request, date: str | None = None):
+    state: AppState = request.app.state.app_state
+    from tradingbot.core.models import MarketRegime
+
+    if date:
+        from datetime import date as d
+        trade_date = d.fromisoformat(date)
+    else:
+        trade_date = next_trading_day(now_ist().date())
+
+    builder = _build_plan_builder(state)
+    plan = builder.build(trade_date, regime=MarketRegime.RANGE_BOUND)
+    state.plan_store.save(plan)
+    state.database.save_plan_snapshot(plan)
+
+    await state.event_bus.emit("plan.generated", {
+        "trade_date": plan.trade_date,
+        "legs": len(plan.legs),
+    })
+
+    return {
+        "status": "generated",
+        "trade_date": plan.trade_date,
+        "legs": len(plan.legs),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Kite OAuth endpoints
 # ---------------------------------------------------------------------------
 
