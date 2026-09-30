@@ -448,6 +448,7 @@ class Executor:
                 exit_reason=reason,
                 status=TradeStatus.CLOSED,
                 mode=self.mode,
+                setup_id=state.leg.setup_id,
             )
         )
 

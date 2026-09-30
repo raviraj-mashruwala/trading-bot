@@ -74,6 +74,10 @@ class Database:
     def initialise(self) -> None:
         """Create tables if they do not exist. Safe to call repeatedly."""
         self.connection.executescript(SCHEMA)
+        try:
+            self.connection.execute("ALTER TABLE trades ADD COLUMN setup_id INTEGER")
+        except Exception:
+            pass
         self.connection.commit()
 
     def close(self) -> None:
@@ -85,8 +89,9 @@ class Database:
             INSERT INTO trades (
                 trade_date, symbol, strategy, direction, quantity,
                 entry_price, exit_price, stop_loss, target_1, target_2,
-                entered_at, exited_at, pnl, exit_reason, status, mode
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                entered_at, exited_at, pnl, exit_reason, status, mode,
+                setup_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 trade.trade_date,
@@ -105,6 +110,7 @@ class Database:
                 trade.exit_reason,
                 trade.status.value,
                 trade.mode.value,
+                trade.setup_id,
             ),
         )
         self.connection.commit()
@@ -191,4 +197,5 @@ class Database:
             exit_reason=row["exit_reason"],
             status=TradeStatus(row["status"]),
             mode=Mode(row["mode"]),
+            setup_id=row["setup_id"] if row["setup_id"] is not None else None,
         )
