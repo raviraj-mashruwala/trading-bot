@@ -491,6 +491,110 @@ class ExecutedTrade:
 
 
 # ---------------------------------------------------------------------------
+# Post-trade review models
+# ---------------------------------------------------------------------------
+
+import re as _re
+
+
+def _parse_invalidation_price(condition: str) -> float | None:
+    """Extract the first numeric price from an invalidation condition string."""
+    match = _re.search(r"(\d+(?:\.\d+)?)", condition)
+    return float(match.group(1)) if match else None
+
+
+@dataclass(frozen=True)
+class TradeScorecard:
+    """Per-trade comparison of predicted setup vs actual outcome."""
+
+    trade_id: int
+    setup_id: int | None
+    symbol: str
+    strategy: str
+    direction: str
+    trade_date: str
+
+    predicted_entry: float
+    predicted_stop: float
+    predicted_target_1: float
+    predicted_target_2: float | None
+    confidence: float
+    confluence_count: int
+    regime_at_generation: str
+    thesis: str
+    invalidation_condition: str
+    bear_case: str
+
+    actual_entry: float
+    actual_exit: float
+    pnl: float
+    exit_reason: str
+    quantity: int
+
+    @property
+    def r_multiple(self) -> float:
+        risk_per_share = abs(self.predicted_entry - self.predicted_stop)
+        if risk_per_share == 0:
+            return 0.0
+        return self.pnl / (risk_per_share * self.quantity)
+
+    @property
+    def hit_target(self) -> bool:
+        if self.direction == "long":
+            return self.actual_exit >= self.predicted_target_1
+        return self.actual_exit <= self.predicted_target_1
+
+    @property
+    def invalidation_fired(self) -> bool:
+        price = _parse_invalidation_price(self.invalidation_condition)
+        if price is None:
+            return False
+        if self.direction == "long":
+            return self.actual_exit <= price
+        return self.actual_exit >= price
+
+    @property
+    def entry_slippage(self) -> float:
+        return self.actual_entry - self.predicted_entry
+
+    @property
+    def predicted_rr(self) -> float:
+        risk = abs(self.predicted_entry - self.predicted_stop)
+        if risk == 0:
+            return 0.0
+        return abs(self.predicted_target_1 - self.predicted_entry) / risk
+
+    @property
+    def actual_rr(self) -> float:
+        risk = abs(self.predicted_entry - self.predicted_stop)
+        if risk == 0 or self.quantity == 0:
+            return 0.0
+        return self.pnl / (risk * self.quantity)
+
+
+@dataclass(frozen=True)
+class StrategyStats:
+    trades: int
+    win_rate: float
+    avg_r: float
+    total_pnl: float
+
+
+@dataclass(frozen=True)
+class PerformanceStats:
+    period_days: int
+    total_trades: int
+    win_rate: float
+    avg_r_multiple: float
+    total_pnl: float
+    by_strategy: dict[str, StrategyStats]
+    by_regime: dict[str, StrategyStats]
+    by_strategy_regime: dict[str, StrategyStats]
+    confluence_buckets: dict[str, float]
+    confidence_calibration: dict[str, float]
+
+
+# ---------------------------------------------------------------------------
 # Extended models for analysis pipeline redesign
 # ---------------------------------------------------------------------------
 
