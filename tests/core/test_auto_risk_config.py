@@ -2,7 +2,7 @@
 
 import pytest
 
-from tradingbot.core.config import ConfigError, RiskConfig, auto_risk_config
+from tradingbot.core.config import ConfigError, RiskConfig, auto_risk_config, auto_shadow_fraction
 
 
 class TestAutoRiskConfigTiers:
@@ -72,3 +72,23 @@ class TestAutoRiskConfigInvalid:
     def test_negative_capital_raises(self):
         with pytest.raises(ConfigError, match="capital must be positive"):
             auto_risk_config(-10_000.0)
+
+
+class TestAutoShadowFraction:
+    """Small accounts use full quantity; large accounts use shadow mode."""
+
+    def test_under_50k_no_shadow(self):
+        assert auto_shadow_fraction(20_000.0) == 1.0
+
+    def test_50k_to_200k_no_shadow(self):
+        assert auto_shadow_fraction(100_000.0) == 1.0
+
+    def test_200k_to_1m_uses_shadow(self):
+        assert auto_shadow_fraction(500_000.0) == 0.1
+
+    def test_above_1m_uses_shadow(self):
+        assert auto_shadow_fraction(2_000_000.0) == 0.1
+
+    def test_zero_capital_raises(self):
+        with pytest.raises(ConfigError, match="capital must be positive"):
+            auto_shadow_fraction(0)

@@ -92,6 +92,15 @@ def auto_risk_config(capital: float) -> RiskConfig:
     return _RISK_TIERS[-1][1]
 
 
+def auto_shadow_fraction(capital: float) -> float:
+    """Shadow fraction: small accounts trade full size, large accounts shadow."""
+    if capital <= 0:
+        raise ConfigError("capital must be positive")
+    if capital < 200_000.0:
+        return 1.0
+    return 0.1
+
+
 @dataclass(frozen=True)
 class ScreeningConfig:
     min_volume: int
@@ -291,7 +300,10 @@ def load_config(config_path: Path | None = None) -> Config:
             plan_max_age_hours=float(execution_raw["plan_max_age_hours"]),
             max_entry_price_drift_pct=float(execution_raw["max_entry_price_drift_pct"]),
             mode=execution_raw.get("mode", "paper"),
-            shadow_fraction=float(execution_raw.get("shadow_fraction", 0.1)),
+            shadow_fraction=float(execution_raw.get(
+                "shadow_fraction",
+                auto_shadow_fraction(float(general_raw["capital"])),
+            )),
         ),
         llm=LLMConfig(
             provider=llm_raw["provider"],
