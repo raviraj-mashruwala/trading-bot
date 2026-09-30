@@ -8,9 +8,21 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 
 from tradingbot.api.state import AppState
+from tradingbot.core.models import TradeScorecard
 from tradingbot.persistence.review_store import TradeReviewStore
 
 router = APIRouter(prefix="/api/review")
+
+
+def _serialize_scorecard(sc: TradeScorecard) -> dict:
+    d = asdict(sc)
+    d["r_multiple"] = sc.r_multiple
+    d["hit_target"] = sc.hit_target
+    d["invalidation_fired"] = sc.invalidation_fired
+    d["entry_slippage"] = sc.entry_slippage
+    d["predicted_rr"] = sc.predicted_rr
+    d["actual_rr"] = sc.actual_rr
+    return d
 
 
 def _get_review_store(state: AppState) -> TradeReviewStore:
@@ -27,7 +39,7 @@ async def get_scorecards(request: Request, date: str | None = None):
         else:
             from datetime import date as d
             cards = rs.get_scorecards_for_date(str(d.today()))
-        return [asdict(c) for c in cards]
+        return [_serialize_scorecard(c) for c in cards]
     finally:
         rs.close()
 
@@ -40,7 +52,7 @@ async def get_scorecard(request: Request, trade_id: int):
         card = rs.get_scorecard(trade_id)
         if card is None:
             raise HTTPException(status_code=404, detail="Trade not found or not linked to a setup")
-        return asdict(card)
+        return _serialize_scorecard(card)
     finally:
         rs.close()
 

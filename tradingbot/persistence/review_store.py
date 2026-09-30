@@ -139,7 +139,11 @@ class TradeReviewStore:
 
         cal: dict[str, list[TradeScorecard]] = {}
         for sc in scorecards:
-            bucket = f"{int(sc.confidence * 10) / 10:.1f}-{int(sc.confidence * 10) / 10 + 0.1:.1f}"
+            lower = int(sc.confidence * 10) / 10
+            upper = min(1.0, lower + 0.1)
+            if lower >= 1.0:
+                lower, upper = 0.9, 1.0
+            bucket = f"{lower:.1f}-{upper:.1f}"
             cal.setdefault(bucket, []).append(sc)
 
         return PerformanceStats(

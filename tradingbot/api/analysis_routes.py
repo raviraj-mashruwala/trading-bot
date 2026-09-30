@@ -81,6 +81,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             instrument_cache=instrument_cache,
             context_fetcher=MarketContextFetcher(candle_store=candle_store),
             lookback_days=config.backtest.lookback_days,
+            db_path=Path(state.data_dir) / "tradingbot.db",
         )
 
         await state.event_bus.emit("analysis.started", {

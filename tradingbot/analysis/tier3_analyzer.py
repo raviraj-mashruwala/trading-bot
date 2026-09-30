@@ -33,6 +33,7 @@ class Tier3Analyzer:
         indicators: dict,
         backtest_results: list[dict],
         price_action: str,
+        performance_context: str = "",
     ) -> dict[str, Any]:
         """Design 1-3 precise trade setups for a single stock.
 
@@ -42,6 +43,7 @@ class Tier3Analyzer:
         user_prompt = build_deep_analysis_user_prompt(
             symbol, direction, regime, indicators,
             backtest_results, price_action,
+            performance_context=performance_context,
         )
         name, desc, schema = DEEP_ANALYSIS_TOOL
         result = await self._provider.analyze(

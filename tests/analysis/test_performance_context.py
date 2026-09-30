@@ -16,6 +16,7 @@ def _make_pipeline(**overrides):
         tier2=MagicMock(), tier3=MagicMock(), backtest_engine=MagicMock(),
         monte_carlo=MagicMock(), quality_gates=MagicMock(), run_store=MagicMock(),
         setup_store=MagicMock(), event_bus=MagicMock(), capital=100_000,
+        db_path="/tmp/test.db",
     )
     defaults.update(overrides)
     return AnalysisPipeline(**defaults)
@@ -31,6 +32,12 @@ def _make_stats(total_trades=42) -> PerformanceStats:
         confluence_buckets={"low": 0.42, "mid": 0.58, "high": 0.73},
         confidence_calibration={"0.7-0.8": 0.67},
     )
+
+
+def test_performance_context_empty_when_no_db_path():
+    p = _make_pipeline(db_path=None)
+    result = p._build_performance_context()
+    assert result == ""
 
 
 def test_performance_context_empty_under_threshold():

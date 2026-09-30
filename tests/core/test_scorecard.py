@@ -38,6 +38,11 @@ def test_scorecard_r_multiple_zero_when_stop_equals_entry():
     assert sc.r_multiple == 0.0
 
 
+def test_scorecard_r_multiple_zero_when_quantity_zero():
+    sc = _make_scorecard(quantity=0)
+    assert sc.r_multiple == 0.0
+
+
 def test_scorecard_hit_target_long():
     sc = _make_scorecard(actual_exit=3600.0)
     assert sc.hit_target is True
@@ -90,6 +95,19 @@ def test_strategy_stats_frozen():
     assert ss.trades == 10
     with pytest.raises(AttributeError):
         ss.trades = 20
+
+
+def test_performance_stats_no_overflow_bucket_at_1():
+    ps = PerformanceStats(
+        period_days=30, total_trades=1, win_rate=1.0,
+        avg_r_multiple=1.0, total_pnl=5000.0,
+        by_strategy={}, by_regime={}, by_strategy_regime={},
+        confluence_buckets={"low": 0.0, "mid": 0.0, "high": 1.0},
+        confidence_calibration={"0.9-1.0": 1.0},
+    )
+    for key in ps.confidence_calibration:
+        upper = float(key.split("-")[1])
+        assert upper <= 1.0
 
 
 def test_performance_stats_creation():

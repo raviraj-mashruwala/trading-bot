@@ -48,6 +48,10 @@ async def test_get_scorecards_returns_linked_trades(api_client):
     assert body[0]["symbol"] == "TCS"
     assert body[0]["predicted_entry"] == 3500.0
     assert body[0]["confluence_count"] == 4
+    assert "r_multiple" in body[0]
+    assert "hit_target" in body[0]
+    assert "invalidation_fired" in body[0]
+    assert "entry_slippage" in body[0]
 
 
 async def test_get_stats_returns_aggregated(api_client):

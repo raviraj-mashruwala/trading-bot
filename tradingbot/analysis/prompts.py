@@ -393,6 +393,7 @@ def build_deep_analysis_user_prompt(
     indicators: dict,
     backtest_results: list[dict],
     price_action_summary: str,
+    performance_context: str = "",
 ) -> str:
     """Build user prompt for per-stock deep analysis."""
     bt_text = "\n".join(
@@ -412,4 +413,6 @@ def build_deep_analysis_user_prompt(
         f"Recent Price Action:\n{price_action_summary}\n\n"
         f"Design 1-3 precise trade setups with exact entry, stop loss, and target levels. "
         f"Only propose if you find 3+ confluence signals and 1.5:1 minimum R:R."
+        + (f"\n\n<performance_context>\n{performance_context}\n</performance_context>"
+           if performance_context else "")
     )

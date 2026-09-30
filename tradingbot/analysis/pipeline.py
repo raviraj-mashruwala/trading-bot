@@ -73,9 +73,11 @@ class AnalysisPipeline:
         instrument_cache: Any = None,
         context_fetcher: Any = None,
         lookback_days: int = 365,
+        db_path: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
+        self._db_path = db_path
         self._instrument_cache = instrument_cache
         self._context_fetcher = context_fetcher
         self._screener = screener
@@ -157,6 +159,9 @@ class AnalysisPipeline:
         if symbols and hasattr(self._sync, "deep_fetch"):
             self._sync.deep_fetch(symbols)
 
+        # --- Performance context for LLM ---
+        perf_ctx = self._build_performance_context()
+
         # --- Backtest + Tier 3: per-stock deep analysis ---
         all_setups: list[dict[str, Any]] = []
         for pick in shortlist:
@@ -178,6 +183,7 @@ class AnalysisPipeline:
                 indicators=indicators,
                 backtest_results=bt_results,
                 price_action=price_action,
+                performance_context=perf_ctx,
             )
             llm_calls += 1
             if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
@@ -531,8 +537,9 @@ class AnalysisPipeline:
         """Compact performance summary for LLM context. Empty if < 10 trades."""
         try:
             from pathlib import Path
-            db_path = Path("tradingbot.db")
-            rs = TradeReviewStore(db_path)
+            if self._db_path is None:
+                return ""
+            rs = TradeReviewStore(Path(self._db_path))
             try:
                 stats = rs.get_performance_stats(lookback_days)
             finally:

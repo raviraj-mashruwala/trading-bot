@@ -534,7 +534,7 @@ class TradeScorecard:
     @property
     def r_multiple(self) -> float:
         risk_per_share = abs(self.predicted_entry - self.predicted_stop)
-        if risk_per_share == 0:
+        if risk_per_share == 0 or self.quantity == 0:
             return 0.0
         return self.pnl / (risk_per_share * self.quantity)
 
