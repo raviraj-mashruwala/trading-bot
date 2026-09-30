@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
+from tradingbot.core.db_factory import DatabaseKind, create_connection
+
 
 class CandleStore:
     """SQLite-backed store for OHLCV candle data across timeframes."""
 
     def __init__(self, db_path: Path):
-        self._conn = sqlite3.connect(str(db_path))
+        self._conn = create_connection(DatabaseKind.MARKET_DATA, Path(db_path))
         self._conn.execute("""
             CREATE TABLE IF NOT EXISTS candles (
                 symbol TEXT NOT NULL,

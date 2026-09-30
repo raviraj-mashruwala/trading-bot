@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
 from typing import Any
+
+from tradingbot.core.db_factory import DatabaseKind, create_connection
 
 
 class InstrumentCache:
@@ -10,8 +11,7 @@ class InstrumentCache:
 
     def __init__(self, db_path: Path):
         self._db_path = db_path
-        self._conn = sqlite3.connect(str(db_path))
-        self._conn.row_factory = sqlite3.Row
+        self._conn = create_connection(DatabaseKind.MARKET_DATA, Path(db_path))
         self._conn.execute("""
             CREATE TABLE IF NOT EXISTS instruments (
                 token INTEGER PRIMARY KEY,
@@ -26,7 +26,7 @@ class InstrumentCache:
         )
         try:
             self._conn.execute("ALTER TABLE instruments ADD COLUMN sector TEXT NOT NULL DEFAULT 'unknown'")
-        except sqlite3.OperationalError:
+        except Exception:
             pass  # column already exists
         self._conn.commit()
 
