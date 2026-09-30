@@ -48,10 +48,13 @@ class TradeReviewStore:
 
     def get_performance_stats(self, lookback_days: int = 30) -> PerformanceStats:
         cutoff = (date.today() - timedelta(days=lookback_days)).isoformat()
-        rows = self._conn.execute(
-            _SCORECARD_SQL + " WHERE t.trade_date >= ? AND t.setup_id IS NOT NULL",
-            (cutoff,),
-        ).fetchall()
+        try:
+            rows = self._conn.execute(
+                _SCORECARD_SQL + " WHERE t.trade_date >= ? AND t.setup_id IS NOT NULL",
+                (cutoff,),
+            ).fetchall()
+        except Exception:
+            rows = []
 
         scorecards = [self._row_to_scorecard(r) for r in rows]
         return self._aggregate(scorecards, lookback_days)
