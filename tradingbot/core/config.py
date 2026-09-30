@@ -54,6 +54,44 @@ class RiskConfig:
     max_concurrent_positions: int
 
 
+_RISK_TIERS: list[tuple[float, RiskConfig]] = [
+    (1_000_000.0, RiskConfig(
+        max_risk_per_trade_pct=0.0075,
+        max_daily_loss_pct=0.02,
+        max_capital_deployed_pct=0.40,
+        max_concurrent_positions=3,
+    )),
+    (200_000.0, RiskConfig(
+        max_risk_per_trade_pct=0.01,
+        max_daily_loss_pct=0.02,
+        max_capital_deployed_pct=0.50,
+        max_concurrent_positions=2,
+    )),
+    (50_000.0, RiskConfig(
+        max_risk_per_trade_pct=0.01,
+        max_daily_loss_pct=0.025,
+        max_capital_deployed_pct=0.60,
+        max_concurrent_positions=2,
+    )),
+    (0.0, RiskConfig(
+        max_risk_per_trade_pct=0.015,
+        max_daily_loss_pct=0.03,
+        max_capital_deployed_pct=0.70,
+        max_concurrent_positions=1,
+    )),
+]
+
+
+def auto_risk_config(capital: float) -> RiskConfig:
+    """Derive risk parameters from the account size."""
+    if capital <= 0:
+        raise ConfigError("capital must be positive")
+    for threshold, config in _RISK_TIERS:
+        if capital >= threshold:
+            return config
+    return _RISK_TIERS[-1][1]
+
+
 @dataclass(frozen=True)
 class ScreeningConfig:
     min_volume: int
