@@ -209,6 +209,25 @@ def _section(data: dict, name: str) -> dict:
     return data[name]
 
 
+def _build_risk_config(risk_raw: dict, capital: float) -> RiskConfig:
+    """Merge explicit TOML overrides onto auto-derived defaults."""
+    auto = auto_risk_config(capital)
+    if not risk_raw:
+        return auto
+    from dataclasses import asdict
+    auto_dict = asdict(auto)
+    type_map = {
+        "max_risk_per_trade_pct": float,
+        "max_daily_loss_pct": float,
+        "max_capital_deployed_pct": float,
+        "max_concurrent_positions": int,
+    }
+    for key in auto_dict:
+        if key in risk_raw:
+            auto_dict[key] = type_map[key](risk_raw[key])
+    return RiskConfig(**auto_dict)
+
+
 def load_config(config_path: Path | None = None) -> Config:
     """Read settings from TOML and secrets from the environment."""
     load_dotenv()
@@ -228,7 +247,7 @@ def load_config(config_path: Path | None = None) -> Config:
         ) from exc
 
     strategy_raw = _section(data, "strategy")
-    risk_raw = _section(data, "risk")
+    risk_raw = data.get("risk", {})
     execution_raw = _section(data, "execution")
     llm_raw = _section(data, "llm")
     paper_raw = _section(data, "paper")
@@ -261,12 +280,7 @@ def load_config(config_path: Path | None = None) -> Config:
             min_reward_risk=float(strategy_raw["min_reward_risk"]),
             max_trades_per_day=int(strategy_raw["max_trades_per_day"]),
         ),
-        risk=RiskConfig(
-            max_risk_per_trade_pct=float(risk_raw["max_risk_per_trade_pct"]),
-            max_daily_loss_pct=float(risk_raw["max_daily_loss_pct"]),
-            max_capital_deployed_pct=float(risk_raw["max_capital_deployed_pct"]),
-            max_concurrent_positions=int(risk_raw["max_concurrent_positions"]),
-        ),
+        risk=_build_risk_config(risk_raw, capital=float(general_raw["capital"])),
         execution=ExecutionConfig(
             entry_slippage_pct=float(execution_raw["entry_slippage_pct"]),
             square_off_time=_parse_time(
