@@ -2,6 +2,7 @@ import type {
   HealthStatus, ConfigResponse, Provider, PlanSummary, TradePlan,
   Trade, TradeStats, AnalysisStatus, ExecutionStatusResponse,
   KiteAuthStatus, AnalysisRun, Setup, DailyPlan, SyncStatus,
+  TradeScorecard, PerformanceStatsData, GeneratePlanResponse,
 } from "@/types";
 
 async function get<T>(url: string): Promise<T> {
@@ -94,4 +95,16 @@ export const api = {
   // Data Sync
   postSync: () => post<{ status: string }>("/api/sync"),
   getSyncStatus: () => get<SyncStatus>("/api/sync/status"),
+
+  // Plan Generation
+  generatePlan: (date?: string) =>
+    post<GeneratePlanResponse>(`/api/plans/generate${date ? `?date=${date}` : ""}`),
+
+  // Review & Performance
+  getScorecards: (date: string) =>
+    get<TradeScorecard[]>(`/api/review/scorecards?date=${date}`),
+  getScorecard: (tradeId: number) =>
+    get<TradeScorecard>(`/api/review/scorecards/${tradeId}`),
+  getPerformanceStats: (days = 30) =>
+    get<PerformanceStatsData>(`/api/review/stats?days=${days}`),
 };

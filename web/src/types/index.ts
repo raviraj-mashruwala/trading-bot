@@ -237,3 +237,59 @@ export interface SyncStatus {
   status: "idle" | "running" | "complete" | "failed";
   progress: string;
 }
+
+export interface TradeScorecard {
+  trade_id: number;
+  setup_id: number | null;
+  symbol: string;
+  strategy: string;
+  direction: string;
+  trade_date: string;
+  predicted_entry: number;
+  predicted_stop: number;
+  predicted_target_1: number;
+  predicted_target_2: number | null;
+  confidence: number;
+  confluence_count: number;
+  regime_at_generation: string;
+  thesis: string;
+  invalidation_condition: string;
+  bear_case: string;
+  actual_entry: number;
+  actual_exit: number;
+  pnl: number;
+  exit_reason: string;
+  quantity: number;
+  r_multiple: number;
+  hit_target: boolean;
+  invalidation_fired: boolean;
+  entry_slippage: number;
+  predicted_rr: number;
+  actual_rr: number;
+}
+
+export interface StrategyStatsData {
+  trades: number;
+  win_rate: number;
+  avg_r: number;
+  total_pnl: number;
+}
+
+export interface PerformanceStatsData {
+  period_days: number;
+  total_trades: number;
+  win_rate: number;
+  avg_r_multiple: number;
+  total_pnl: number;
+  by_strategy: Record<string, StrategyStatsData>;
+  by_regime: Record<string, StrategyStatsData>;
+  by_strategy_regime: Record<string, StrategyStatsData>;
+  confluence_buckets: Record<string, number>;
+  confidence_calibration: Record<string, number>;
+}
+
+export interface GeneratePlanResponse {
+  status: string;
+  trade_date: string;
+  legs: number;
+}

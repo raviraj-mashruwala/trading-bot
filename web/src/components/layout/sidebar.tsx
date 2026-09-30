@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: "grid" },
   { href: "/analysis", label: "Analysis", icon: "scan" },
   { href: "/trading", label: "Trading", icon: "activity" },
+  { href: "/review", label: "Review", icon: "target" },
   { href: "/settings", label: "Settings", icon: "sliders" },
   { href: "/history", label: "History", icon: "clock" },
 ];
@@ -18,6 +19,7 @@ const ICONS: Record<string, React.ReactNode> = {
   scan: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><line x1="8" y1="2" x2="8" y2="8"/><line x1="8" y1="8" x2="12" y2="10"/></svg>,
   activity: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="1,8 4,8 6,3 8,13 10,6 12,8 15,8"/></svg>,
   sliders: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="3" y1="2" x2="3" y2="14"/><line x1="8" y1="2" x2="8" y2="14"/><line x1="13" y1="2" x2="13" y2="14"/><circle cx="3" cy="5" r="1.5" fill="currentColor"/><circle cx="8" cy="10" r="1.5" fill="currentColor"/><circle cx="13" cy="7" r="1.5" fill="currentColor"/></svg>,
+  target: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3"/><circle cx="8" cy="8" r="0.5" fill="currentColor"/></svg>,
   clock: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><line x1="8" y1="4" x2="8" y2="8"/><line x1="8" y1="8" x2="11" y2="8"/></svg>,
 };
 
