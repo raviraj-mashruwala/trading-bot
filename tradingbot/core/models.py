@@ -272,6 +272,7 @@ class TradeSetup:
     entry_window_end: time
     confidence: float
     reasoning: str
+    setup_id: int | None = None
 
     @property
     def risk_per_share(self) -> float:
@@ -310,6 +311,7 @@ class TradeSetup:
             exit_before=exit_before,
             confidence=self.confidence,
             reasoning=self.reasoning,
+            setup_id=self.setup_id,
         )
 
 
@@ -334,6 +336,7 @@ class TradeLeg:
     exit_before: time
     confidence: float
     reasoning: str
+    setup_id: int | None = None
 
     @property
     def risk_per_share(self) -> float:
@@ -369,6 +372,7 @@ class TradeLeg:
             "exit_before": _fmt_time(self.exit_before),
             "confidence": self.confidence,
             "reasoning": self.reasoning,
+            "setup_id": self.setup_id,
         }
 
     @classmethod
@@ -391,6 +395,7 @@ class TradeLeg:
             exit_before=_parse_time(raw["exit_before"]),
             confidence=float(raw["confidence"]),
             reasoning=raw["reasoning"],
+            setup_id=raw.get("setup_id"),
         )
 
 
@@ -482,6 +487,7 @@ class ExecutedTrade:
     exit_reason: str
     status: TradeStatus
     mode: Mode
+    setup_id: int | None = None
 
 
 # ---------------------------------------------------------------------------
