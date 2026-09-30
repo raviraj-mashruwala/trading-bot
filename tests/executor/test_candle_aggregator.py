@@ -87,6 +87,8 @@ def test_close_stale_candles_fills_empty():
     agg.close_stale_candles("RELIANCE", datetime(2026, 9, 29, 9, 17, 0))
     assert len(closed) == 1
     assert closed[0].is_complete
+    assert closed[0].has_gap is True
+    assert closed[0].volume == 100
     assert closed[0].volume == 100
 
 

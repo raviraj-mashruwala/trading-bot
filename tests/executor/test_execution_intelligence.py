@@ -145,3 +145,50 @@ def test_start_subscribes_int_tokens_with_cache():
     intel.start(["RELIANCE", "INFY"])
     assert 738561 in ticker.subscribed
     assert 408065 in ticker.subscribed
+
+
+def test_degraded_status_not_reset_by_ticks():
+    """When status is 'degraded', incoming ticks should NOT reset it to 'healthy'."""
+    ticker = FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    with patch.object(intel, '_fetch_historical_candles', return_value=[]):
+        intel.start(["RELIANCE"])
+    intel.mark_degraded(30)
+    assert intel.health.status == "degraded"
+    tick = {"instrument_token": "RELIANCE", "last_price": 2450.0,
+            "volume_traded": 1000, "exchange_timestamp": datetime(2026, 9, 29, 9, 15, 10)}
+    intel._on_ticks(None, [tick])
+    assert intel.health.status == "degraded"
+
+
+def test_reconnecting_status_reset_by_ticks():
+    """When status is 'reconnecting', incoming ticks SHOULD reset to 'healthy'."""
+    ticker = FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    with patch.object(intel, '_fetch_historical_candles', return_value=[]):
+        intel.start(["RELIANCE"])
+    intel.on_disconnect()
+    assert intel.health.status == "reconnecting"
+    tick = {"instrument_token": "RELIANCE", "last_price": 2450.0,
+            "volume_traded": 1000, "exchange_timestamp": datetime(2026, 9, 29, 9, 15, 10)}
+    intel._on_ticks(None, [tick])
+    assert intel.health.status == "healthy"
+
+
+def test_on_disconnect_increments_reconnect_count():
+    ticker = FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    intel.on_disconnect()
+    assert intel.health.reconnect_count == 1
+    assert intel.health.status == "reconnecting"
+    intel.on_disconnect()
+    assert intel.health.reconnect_count == 2
+
+
+def test_mark_degraded_accumulates_gap():
+    ticker = FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    intel.mark_degraded(30)
+    intel.mark_degraded(45)
+    assert intel.health.gap_seconds_today == 75
+    assert intel.health.status == "degraded"

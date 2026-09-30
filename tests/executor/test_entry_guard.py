@@ -79,10 +79,24 @@ def test_rule7_long_falling_below_vwap():
     assert v.action == "WAIT"
 
 
+def test_rule7b_short_rising_above_vwap():
+    guard = EntryGuard(max_drift_pct=5.0)
+    leg = FakeLeg(direction="SHORT")
+    v = guard.evaluate(leg, _state(vwap_position=0.9, momentum_1m=35.0), 2450.0, datetime(2026, 9, 29, 9, 20))
+    assert v.action == "WAIT"
+
+
 def test_rule8_bearish_pattern_for_long():
     guard = EntryGuard(max_drift_pct=5.0)
     leg = FakeLeg(direction="LONG")
     v = guard.evaluate(leg, _state(last_pattern_5m="bearish_engulf"), 2450.0, datetime(2026, 9, 29, 9, 20))
+    assert v.action == "WAIT"
+
+
+def test_rule8_bullish_pattern_for_short():
+    guard = EntryGuard(max_drift_pct=5.0)
+    leg = FakeLeg(direction="SHORT")
+    v = guard.evaluate(leg, _state(last_pattern_5m="bullish_engulf"), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "WAIT"
 
 

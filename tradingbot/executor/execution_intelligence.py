@@ -85,7 +85,8 @@ class ExecutionIntelligence:
     def _on_ticks(self, ws: Any, ticks: list[dict]) -> None:
         now = datetime.now()
         self.health.last_tick_at = now
-        self.health.status = "healthy"
+        if self.health.status == "reconnecting":
+            self.health.status = "healthy"
         for tick in ticks:
             raw_token = tick.get("instrument_token", "")
             price = tick.get("last_price", 0.0)
