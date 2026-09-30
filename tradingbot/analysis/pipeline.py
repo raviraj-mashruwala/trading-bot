@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 
 from tradingbot.core.llm.provider import LLMUsage
 from tradingbot.core.models import AnalysisRun, MarketRegime, StrategyName
+from tradingbot.persistence.review_store import TradeReviewStore
 from tradingbot.screening.candlestick import score_patterns as _score_candlestick
 from tradingbot.screening.volume_profile_score import score_volume_profile as _score_volume_profile
 
@@ -525,6 +526,52 @@ class AnalysisPipeline:
 
         survivors = set(kept) | set(no_data)
         return [s for s in setups_with_data if s["symbol"] in survivors]
+
+    def _build_performance_context(self, lookback_days: int = 30) -> str:
+        """Compact performance summary for LLM context. Empty if < 10 trades."""
+        try:
+            from pathlib import Path
+            db_path = Path("tradingbot.db")
+            rs = TradeReviewStore(db_path)
+            try:
+                stats = rs.get_performance_stats(lookback_days)
+            finally:
+                rs.close()
+        except Exception:
+            return ""
+
+        if stats.total_trades < 10:
+            return ""
+
+        lines = [
+            f"RECENT PERFORMANCE ({stats.period_days}d):",
+            f"{stats.total_trades} trades, {stats.win_rate:.1%} win rate, "
+            f"avg R: {stats.avg_r_multiple:.1f}, total PnL: {stats.total_pnl:+,.0f}",
+        ]
+
+        if stats.by_strategy:
+            strats = ", ".join(
+                f"{k} {v.win_rate:.0%} ({v.trades}t)"
+                for k, v in sorted(stats.by_strategy.items(), key=lambda x: -x[1].trades)
+            )
+            lines.append(f"By strategy: {strats}")
+
+        if stats.by_regime:
+            regs = ", ".join(
+                f"{k} {v.win_rate:.0%} ({v.trades}t)"
+                for k, v in sorted(stats.by_regime.items(), key=lambda x: -x[1].trades)
+            )
+            lines.append(f"By regime: {regs}")
+
+        cb = stats.confluence_buckets
+        lines.append(f"Confluence: low(1-2) {cb.get('low', 0):.0%}, "
+                      f"mid(3) {cb.get('mid', 0):.0%}, high(4+) {cb.get('high', 0):.0%}")
+
+        if stats.confidence_calibration:
+            cal = ", ".join(f"{k}→{v:.0%}" for k, v in stats.confidence_calibration.items())
+            lines.append(f"Calibration: {cal}")
+
+        return "\n".join(lines)
 
     def _get_regime_eligible_strategies(self, regime: dict) -> frozenset[StrategyName]:
         """Return strategy names valid for the current regime. Fail-open on unknown."""

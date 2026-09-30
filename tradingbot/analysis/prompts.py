@@ -198,7 +198,11 @@ DEEP_ANALYSIS_SYSTEM = (
     "- Below 0.6 means skip -- return no_trade_reason\n\n"
     "For each setup, state the invalidation condition -- the specific price action "
     "that kills the trade thesis.\n\n"
-    "State the strongest COUNTER-ARGUMENT against each setup."
+    "State the strongest COUNTER-ARGUMENT against each setup.\n\n"
+    "If a <performance_context> block is provided, factor it into your "
+    "confidence scoring. Strategies that underperform in the current regime "
+    "deserve lower confidence. If your confidence calibration shows systematic "
+    "overconfidence in a bucket, adjust downward."
 )
 
 DEEP_ANALYSIS_SCHEMA: dict[str, Any] = {
