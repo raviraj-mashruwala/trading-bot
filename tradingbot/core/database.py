@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from datetime import date, datetime, timedelta
 from pathlib import Path
+
+from tradingbot.core.db_factory import DatabaseKind, create_connection
 
 from tradingbot.core.models import (
     Direction,
@@ -68,9 +69,7 @@ class Database:
 
     def __init__(self, db_path: Path) -> None:
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.connection = sqlite3.connect(self.db_path)
-        self.connection.row_factory = sqlite3.Row
+        self.connection = create_connection(DatabaseKind.TRADING, self.db_path)
 
     def initialise(self) -> None:
         """Create tables if they do not exist. Safe to call repeatedly."""
