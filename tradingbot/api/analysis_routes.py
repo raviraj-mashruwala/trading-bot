@@ -98,6 +98,25 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             "run_id": analysis_run.run_id,
         })
 
+        try:
+            from tradingbot.core.models import MarketRegime
+            builder = _build_plan_builder(state)
+            regime_str = analysis_run.market_regime.value if analysis_run.market_regime else "range_bound"
+            plan = builder.build(
+                trade_date,
+                regime=MarketRegime(regime_str),
+                market_summary=f"Auto-generated after {analysis_run.run_id}",
+            )
+            state.plan_store.save(plan)
+            state.database.save_plan_snapshot(plan)
+            await state.event_bus.emit("plan.generated", {
+                "trade_date": trade_date.isoformat(),
+                "legs": len(plan.legs),
+            })
+            logger.info("Auto-generated plan for %s: %d legs", trade_date, len(plan.legs))
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Auto plan generation failed: %s", exc, exc_info=True)
+
     except asyncio.CancelledError:
         state.analysis_status = "idle"
         raise
