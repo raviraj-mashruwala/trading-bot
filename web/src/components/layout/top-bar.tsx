@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { KiteConnectButton } from "@/components/auth/kite-connect-button";
+import { KeepAwake } from "@/components/dashboard/keep-awake";
 
 export function TopBar() {
   const { data: health } = useQuery({
@@ -16,6 +17,7 @@ export function TopBar() {
   return (
     <header className="flex h-12 items-center justify-end border-b border-border/50 px-6">
       <div className="flex items-center gap-4">
+        <KeepAwake />
         <KiteConnectButton />
       </div>
       <div className="flex items-center gap-2 ml-4">
