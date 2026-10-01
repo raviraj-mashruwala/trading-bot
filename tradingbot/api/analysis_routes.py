@@ -377,49 +377,72 @@ async def start_sync(request: Request):
     state.sync_status = "running"
     state.sync_progress = "Starting..."
 
-    async def _run_sync() -> None:
+    import multiprocessing
+    import threading
+
+    access_token = auth.access_token
+    api_key = state.config.secrets.kite_api_key
+    rate_limit = state.config.kite.rate_limit_per_sec
+    data_dir_str = state.data_dir or "."
+
+    def _run_sync_subprocess() -> None:
+        """Run sync in a child process to avoid GIL blocking the event loop."""
         try:
-            from tradingbot.data.candle_store import CandleStore
-            from tradingbot.data.data_sync import DataSync
-            from tradingbot.data.instrument_cache import InstrumentCache
-            from tradingbot.data.kite_client import KiteClient
-
-            data_dir = Path(state.data_dir) if state.data_dir else Path(".")
-            data_dir.mkdir(exist_ok=True)
-
-            kite_client = KiteClient(
-                auth.kite,
-                rate_limit_per_sec=state.config.kite.rate_limit_per_sec,
+            proc = multiprocessing.Process(
+                target=_sync_worker,
+                args=(api_key, access_token, rate_limit, data_dir_str),
+                daemon=True,
             )
-            cache = InstrumentCache(data_dir / "instruments.db")
-            store = CandleStore(data_dir / "candles.db")
-            sync = DataSync(kite_client, cache, store)
-
+            proc.start()
             state.sync_progress = "Syncing instruments..."
-            await state.event_bus.emit("sync.started", {})
+            proc.join()
 
-            import asyncio as _aio
-
-            stats = await _aio.to_thread(sync.full_sync, 365, 60)
-
-            state.sync_status = "complete"
-            state.sync_progress = (
-                f"{stats['instruments']} instruments, "
-                f"{stats['daily_candles']} daily, "
-                f"{stats['intraday_candles']} intraday candles"
-            )
-            await state.event_bus.emit("sync.complete", stats)
-            cache.close()
-            store.close()
-
+            if proc.exitcode == 0:
+                state.sync_status = "complete"
+                state.sync_progress = "Sync finished. Restart may be needed to pick up new data."
+                logger.info("Sync subprocess completed successfully")
+            else:
+                state.sync_status = "failed"
+                state.sync_progress = f"Sync process exited with code {proc.exitcode}"
+                logger.error("Sync subprocess failed with exit code %d", proc.exitcode)
         except Exception as exc:
             logger.error("Sync failed: %s", exc, exc_info=True)
             state.sync_status = "failed"
             state.sync_progress = str(exc)
-            await state.event_bus.emit("sync.failed", {"error": str(exc)})
 
-    state.sync_task = asyncio.create_task(_run_sync())
+    t = threading.Thread(target=_run_sync_subprocess, daemon=True)
+    t.start()
     return {"status": "started"}
+
+
+def _sync_worker(api_key: str, access_token: str, rate_limit: int, data_dir_str: str) -> None:
+    """Runs in a child process. No shared state with the server."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    log = logging.getLogger("sync_worker")
+
+    from kiteconnect import KiteConnect
+    from tradingbot.data.candle_store import CandleStore
+    from tradingbot.data.data_sync import DataSync
+    from tradingbot.data.instrument_cache import InstrumentCache
+    from tradingbot.data.kite_client import KiteClient
+
+    data_dir = Path(data_dir_str)
+    data_dir.mkdir(exist_ok=True)
+
+    kite = KiteConnect(api_key=api_key)
+    kite.set_access_token(access_token)
+    kite_client = KiteClient(kite, rate_limit_per_sec=rate_limit)
+
+    cache = InstrumentCache(data_dir / "instruments.db")
+    store = CandleStore(data_dir / "candles.db")
+    sync = DataSync(kite_client, cache, store)
+
+    log.info("Starting full sync...")
+    stats = sync.full_sync(365, 60)
+    log.info("Sync complete: %s", stats)
+    cache.close()
+    store.close()
 
 
 @router.get("/sync/status")
