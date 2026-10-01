@@ -65,10 +65,6 @@ async def api_client(tmp_path, monkeypatch, config_text):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-secret123")
     monkeypatch.setenv("KITE_API_KEY", "kite-key-abc")
     monkeypatch.setenv("KITE_API_SECRET", "kite-secret-xyz")
-    monkeypatch.setenv("TURSO_TRADING_URL", "")
-    monkeypatch.setenv("TURSO_TRADING_TOKEN", "")
-    monkeypatch.setenv("TURSO_MARKET_URL", "")
-    monkeypatch.setenv("TURSO_MARKET_TOKEN", "")
     (tmp_path / "config.toml").write_text(config_text)
 
     app = create_app(config_path=tmp_path / "config.toml", data_dir=tmp_path)
