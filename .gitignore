@@ -11,3 +11,6 @@ logs/
 *.egg-info/
 .claude/
 .superpowers/
+.DS_Store
+:memory:*
+*.db-info
