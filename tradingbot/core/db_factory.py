@@ -39,7 +39,7 @@ def create_connection(kind: DatabaseKind, local_path: Path) -> Any:
 
 def _create_sqlite_connection(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(path))
+    conn = sqlite3.connect(str(path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     return conn
