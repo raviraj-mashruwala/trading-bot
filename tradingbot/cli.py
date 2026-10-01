@@ -276,7 +276,6 @@ def backtest(obj: dict, strategy_name: str, symbol: str, days: int) -> None:
     """Replay one or every strategy over recent history."""
     from tradingbot.data.market_data_provider import MarketDataProvider
 
-    config: Config = obj["config"]
     provider = MarketDataProvider()
 
     candles = provider.get_intraday(symbol, "15m", days=days)

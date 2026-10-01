@@ -70,9 +70,9 @@ class AdaptiveExitManager:
 
         # P3: target 2
         if state.target_1_booked:
-            if is_long and price >= state.leg.target_2:
+            if is_long and state.leg.target_2 > 0 and price >= state.leg.target_2:
                 return ExitDecision.BOOK_TARGET_2
-            if not is_long and price <= state.leg.target_2:
+            if not is_long and state.leg.target_2 > 0 and price <= state.leg.target_2:
                 return ExitDecision.BOOK_TARGET_2
 
         # P4: momentum reversal exit

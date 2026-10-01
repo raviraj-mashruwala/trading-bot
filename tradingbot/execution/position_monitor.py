@@ -63,6 +63,7 @@ class PositionMonitor:
                 direction=pos["direction"],
                 quantity=pos["quantity"],
                 order_type="MARKET",
+                entry_cost=pos.get("entry_price", 0) * pos["quantity"],
             )
             actions.append({
                 "action": "stop_loss_exit",
