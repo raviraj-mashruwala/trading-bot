@@ -293,3 +293,21 @@ export interface GeneratePlanResponse {
   trade_date: string;
   legs: number;
 }
+
+export interface MarketHoliday {
+  date: string;
+  name: string;
+}
+
+export interface MarketCalendarResponse {
+  status: "open" | "pre_market" | "post_market" | "closed" | "holiday";
+  reason: string;
+  holiday_name: string | null;
+  next_session: string;
+  today_is_trading_day: boolean;
+  holidays: MarketHoliday[];
+  total_holidays_this_year: number;
+  coverage: { first: string; last: string };
+  current_year_covered: boolean;
+  data_year: number;
+}
