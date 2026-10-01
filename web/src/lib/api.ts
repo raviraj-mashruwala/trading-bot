@@ -3,6 +3,7 @@ import type {
   Trade, TradeStats, AnalysisStatus, ExecutionStatusResponse,
   KiteAuthStatus, AnalysisRun, Setup, DailyPlan, SyncStatus,
   TradeScorecard, PerformanceStatsData, GeneratePlanResponse,
+  MarketCalendarResponse,
 } from "@/types";
 
 async function get<T>(url: string): Promise<T> {
@@ -107,4 +108,8 @@ export const api = {
     get<TradeScorecard>(`/api/review/scorecards/${tradeId}`),
   getPerformanceStats: (days = 30) =>
     get<PerformanceStatsData>(`/api/review/stats?days=${days}`),
+
+  // Market Calendar
+  getMarketCalendar: () => get<MarketCalendarResponse>("/api/market-calendar"),
+  refreshMarketCalendar: () => post<MarketCalendarResponse>("/api/market-calendar/refresh"),
 };
