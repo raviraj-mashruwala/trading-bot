@@ -39,7 +39,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
     }
 
     if (type === "analysis.failed") {
-      set({ status: "failed", error: (data.error as string) ?? "Unknown error" });
+      set({ status: "failed", error: String(data.error ?? "Unknown error") });
       return;
     }
 

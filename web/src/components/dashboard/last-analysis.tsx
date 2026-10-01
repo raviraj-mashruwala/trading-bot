@@ -9,7 +9,10 @@ export function LastAnalysis() {
   const { data: status } = useQuery({ queryKey: ["analysis-status"], queryFn: api.getAnalysisStatus });
   const { data: plans } = useQuery({ queryKey: ["plans"], queryFn: api.getPlans });
 
-  const latest: PlanSummary | undefined = plans?.at(-1);
+  const latest: PlanSummary | undefined = plans
+    ?.slice()
+    .sort((a, b) => b.generated_at.localeCompare(a.generated_at))
+    .at(0);
 
   return (
     <Card className="border-border/50 bg-card/80">

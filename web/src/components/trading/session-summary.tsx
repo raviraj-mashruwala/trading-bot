@@ -10,12 +10,12 @@ function fmt(n: number): string {
 
 export function SessionSummary({ result }: { result: SessionResult }) {
   return (
-    <Card className="border-2 border-dashed">
+    <Card className="border-border/50 bg-card/80">
       <CardHeader><CardTitle className="text-sm">Session Complete</CardTitle></CardHeader>
       <CardContent className="flex items-center gap-6 text-sm">
         <div>
           <span className="text-muted-foreground">Total P&L: </span>
-          <span className={`font-bold ${result.total_pnl >= 0 ? "text-green-600" : "text-red-600"}`}>
+          <span className={`font-bold ${result.total_pnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}>
             {fmt(result.total_pnl)}
           </span>
         </div>

@@ -10,6 +10,7 @@ export function KiteConnectButton() {
     available_cash?: number; error?: string;
   } | null>(null);
   const [testing, setTesting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   const { data: status, isLoading } = useQuery({
     queryKey: ["kite-status"],
@@ -18,11 +19,12 @@ export function KiteConnectButton() {
   });
 
   const handleConnect = async () => {
+    setConnectError(null);
     try {
       const { login_url } = await api.getKiteLoginUrl();
       window.location.href = login_url;
-    } catch {
-      // Kite API not available
+    } catch (e) {
+      setConnectError(e instanceof Error ? e.message : "Failed to get login URL");
     }
   };
 
@@ -81,12 +83,15 @@ export function KiteConnectButton() {
   }
 
   return (
-    <button
-      onClick={handleConnect}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#d4a015]/10 text-[#d4a015] text-xs font-medium hover:bg-[#d4a015]/20 transition-colors cursor-pointer"
-    >
-      <div className="w-2 h-2 rounded-full bg-[#f85149]" />
-      Connect Kite
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleConnect}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#d4a015]/10 text-[#d4a015] text-xs font-medium hover:bg-[#d4a015]/20 transition-colors cursor-pointer"
+      >
+        <div className="w-2 h-2 rounded-full bg-[#f85149]" />
+        Connect Kite
+      </button>
+      {connectError && <span className="text-xs text-[#f85149]">{connectError}</span>}
+    </div>
   );
 }

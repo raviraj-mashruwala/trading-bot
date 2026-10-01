@@ -26,7 +26,7 @@ export function LlmTestButton() {
         {testing ? "Testing..." : "Test Connection"}
       </Button>
       {result && (
-        <span className={`text-xs ${result.ok ? "text-green-600" : "text-red-600"}`}>
+        <span className={`text-xs ${result.ok ? "text-[#2da44e]" : "text-[#f85149]"}`}>
           {result.ok ? "Connection OK" : `Failed: ${result.error}`}
         </span>
       )}
