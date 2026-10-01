@@ -72,12 +72,12 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             tier2=Tier2Analyzer(provider),
             tier3=Tier3Analyzer(provider),
             backtest_engine=WalkForwardEngine(),
-            monte_carlo=MonteCarloSimulator(capital=config.general.capital),
+            monte_carlo=MonteCarloSimulator(capital=state.capital),
             quality_gates=QualityGates(),
             run_store=state.run_store,
             setup_store=state.setup_store,
             event_bus=state.event_bus,
-            capital=config.general.capital,
+            capital=state.capital,
             instrument_cache=instrument_cache,
             context_fetcher=MarketContextFetcher(candle_store=candle_store),
             lookback_days=config.backtest.lookback_days,
@@ -238,11 +238,12 @@ def _build_plan_builder(state: AppState):
 
     _ensure_stores(state)
     config = state.config
-    risk_config = auto_risk_config(config.general.capital)
+    capital = state.capital
+    risk_config = auto_risk_config(capital)
     rm = RiskManager(
         risk_config=risk_config,
         strategy_config=config.strategy,
-        capital=config.general.capital,
+        capital=capital,
     )
     return PlanBuilder(state.setup_store, rm)
 
@@ -481,7 +482,7 @@ async def emergency_stop(request: Request):
     cap_mgr = CapitalManager(kite_client, deployed=0)
     executor = KiteExecutor(kite_client, cap_mgr)
     safety = SafetyManager(
-        capital=state.config.general.capital,
+        capital=state.capital,
         max_daily_loss_pct=state.config.risk.max_daily_loss_pct,
     )
 

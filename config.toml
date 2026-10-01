@@ -3,48 +3,6 @@ mode = "live"
 capital = 400000
 log_level = "INFO"
 
-[strategy]
-backtest_days = 30
-candle_interval = "15minute"
-min_confidence = 0.5
-min_reward_risk = 1.5
-max_trades_per_day = 2
-
-[screening]
-min_price = 50
-min_atr_pct = 0.5
-min_trading_days = 10
-max_per_sector = 3
-volume_surge_weight = 15
-relative_strength_weight = 15
-atr_expansion_weight = 10
-price_structure_weight = 15
-delivery_pct_weight = 10
-sector_momentum_weight = 10
-gap_analysis_weight = 10
-candlestick_pattern_weight = 10
-volume_profile_weight = 5
-
-[backtest]
-lookback_days = 365
-walk_forward_windows = 10
-train_pct = 70
-monte_carlo_simulations = 10000
-min_trades = 30
-min_win_rate = 0.45
-min_profit_factor = 1.5
-min_expectancy_r = 0.3
-max_oos_degradation = 0.3
-max_risk_of_ruin = 0.05
-max_consecutive_losses = 8
-
-[kite]
-api_key_env = "KITE_API_KEY"
-api_secret_env = "KITE_API_SECRET"
-sync_hour = 6
-sync_minute = 0
-rate_limit_per_sec = 3
-
 [execution]
 mode = "live"
 entry_slippage_pct = 0.05
@@ -53,7 +11,6 @@ connection_timeout_sec = 30
 heartbeat_interval_sec = 60
 plan_max_age_hours = 14
 max_entry_price_drift_pct = 2.0
-shadow_fraction = 0.1
 
 [llm]
 provider = "anthropic"
@@ -64,3 +21,10 @@ max_retries = 1
 [paper]
 slippage_pct = 0.05
 initial_capital = 400000
+
+[strategy]
+backtest_days = 30
+candle_interval = "15minute"
+min_confidence = 0.5
+min_reward_risk = 1.5
+max_trades_per_day = 2

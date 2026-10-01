@@ -51,9 +51,11 @@ def _risk_response(risk: RiskConfig, capital: float) -> dict[str, Any]:
 
 def _config_to_dict(state: AppState) -> dict[str, Any]:
     config = state.config
+    capital = state.capital
+    capital_source = "kite" if (state.kite_auth and state.kite_auth.is_authenticated() and capital != config.general.capital) else "config"
     return {
-        "general": {"mode": config.general.mode.value, "capital": config.general.capital, "log_level": config.general.log_level},
-        "screening": _screening_response(config.screening, config.general.capital),
+        "general": {"mode": config.general.mode.value, "capital": capital, "capital_source": capital_source, "log_level": config.general.log_level},
+        "screening": _screening_response(config.screening, capital),
         "backtest": {
             "lookback_days": config.backtest.lookback_days,
             "walk_forward_windows": config.backtest.walk_forward_windows,
@@ -67,7 +69,7 @@ def _config_to_dict(state: AppState) -> dict[str, Any]:
             "max_risk_of_ruin": config.backtest.max_risk_of_ruin,
             "max_consecutive_losses": config.backtest.max_consecutive_losses,
         },
-        "risk": _risk_response(config.risk, config.general.capital),
+        "risk": _risk_response(config.risk, capital),
         "execution": {
             "mode": config.execution.mode,
             "entry_slippage_pct": config.execution.entry_slippage_pct,

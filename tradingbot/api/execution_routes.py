@@ -58,7 +58,7 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
         from tradingbot.executor.executor import Executor
 
         risk_manager = RiskManager(
-            config.risk, config.strategy, capital=config.general.capital,
+            config.risk, config.strategy, capital=state.capital,
             plan_max_age_hours=config.execution.plan_max_age_hours,
             max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
         )

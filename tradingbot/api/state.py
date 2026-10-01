@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import time as _time
 from dataclasses import dataclass, field
 
 from tradingbot.core.config import Config
 from tradingbot.core.database import Database
 from tradingbot.core.events import EventBus
 from tradingbot.core.plan_store import PlanStore
+
+log = logging.getLogger(__name__)
+
+_CAPITAL_CACHE_SECONDS = 60
 
 
 @dataclass
@@ -46,3 +52,28 @@ class AppState:
     sync_status: str = "idle"
     sync_task: asyncio.Task | None = None
     sync_progress: str = ""
+
+    # Capital cache
+    _cached_capital: float = 0.0
+    _capital_fetched_at: float = 0.0
+
+    @property
+    def capital(self) -> float:
+        """Live capital from Kite if authenticated, else config fallback."""
+        if self.kite_auth and self.kite_auth.is_authenticated():
+            now = _time.monotonic()
+            if now - self._capital_fetched_at < _CAPITAL_CACHE_SECONDS and self._cached_capital > 0:
+                return self._cached_capital
+            try:
+                margins = self.kite_auth.kite.margins("equity")
+                available = margins.get("available", {})
+                live = available.get("live_balance", 0) + available.get("intraday_payin", 0)
+                if live > 0:
+                    self._cached_capital = live
+                    self._capital_fetched_at = now
+                    return live
+            except Exception:
+                log.debug("Failed to fetch Kite margins, using fallback", exc_info=True)
+            if self._cached_capital > 0:
+                return self._cached_capital
+        return self.config.general.capital
