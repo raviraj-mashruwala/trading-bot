@@ -33,8 +33,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         from tradingbot.backtest.quality_gates import QualityGates
         from tradingbot.backtest.walk_forward import WalkForwardEngine
         from tradingbot.core.llm.anthropic_provider import build_provider
-        from tradingbot.data.candle_store import CandleStore
-        from tradingbot.data.instrument_cache import InstrumentCache
+        from tradingbot.data.market_data_provider import MarketDataProvider
         from tradingbot.scanner.market_context import MarketContextFetcher
         from tradingbot.screening.screener import Tier1Screener
 
@@ -45,32 +44,23 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
 
         _ensure_stores(state)
 
-        provider = build_provider(config.llm, config.secrets, log_dir=log_dir / "llm")
+        llm_provider = build_provider(config.llm, config.secrets, log_dir=log_dir / "llm")
 
-        instrument_cache = InstrumentCache(data_dir / "instruments.db")
-        candle_store = CandleStore(data_dir / "candles.db")
-
-        data_sync = None
+        kite_for_universe = None
         if state.kite_auth and state.kite_auth.is_authenticated():
-            from tradingbot.data.data_sync import DataSync
             from tradingbot.data.kite_client import KiteClient
-
-            kite_client = KiteClient(
+            kite_for_universe = KiteClient(
                 state.kite_auth.kite,
                 rate_limit_per_sec=config.kite.rate_limit_per_sec,
             )
-            data_sync = DataSync(kite_client, instrument_cache, candle_store)
-
-            if not instrument_cache.get_all():
-                logger.info("InstrumentCache empty, running initial sync...")
-                data_sync.full_sync(daily_lookback=365, intraday_lookback=60)
+        market_provider = MarketDataProvider(kite_client=kite_for_universe)
 
         pipeline = AnalysisPipeline(
-            data_sync=data_sync,
-            candle_store=candle_store,
-            screener=Tier1Screener(config.screening, candle_store),
-            tier2=Tier2Analyzer(provider),
-            tier3=Tier3Analyzer(provider),
+            data_sync=None,
+            candle_store=None,
+            screener=Tier1Screener(config.screening, candle_store=None),
+            tier2=Tier2Analyzer(llm_provider),
+            tier3=Tier3Analyzer(llm_provider),
             backtest_engine=WalkForwardEngine(),
             monte_carlo=MonteCarloSimulator(capital=state.capital),
             quality_gates=QualityGates(),
@@ -78,10 +68,10 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             setup_store=state.setup_store,
             event_bus=state.event_bus,
             capital=state.capital,
-            instrument_cache=instrument_cache,
-            context_fetcher=MarketContextFetcher(candle_store=candle_store),
+            context_fetcher=MarketContextFetcher(market_data_provider=market_provider),
             lookback_days=config.backtest.lookback_days,
             db_path=Path(state.data_dir) / "tradingbot.db",
+            market_data_provider=market_provider,
         )
 
         await state.event_bus.emit("analysis.started", {
@@ -357,98 +347,6 @@ async def kite_test(request: Request):
     except Exception:
         logger.exception("Kite connection test failed")
         return {"ok": False, "error": "Connection test failed. Check server logs."}
-
-
-# ---------------------------------------------------------------------------
-# Data sync endpoints
-# ---------------------------------------------------------------------------
-
-
-@router.post("/sync")
-async def start_sync(request: Request):
-    state: AppState = request.app.state.app_state
-    if state.sync_status == "running":
-        raise HTTPException(status_code=409, detail="Sync already running")
-
-    auth = _ensure_kite_auth(state)
-    if not auth.is_authenticated():
-        raise HTTPException(status_code=400, detail="Kite not authenticated. Connect Kite first.")
-
-    state.sync_status = "running"
-    state.sync_progress = "Starting..."
-
-    import multiprocessing
-    import threading
-
-    access_token = auth.access_token
-    api_key = state.config.secrets.kite_api_key
-    rate_limit = state.config.kite.rate_limit_per_sec
-    data_dir_str = state.data_dir or "."
-
-    def _run_sync_subprocess() -> None:
-        """Run sync in a child process to avoid GIL blocking the event loop."""
-        try:
-            proc = multiprocessing.Process(
-                target=_sync_worker,
-                args=(api_key, access_token, rate_limit, data_dir_str),
-                daemon=True,
-            )
-            proc.start()
-            state.sync_progress = "Syncing instruments..."
-            proc.join()
-
-            if proc.exitcode == 0:
-                state.sync_status = "complete"
-                state.sync_progress = "Sync finished. Restart may be needed to pick up new data."
-                logger.info("Sync subprocess completed successfully")
-            else:
-                state.sync_status = "failed"
-                state.sync_progress = f"Sync process exited with code {proc.exitcode}"
-                logger.error("Sync subprocess failed with exit code %d", proc.exitcode)
-        except Exception as exc:
-            logger.error("Sync failed: %s", exc, exc_info=True)
-            state.sync_status = "failed"
-            state.sync_progress = str(exc)
-
-    t = threading.Thread(target=_run_sync_subprocess, daemon=True)
-    t.start()
-    return {"status": "started"}
-
-
-def _sync_worker(api_key: str, access_token: str, rate_limit: int, data_dir_str: str) -> None:
-    """Runs in a child process. No shared state with the server."""
-    import logging
-    logging.basicConfig(level=logging.INFO)
-    log = logging.getLogger("sync_worker")
-
-    from kiteconnect import KiteConnect
-    from tradingbot.data.candle_store import CandleStore
-    from tradingbot.data.data_sync import DataSync
-    from tradingbot.data.instrument_cache import InstrumentCache
-    from tradingbot.data.kite_client import KiteClient
-
-    data_dir = Path(data_dir_str)
-    data_dir.mkdir(exist_ok=True)
-
-    kite = KiteConnect(api_key=api_key)
-    kite.set_access_token(access_token)
-    kite_client = KiteClient(kite, rate_limit_per_sec=rate_limit)
-
-    cache = InstrumentCache(data_dir / "instruments.db")
-    store = CandleStore(data_dir / "candles.db")
-    sync = DataSync(kite_client, cache, store)
-
-    log.info("Starting full sync...")
-    stats = sync.full_sync(365, 60)
-    log.info("Sync complete: %s", stats)
-    cache.close()
-    store.close()
-
-
-@router.get("/sync/status")
-async def sync_status(request: Request):
-    state: AppState = request.app.state.app_state
-    return {"status": state.sync_status, "progress": state.sync_progress}
 
 
 # ---------------------------------------------------------------------------

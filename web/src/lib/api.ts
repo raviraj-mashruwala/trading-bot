@@ -1,7 +1,7 @@
 import type {
   HealthStatus, ConfigResponse, Provider, PlanSummary, TradePlan,
   Trade, TradeStats, AnalysisStatus, ExecutionStatusResponse,
-  KiteAuthStatus, AnalysisRun, Setup, DailyPlan, SyncStatus,
+  KiteAuthStatus, AnalysisRun, Setup, DailyPlan,
   TradeScorecard, PerformanceStatsData, GeneratePlanResponse,
   MarketCalendarResponse,
 } from "@/types";
@@ -92,10 +92,6 @@ export const api = {
       if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
       return r.json() as Promise<{ ok: boolean }>;
     }),
-
-  // Data Sync
-  postSync: () => post<{ status: string }>("/api/sync"),
-  getSyncStatus: () => get<SyncStatus>("/api/sync/status"),
 
   // Plan Generation
   generatePlan: (date?: string) =>

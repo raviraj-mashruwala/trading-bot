@@ -8,7 +8,6 @@ import { PipelineStepper } from "@/components/analysis/pipeline-stepper";
 import { PlanLegsCards } from "@/components/analysis/plan-legs-cards";
 import { RunHistory } from "@/components/analysis/run-history";
 import { RankedSetups } from "@/components/analysis/ranked-setups";
-import { SyncButton } from "@/components/analysis/sync-button";
 import { Button } from "@/components/ui/button";
 import type { TradePlan } from "@/types";
 
@@ -89,9 +88,6 @@ export default function AnalysisPage() {
           </Button>
         )}
         {runMutation.isError && <span className="text-xs text-[#f85149]">{runMutation.error.message}</span>}
-        <div className="border-l border-[#1c2736]/50 pl-3">
-          <SyncButton />
-        </div>
       </div>
 
       {/* Pipeline + Run History (side by side) */}

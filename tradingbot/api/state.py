@@ -48,11 +48,6 @@ class AppState:
     # WebSocket manager (set by app.py after construction)
     ws_manager: object | None = None
 
-    # Data sync
-    sync_status: str = "idle"
-    sync_task: asyncio.Task | None = None
-    sync_progress: str = ""
-
     # Capital cache
     _cached_capital: float = 0.0
     _capital_fetched_at: float = 0.0
