@@ -312,15 +312,19 @@ async def kite_login(request: Request):
 
 @router.get("/auth/kite/callback")
 async def kite_callback(request: Request, request_token: str | None = None):
+    from fastapi.responses import RedirectResponse
     if not request_token:
         raise HTTPException(status_code=400, detail="request_token required")
     state: AppState = request.app.state.app_state
     auth = _ensure_kite_auth(state)
     try:
         data = auth.generate_session(request_token)
-        return {"authenticated": True, "user_id": data.get("user_id", "")}
+        await state.event_bus.emit("kite.authenticated", {
+            "user_id": data.get("user_id", ""),
+        })
+        return RedirectResponse(url="http://localhost:3000/settings?kite=success")
     except Exception as exc:
-        raise HTTPException(status_code=401, detail=f"Token exchange failed: {exc}")
+        return RedirectResponse(url=f"http://localhost:3000/settings?kite=error&detail={exc}")
 
 
 @router.get("/auth/kite/status")
