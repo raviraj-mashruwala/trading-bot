@@ -92,6 +92,21 @@ def auto_risk_config(capital: float) -> RiskConfig:
     return _RISK_TIERS[-1][1]
 
 
+def auto_screening_defaults(capital: float) -> dict[str, float | int]:
+    """Derive screening filters from capital so small accounts don't filter in
+    stocks they can't meaningfully trade."""
+    if capital <= 0:
+        raise ConfigError("capital must be positive")
+    max_price = min(5000.0, capital / 20)
+    min_volume = 100_000 if capital < 100_000 else 500_000
+    min_market_cap_cr = 500.0 if capital < 100_000 else 1000.0
+    return {
+        "max_price": max_price,
+        "min_volume": min_volume,
+        "min_market_cap_cr": min_market_cap_cr,
+    }
+
+
 def auto_shadow_fraction(capital: float) -> float:
     """Shadow fraction: small accounts trade full size, large accounts shadow."""
     if capital <= 0:
@@ -237,6 +252,29 @@ def _build_risk_config(risk_raw: dict, capital: float) -> RiskConfig:
     return RiskConfig(**auto_dict)
 
 
+def _build_screening_config(screening_raw: dict, capital: float) -> ScreeningConfig:
+    """Merge explicit TOML overrides onto capital-derived screening defaults."""
+    auto = auto_screening_defaults(capital)
+    return ScreeningConfig(
+        min_volume=int(screening_raw.get("min_volume", auto["min_volume"])),
+        min_price=float(screening_raw.get("min_price", 50)),
+        max_price=float(screening_raw.get("max_price", auto["max_price"])),
+        min_market_cap_cr=float(screening_raw.get("min_market_cap_cr", auto["min_market_cap_cr"])),
+        min_atr_pct=float(screening_raw.get("min_atr_pct", 0.5)),
+        min_trading_days=int(screening_raw.get("min_trading_days", 10)),
+        max_per_sector=int(screening_raw.get("max_per_sector", 3)),
+        volume_surge_weight=int(screening_raw.get("volume_surge_weight", 15)),
+        relative_strength_weight=int(screening_raw.get("relative_strength_weight", 15)),
+        atr_expansion_weight=int(screening_raw.get("atr_expansion_weight", 10)),
+        price_structure_weight=int(screening_raw.get("price_structure_weight", 15)),
+        delivery_pct_weight=int(screening_raw.get("delivery_pct_weight", 10)),
+        sector_momentum_weight=int(screening_raw.get("sector_momentum_weight", 10)),
+        gap_analysis_weight=int(screening_raw.get("gap_analysis_weight", 10)),
+        candlestick_pattern_weight=int(screening_raw.get("candlestick_pattern_weight", 10)),
+        volume_profile_weight=int(screening_raw.get("volume_profile_weight", 5)),
+    )
+
+
 def load_config(config_path: Path | None = None) -> Config:
     """Read settings from TOML and secrets from the environment."""
     load_dotenv()
@@ -321,24 +359,7 @@ def load_config(config_path: Path | None = None) -> Config:
             kite_api_key=_require_env("KITE_API_KEY"),
             kite_api_secret=_require_env("KITE_API_SECRET"),
         ),
-        screening=ScreeningConfig(
-            min_volume=int(screening_raw.get("min_volume", 500000)),
-            min_price=float(screening_raw.get("min_price", 50)),
-            max_price=float(screening_raw.get("max_price", 5000)),
-            min_market_cap_cr=float(screening_raw.get("min_market_cap_cr", 1000)),
-            min_atr_pct=float(screening_raw.get("min_atr_pct", 0.5)),
-            min_trading_days=int(screening_raw.get("min_trading_days", 10)),
-            max_per_sector=int(screening_raw.get("max_per_sector", 3)),
-            volume_surge_weight=int(screening_raw.get("volume_surge_weight", 15)),
-            relative_strength_weight=int(screening_raw.get("relative_strength_weight", 15)),
-            atr_expansion_weight=int(screening_raw.get("atr_expansion_weight", 10)),
-            price_structure_weight=int(screening_raw.get("price_structure_weight", 15)),
-            delivery_pct_weight=int(screening_raw.get("delivery_pct_weight", 10)),
-            sector_momentum_weight=int(screening_raw.get("sector_momentum_weight", 10)),
-            gap_analysis_weight=int(screening_raw.get("gap_analysis_weight", 10)),
-            candlestick_pattern_weight=int(screening_raw.get("candlestick_pattern_weight", 10)),
-            volume_profile_weight=int(screening_raw.get("volume_profile_weight", 5)),
-        ),
+        screening=_build_screening_config(screening_raw, capital=float(general_raw["capital"])),
         backtest=BacktestConfig(
             lookback_days=int(backtest_raw.get("lookback_days", 365)),
             walk_forward_windows=int(backtest_raw.get("walk_forward_windows", 10)),

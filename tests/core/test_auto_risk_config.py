@@ -2,7 +2,9 @@
 
 import pytest
 
-from tradingbot.core.config import ConfigError, RiskConfig, auto_risk_config, auto_shadow_fraction
+from tradingbot.core.config import (
+    ConfigError, RiskConfig, auto_risk_config, auto_screening_defaults, auto_shadow_fraction,
+)
 
 
 class TestAutoRiskConfigTiers:
@@ -92,3 +94,33 @@ class TestAutoShadowFraction:
     def test_zero_capital_raises(self):
         with pytest.raises(ConfigError, match="capital must be positive"):
             auto_shadow_fraction(0)
+
+
+class TestAutoScreeningDefaults:
+    """Small accounts get lower max_price so they can buy enough shares."""
+
+    def test_micro_20k(self):
+        d = auto_screening_defaults(20_000.0)
+        assert d["max_price"] == 1000.0
+        assert d["min_volume"] == 100_000
+        assert d["min_market_cap_cr"] == 500.0
+
+    def test_small_80k(self):
+        d = auto_screening_defaults(80_000.0)
+        assert d["max_price"] == 4000.0
+        assert d["min_volume"] == 100_000
+
+    def test_medium_200k(self):
+        d = auto_screening_defaults(200_000.0)
+        assert d["max_price"] == 5000.0
+        assert d["min_volume"] == 500_000
+        assert d["min_market_cap_cr"] == 1000.0
+
+    def test_large_1m(self):
+        d = auto_screening_defaults(1_000_000.0)
+        assert d["max_price"] == 5000.0
+        assert d["min_volume"] == 500_000
+
+    def test_zero_capital_raises(self):
+        with pytest.raises(ConfigError, match="capital must be positive"):
+            auto_screening_defaults(0)

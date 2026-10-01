@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 
 from tradingbot.api.state import AppState
-from tradingbot.core.config import ConfigError, RiskConfig, auto_risk_config, load_config
+from tradingbot.core.config import ConfigError, RiskConfig, auto_risk_config, auto_screening_defaults, load_config
 from tradingbot.core.models import Mode
 
 router = APIRouter(prefix="/api")
@@ -24,6 +24,19 @@ def _mask_secret(value: str) -> str:
     if not value or len(value) <= 6:
         return "***"
     return "***" + value[-3:]
+
+
+def _screening_response(screening, capital: float) -> dict[str, Any]:
+    """Screening config dict with auto_derived flags for capital-sensitive fields."""
+    from dataclasses import asdict
+    auto = auto_screening_defaults(capital)
+    d = asdict(screening)
+    d["auto_derived"] = {
+        "max_price": d["max_price"] == auto["max_price"],
+        "min_volume": d["min_volume"] == auto["min_volume"],
+        "min_market_cap_cr": d["min_market_cap_cr"] == auto["min_market_cap_cr"],
+    }
+    return d
 
 
 def _risk_response(risk: RiskConfig, capital: float) -> dict[str, Any]:
@@ -40,21 +53,7 @@ def _config_to_dict(state: AppState) -> dict[str, Any]:
     config = state.config
     return {
         "general": {"mode": config.general.mode.value, "capital": config.general.capital, "log_level": config.general.log_level},
-        "screening": {
-            "min_volume": config.screening.min_volume, "min_price": config.screening.min_price,
-            "max_price": config.screening.max_price, "min_market_cap_cr": config.screening.min_market_cap_cr,
-            "min_atr_pct": config.screening.min_atr_pct, "min_trading_days": config.screening.min_trading_days,
-            "max_per_sector": config.screening.max_per_sector,
-            "volume_surge_weight": config.screening.volume_surge_weight,
-            "relative_strength_weight": config.screening.relative_strength_weight,
-            "atr_expansion_weight": config.screening.atr_expansion_weight,
-            "price_structure_weight": config.screening.price_structure_weight,
-            "delivery_pct_weight": config.screening.delivery_pct_weight,
-            "sector_momentum_weight": config.screening.sector_momentum_weight,
-            "gap_analysis_weight": config.screening.gap_analysis_weight,
-            "candlestick_pattern_weight": config.screening.candlestick_pattern_weight,
-            "volume_profile_weight": config.screening.volume_profile_weight,
-        },
+        "screening": _screening_response(config.screening, config.general.capital),
         "backtest": {
             "lookback_days": config.backtest.lookback_days,
             "walk_forward_windows": config.backtest.walk_forward_windows,
