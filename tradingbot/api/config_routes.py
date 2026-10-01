@@ -131,12 +131,17 @@ async def put_config(request: Request):
     for section, values in existing.items():
         lines.append(f"[{section}]")
         for key, val in values.items():
-            if isinstance(val, str):
-                lines.append(f'{key} = "{val}"')
-            elif isinstance(val, bool):
+            if isinstance(val, bool):
                 lines.append(f"{key} = {'true' if val else 'false'}")
             elif isinstance(val, (int, float)):
                 lines.append(f"{key} = {val}")
+            elif isinstance(val, list):
+                items = ", ".join(
+                    f'"{v}"' if isinstance(v, str) else str(v) for v in val
+                )
+                lines.append(f"{key} = [{items}]")
+            elif isinstance(val, str):
+                lines.append(f'{key} = "{val}"')
             else:
                 lines.append(f'{key} = "{val}"')
         lines.append("")

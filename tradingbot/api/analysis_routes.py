@@ -39,7 +39,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         from tradingbot.screening.screener import Tier1Screener
 
         config = state.config
-        data_dir = Path(state.data_dir) if state.data_dir else Path("data")
+        data_dir = Path(state.data_dir) if state.data_dir else Path(".")
         data_dir.mkdir(exist_ok=True)
         log_dir = data_dir / "logs"
 
@@ -383,7 +383,7 @@ async def start_sync(request: Request):
             from tradingbot.data.instrument_cache import InstrumentCache
             from tradingbot.data.kite_client import KiteClient
 
-            data_dir = Path(state.data_dir) if state.data_dir else Path("data")
+            data_dir = Path(state.data_dir) if state.data_dir else Path(".")
             data_dir.mkdir(exist_ok=True)
 
             kite_client = KiteClient(
