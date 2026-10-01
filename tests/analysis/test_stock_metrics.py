@@ -29,6 +29,7 @@ def _make_pipeline(instrument_cache, candle_store):
     pipeline = AnalysisPipeline.__new__(AnalysisPipeline)
     pipeline._instrument_cache = instrument_cache
     pipeline._candles = candle_store
+    pipeline._provider = None
     return pipeline
 
 
@@ -79,6 +80,7 @@ def test_build_stock_metrics_no_cache():
     pipeline = AnalysisPipeline.__new__(AnalysisPipeline)
     pipeline._instrument_cache = None
     pipeline._candles = MagicMock()
+    pipeline._provider = None
     result = pipeline._build_stock_metrics()
     assert result == []
 

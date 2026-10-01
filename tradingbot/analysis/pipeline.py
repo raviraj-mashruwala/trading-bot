@@ -74,11 +74,13 @@ class AnalysisPipeline:
         context_fetcher: Any = None,
         lookback_days: int = 365,
         db_path: Any = None,
+        market_data_provider: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
         self._db_path = db_path
         self._instrument_cache = instrument_cache
+        self._provider = market_data_provider
         self._context_fetcher = context_fetcher
         self._screener = screener
         self._tier2 = tier2
@@ -154,9 +156,9 @@ class AnalysisPipeline:
 
         self._bus.emit("analysis.tier2_complete", {"shortlisted": len(shortlist)})
 
-        # Sync deep data for shortlisted symbols
+        # Sync deep data for shortlisted symbols (skip when using yfinance provider)
         symbols = [s["symbol"] for s in shortlist]
-        if symbols and hasattr(self._sync, "deep_fetch"):
+        if self._provider is None and symbols and hasattr(self._sync, "deep_fetch"):
             self._sync.deep_fetch(symbols)
 
         # --- Performance context for LLM ---
@@ -270,11 +272,14 @@ class AnalysisPipeline:
     def _build_stock_metrics(
         self, nifty_5d_change: float = 0.0, delivery_data: dict | None = None
     ) -> list[dict]:
-        """Compute all 9 screening factor scores for cached instruments."""
-        if self._instrument_cache is None:
+        """Compute all 9 screening factor scores for all instruments."""
+        if self._provider is not None:
+            instruments = self._provider.get_universe()
+        elif self._instrument_cache is not None:
+            instruments = self._instrument_cache.get_all()
+        else:
             return []
 
-        instruments = self._instrument_cache.get_all()
         if not instruments:
             return []
 
@@ -285,14 +290,25 @@ class AnalysisPipeline:
         now = datetime.now(tz=IST)
         from_dt = now - timedelta(days=30)
 
+        symbols = [inst["symbol"] for inst in instruments]
+        inst_map = {inst["symbol"]: inst for inst in instruments}
+
+        if self._provider is not None:
+            daily_data = self._provider.get_daily_batch(symbols, days=30)
+        else:
+            daily_data = {}
+            for sym in symbols:
+                df = self._candles.read(sym, "day", from_dt, now)
+                if not df.empty:
+                    daily_data[sym] = df
+
         sector_returns: dict[str, list[float]] = {}
         metrics = []
 
-        for inst in instruments:
-            symbol = inst["symbol"]
-            df = self._candles.read(symbol, "day", from_dt, now)
+        for symbol, df in daily_data.items():
             if df.empty or len(df) < 5:
                 continue
+            inst = inst_map.get(symbol, {"symbol": symbol, "token": 0, "sector": "unknown"})
 
             close = df["close"]
             volume = df["volume"]
@@ -388,13 +404,18 @@ class AnalysisPipeline:
             return {}
 
     def _compute_nifty_5d_change_from_store(self) -> float:
-        """5-day Nifty50 return from CandleStore. Zero on failure. No yfinance."""
+        """5-day Nifty50 return. Uses provider or CandleStore fallback."""
         try:
-            df = self._candles.read(
-                "NIFTY 50", "day",
-                datetime.now(tz=IST) - timedelta(days=self._lookback_days),
-                datetime.now(tz=IST),
-            )
+            if self._provider is not None:
+                df = self._provider.get_index("NIFTY 50", days=10)
+            elif self._candles is not None:
+                df = self._candles.read(
+                    "NIFTY 50", "day",
+                    datetime.now(tz=IST) - timedelta(days=self._lookback_days),
+                    datetime.now(tz=IST),
+                )
+            else:
+                return 0.0
             if len(df) >= 6:
                 return float((df["close"].iloc[-1] / df["close"].iloc[-6] - 1) * 100)
         except Exception:
@@ -432,11 +453,14 @@ class AnalysisPipeline:
         from tradingbot.strategy.indicators import compute_snapshot, InsufficientDataError
 
         try:
-            df = self._candles.read(
-                symbol, "15minute",
-                datetime.now(tz=IST) - timedelta(days=self._lookback_days),
-                datetime.now(tz=IST),
-            )
+            if self._provider is not None:
+                df = self._provider.get_intraday(symbol, "15m", days=60)
+            else:
+                df = self._candles.read(
+                    symbol, "15minute",
+                    datetime.now(tz=IST) - timedelta(days=self._lookback_days),
+                    datetime.now(tz=IST),
+                )
             if df.empty or len(df) < 30:
                 return {}, f"{symbol}: insufficient candle data for indicators"
 
@@ -488,14 +512,24 @@ class AnalysisPipeline:
             )
 
         symbol_returns: dict[str, list[float]] = {}
+        corr_symbols = [s["symbol"] for s in setups_with_data]
+        if self._provider is not None and corr_symbols:
+            corr_data = self._provider.get_daily_batch(corr_symbols, days=30)
+        else:
+            corr_data = {}
         for s in setups_with_data:
             sym = s["symbol"]
             try:
-                df = self._candles.read(
-                    sym, "day",
-                    datetime.now(tz=IST) - timedelta(days=self._lookback_days),
-                    datetime.now(tz=IST),
-                )
+                if sym in corr_data:
+                    df = corr_data[sym]
+                elif self._candles is not None:
+                    df = self._candles.read(
+                        sym, "day",
+                        datetime.now(tz=IST) - timedelta(days=self._lookback_days),
+                        datetime.now(tz=IST),
+                    )
+                else:
+                    continue
                 if len(df) >= 20:
                     symbol_returns[sym] = df["close"].tail(20).pct_change().dropna().tolist()
             except Exception:
@@ -596,8 +630,11 @@ class AnalysisPipeline:
 
         eligible = self._get_regime_eligible_strategies(regime or {})
 
-        from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
-        df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
+        if self._provider is not None:
+            df = self._provider.get_intraday(symbol, "15m", days=60)
+        else:
+            from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
+            df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
         if len(df) == 0:
             return
 
