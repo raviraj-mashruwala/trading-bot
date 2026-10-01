@@ -40,11 +40,11 @@ class EntryGuard:
             return EntryVerdict("VETO", f"Price drift {drift_pct:.1f}% exceeds {self._max_drift_pct}%", 1.0, 0)
 
         # Rule 3: LONG into strong selling
-        if direction == "LONG" and state.momentum_5m < -60:
+        if direction == "long" and state.momentum_5m < -60:
             return EntryVerdict("VETO", f"Strong 5m selling (momentum {state.momentum_5m:.0f})", 0.9, 0)
 
         # Rule 4: SHORT into strong buying
-        if direction == "SHORT" and state.momentum_5m > 60:
+        if direction == "short" and state.momentum_5m > 60:
             return EntryVerdict("VETO", f"Strong 5m buying (momentum {state.momentum_5m:.0f})", 0.9, 0)
 
         # Rule 5: low volume
@@ -56,23 +56,23 @@ class EntryGuard:
             return EntryVerdict("WAIT", "Choppy, conflicting signals", 0.6, 60)
 
         # Rule 7: LONG falling below VWAP
-        if direction == "LONG" and state.vwap_position < -0.8 and state.momentum_1m < -30:
+        if direction == "long" and state.vwap_position < -0.8 and state.momentum_1m < -30:
             return EntryVerdict("WAIT", "Price falling below VWAP", 0.5, 60)
 
         # Rule 7b: SHORT rising above VWAP
-        if direction == "SHORT" and state.vwap_position > 0.8 and state.momentum_1m > 30:
+        if direction == "short" and state.vwap_position > 0.8 and state.momentum_1m > 30:
             return EntryVerdict("WAIT", "Price rising above VWAP", 0.5, 60)
 
         # Rule 8: adverse candle pattern
-        if direction == "LONG" and state.last_pattern_5m in _BEARISH_PATTERNS:
+        if direction == "long" and state.last_pattern_5m in _BEARISH_PATTERNS:
             return EntryVerdict("WAIT", f"Bearish 5m pattern: {state.last_pattern_5m}", 0.5, 60)
-        if direction == "SHORT" and state.last_pattern_5m in _BULLISH_PATTERNS:
+        if direction == "short" and state.last_pattern_5m in _BULLISH_PATTERNS:
             return EntryVerdict("WAIT", f"Bullish 5m pattern: {state.last_pattern_5m}", 0.5, 60)
 
         # Rule 10: clean setup — momentum aligned + volume adequate
         aligned_momentum = (
-            (direction == "LONG" and state.momentum_1m > 20 and state.momentum_5m > 15)
-            or (direction == "SHORT" and state.momentum_1m < -20 and state.momentum_5m < -15)
+            (direction == "long" and state.momentum_1m > 20 and state.momentum_5m > 15)
+            or (direction == "short" and state.momentum_1m < -20 and state.momentum_5m < -15)
         )
         if aligned_momentum and state.volume_ratio > 0.7 and state.trend_alignment:
             return EntryVerdict("ENTER", "Momentum aligned, volume adequate", 0.8, 0)

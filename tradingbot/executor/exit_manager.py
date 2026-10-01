@@ -37,7 +37,7 @@ class ExitManager:
             if price <= stop:
                 return ExitDecision.STOP_HIT
             if state.target_1_booked:
-                if price >= leg.target_2:
+                if leg.target_2 > 0 and price >= leg.target_2:
                     return ExitDecision.BOOK_TARGET_2
             elif price >= leg.target_1:
                 return ExitDecision.BOOK_TARGET_1
@@ -45,7 +45,7 @@ class ExitManager:
             if price >= stop:
                 return ExitDecision.STOP_HIT
             if state.target_1_booked:
-                if price <= leg.target_2:
+                if leg.target_2 > 0 and price <= leg.target_2:
                     return ExitDecision.BOOK_TARGET_2
             elif price <= leg.target_1:
                 return ExitDecision.BOOK_TARGET_1

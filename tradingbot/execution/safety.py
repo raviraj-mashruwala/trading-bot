@@ -18,13 +18,13 @@ class SafetyManager:
         max_positions: int = 4,
     ):
         self._capital = capital
-        self._max_loss = capital * max_daily_loss_pct / 100
+        self._max_loss = capital * max_daily_loss_pct
         self._max_positions = max_positions
 
     def check_daily_loss(self, realised_pnl: float) -> bool:
         """Return True when daily loss limit is breached.
 
-        Breached when ``abs(loss) >= capital x max_daily_loss_pct / 100``.
+        Breached when ``abs(loss) >= capital x max_daily_loss_pct``.
         """
         if realised_pnl < 0 and abs(realised_pnl) >= self._max_loss:
             log.critical(

@@ -84,6 +84,7 @@ class KiteExecutor:
         quantity: int,
         price: float | None = None,
         order_type: str = "MARKET",
+        entry_cost: float | None = None,
     ) -> str | None:
         """Place an exit order. Returns order_id or None on failure."""
         transaction_type = "SELL" if direction == "long" else "BUY"
@@ -101,7 +102,8 @@ class KiteExecutor:
             if price and order_type != "MARKET":
                 kwargs["price"] = price
             order_id = self._client.place_order(**kwargs)
-            self._capital.release_deployed(price * quantity if price else 0)
+            release = entry_cost if entry_cost else (price * quantity if price else 0)
+            self._capital.release_deployed(release)
             return order_id
         except Exception:
             log.exception("%s: failed to place exit", symbol)
