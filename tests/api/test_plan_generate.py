@@ -17,7 +17,7 @@ async def test_generate_plan_creates_plan_file(api_client):
     })
     ss.close()
 
-    response = await api_client.post("/api/plans/generate?date=2026-10-01")
+    response = await api_client.post("/api/plans/generate?trade_date=2026-10-01")
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "generated"
@@ -31,7 +31,7 @@ async def test_generate_plan_creates_plan_file(api_client):
 
 
 async def test_generate_plan_with_no_approved_setups(api_client):
-    response = await api_client.post("/api/plans/generate?date=2026-10-02")
+    response = await api_client.post("/api/plans/generate?trade_date=2026-10-02")
     assert response.status_code == 200
     body = response.json()
     assert body["legs"] == 0
@@ -49,7 +49,7 @@ async def test_generate_plan_legs_carry_setup_id(api_client):
     })
     ss.close()
 
-    await api_client.post("/api/plans/generate?date=2026-10-01")
+    await api_client.post("/api/plans/generate?trade_date=2026-10-01")
     plan = (await api_client.get("/api/plans/2026-10-01")).json()
 
     found = [l for l in plan["legs"] if l["symbol"] == "INFY"]

@@ -179,7 +179,7 @@ class Database:
         return [dict(r) for r in rows]
 
     @staticmethod
-    def _row_to_trade(row: sqlite3.Row) -> ExecutedTrade:
+    def _row_to_trade(row) -> ExecutedTrade:
         return ExecutedTrade(
             trade_date=row["trade_date"],
             symbol=row["symbol"],

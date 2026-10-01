@@ -21,19 +21,49 @@ SELECT t.id AS trade_id, t.setup_id, t.symbol, t.strategy, t.direction,
        s.confidence, s.confluence_count, s.regime_at_generation,
        s.thesis, s.invalidation_condition, s.bear_case
 FROM trades t
+JOIN analysis.setups s ON t.setup_id = s.id
+"""
+
+_SCORECARD_SQL_LOCAL = """
+SELECT t.id AS trade_id, t.setup_id, t.symbol, t.strategy, t.direction,
+       t.trade_date, t.entry_price AS actual_entry, t.exit_price AS actual_exit,
+       t.pnl, t.exit_reason, t.quantity,
+       s.entry_price AS predicted_entry, s.stop_loss AS predicted_stop,
+       s.target_1 AS predicted_target_1, s.target_2 AS predicted_target_2,
+       s.confidence, s.confluence_count, s.regime_at_generation,
+       s.thesis, s.invalidation_condition, s.bear_case
+FROM trades t
 JOIN setups s ON t.setup_id = s.id
 """
 
 
 class TradeReviewStore:
-    """Join trades and setups to produce scorecards and aggregated stats."""
+    """Join trades and setups to produce scorecards and aggregated stats.
+
+    The trades table lives in tradingbot.db and the setups table lives in
+    analysis.db. We ATTACH analysis.db so the JOIN can cross databases.
+    """
 
     def __init__(self, db_path: Path):
-        self._conn = create_connection(DatabaseKind.TRADING, Path(db_path))
+        import sqlite3 as _sqlite3
+
+        trading_path = Path(db_path)
+        analysis_path = trading_path.parent / "analysis.db"
+
+        conn = _sqlite3.connect(str(trading_path))
+        conn.row_factory = _sqlite3.Row
+        if analysis_path.exists():
+            conn.execute(f"ATTACH DATABASE ? AS analysis", (str(analysis_path),))
+        self._conn = conn
+        self._has_analysis = analysis_path.exists()
+
+    @property
+    def _sql(self) -> str:
+        return _SCORECARD_SQL if self._has_analysis else _SCORECARD_SQL_LOCAL
 
     def get_scorecard(self, trade_id: int) -> TradeScorecard | None:
         row = self._conn.execute(
-            _SCORECARD_SQL + " WHERE t.id = ?", (trade_id,)
+            self._sql + " WHERE t.id = ?", (trade_id,)
         ).fetchone()
         if row is None:
             return None
@@ -41,7 +71,7 @@ class TradeReviewStore:
 
     def get_scorecards_for_date(self, trade_date: str) -> list[TradeScorecard]:
         rows = self._conn.execute(
-            _SCORECARD_SQL + " WHERE t.trade_date = ? AND t.setup_id IS NOT NULL ORDER BY t.id",
+            self._sql + " WHERE t.trade_date = ? AND t.setup_id IS NOT NULL ORDER BY t.id",
             (trade_date,),
         ).fetchall()
         return [self._row_to_scorecard(r) for r in rows]
@@ -50,7 +80,7 @@ class TradeReviewStore:
         cutoff = (date.today() - timedelta(days=lookback_days)).isoformat()
         try:
             rows = self._conn.execute(
-                _SCORECARD_SQL + " WHERE t.trade_date >= ? AND t.setup_id IS NOT NULL",
+                self._sql + " WHERE t.trade_date >= ? AND t.setup_id IS NOT NULL",
                 (cutoff,),
             ).fetchall()
         except Exception:

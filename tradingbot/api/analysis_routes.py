@@ -248,18 +248,17 @@ def _build_plan_builder(state: AppState):
 
 
 @router.post("/plans/generate")
-async def generate_plan(request: Request, date: str | None = None):
+async def generate_plan(request: Request, trade_date: str | None = None):
     state: AppState = request.app.state.app_state
     from tradingbot.core.models import MarketRegime
 
-    if date:
-        from datetime import date as d
-        trade_date = d.fromisoformat(date)
+    if trade_date:
+        td = date.fromisoformat(trade_date)
     else:
-        trade_date = next_trading_day(now_ist().date())
+        td = next_trading_day(now_ist().date())
 
     builder = _build_plan_builder(state)
-    plan = builder.build(trade_date, regime=MarketRegime.RANGE_BOUND)
+    plan = builder.build(td, regime=MarketRegime.RANGE_BOUND)
     state.plan_store.save(plan)
     state.database.save_plan_snapshot(plan)
 
@@ -500,5 +499,9 @@ async def update_setup(setup_id: int, request: Request):
     reason = body.get("reason", "")
     if status not in ("approved", "rejected", "active"):
         raise HTTPException(status_code=400, detail="Invalid status")
+    try:
+        state.setup_store.get_by_id(setup_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Setup {setup_id} not found")
     state.setup_store.update_status(setup_id, status, reason)
     return {"ok": True, "setup_id": setup_id, "status": status}

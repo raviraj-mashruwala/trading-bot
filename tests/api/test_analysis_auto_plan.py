@@ -11,7 +11,7 @@ async def test_generate_plan_emits_plan_generated_event(api_client):
     events_received = []
     state.event_bus.subscribe(lambda e: events_received.append(e))
 
-    response = await api_client.post("/api/plans/generate?date=2026-10-01")
+    response = await api_client.post("/api/plans/generate?trade_date=2026-10-01")
     assert response.status_code == 200
 
     plan_events = [e for e in events_received if e["type"] == "plan.generated"]

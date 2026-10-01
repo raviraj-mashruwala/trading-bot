@@ -36,8 +36,9 @@ async def test_kite_callback_with_valid_token(api_client):
             "user_id": "AB1234",
         }
         mock_ensure.return_value = auth
-        response = await api_client.get("/api/auth/kite/callback?request_token=test_req")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["authenticated"] is True
-        assert data["user_id"] == "AB1234"
+        response = await api_client.get(
+            "/api/auth/kite/callback?request_token=test_req",
+            follow_redirects=False,
+        )
+        assert response.status_code == 307
+        assert "kite=success" in response.headers["location"]
