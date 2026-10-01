@@ -73,7 +73,7 @@ class MarketDataProvider:
         if not symbols:
             return {}
         yf_symbols = [self.to_nse_symbol(s) for s in symbols]
-        period = f"{days}d" if days <= 730 else f"{days // 365}y"
+        period = f"{days}d"
         try:
             raw = yf.download(
                 yf_symbols, period=period, interval="1d",
