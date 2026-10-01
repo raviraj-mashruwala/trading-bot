@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { usePipelineStore } from "@/lib/store";
@@ -50,11 +50,12 @@ export default function AnalysisPage() {
   const isRunning = pipelineStatus === "running" || analysisStatus?.status === "running";
   const isComplete = analysisStatus?.status === "complete";
 
-  // Invalidate v2 queries when analysis completes
-  if (isComplete && pipelineStatus !== "running") {
-    queryClient.invalidateQueries({ queryKey: ["daily-plan"] });
-    queryClient.invalidateQueries({ queryKey: ["analysis-runs"] });
-  }
+  useEffect(() => {
+    if (isComplete && pipelineStatus !== "running") {
+      queryClient.invalidateQueries({ queryKey: ["daily-plan"] });
+      queryClient.invalidateQueries({ queryKey: ["analysis-runs"] });
+    }
+  }, [isComplete, pipelineStatus, queryClient]);
 
   return (
     <div className="space-y-5">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -23,6 +23,11 @@ export function ConfigSection({ name, fields, onSave }: Props) {
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValues(Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, String(v)])));
+  }, [fields]);
 
   const handleSave = async () => {
     const changed: Record<string, unknown> = {};
@@ -34,10 +39,16 @@ export function ConfigSection({ name, fields, onSave }: Props) {
     }
     if (Object.keys(changed).length === 0) return;
     setSaving(true);
-    await onSave(changed);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setError(null);
+    try {
+      await onSave(changed);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -60,6 +71,7 @@ export function ConfigSection({ name, fields, onSave }: Props) {
           {saving ? "Saving..." : "Save"}
         </Button>
         {saved && <span className="text-[11px] text-[#2da44e]">Saved</span>}
+        {error && <span className="text-[11px] text-[#f85149]">{error}</span>}
       </div>
     </div>
   );

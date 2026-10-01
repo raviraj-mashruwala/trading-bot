@@ -98,7 +98,7 @@ export const api = {
 
   // Plan Generation
   generatePlan: (date?: string) =>
-    post<GeneratePlanResponse>(`/api/plans/generate${date ? `?date=${date}` : ""}`),
+    post<GeneratePlanResponse>(`/api/plans/generate${date ? `?trade_date=${date}` : ""}`),
 
   // Review & Performance
   getScorecards: (date: string) =>
