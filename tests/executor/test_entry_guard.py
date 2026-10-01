@@ -18,7 +18,7 @@ def _state(**overrides) -> SymbolState:
 
 
 class FakeLeg:
-    def __init__(self, direction="LONG", entry_price=2450.0,
+    def __init__(self, direction="long", entry_price=2450.0,
                  entry_window_end=time(10, 0),
                  max_entry_wait=time(10, 30)):
         self.direction = type("D", (), {"value": direction})()
@@ -46,14 +46,14 @@ def test_rule2_price_drifted_too_far():
 
 def test_rule3_long_into_strong_selling():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="LONG")
+    leg = FakeLeg(direction="long")
     v = guard.evaluate(leg, _state(momentum_5m=-65.0), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "VETO"
 
 
 def test_rule4_short_into_strong_buying():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="SHORT")
+    leg = FakeLeg(direction="short")
     v = guard.evaluate(leg, _state(momentum_5m=65.0), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "VETO"
 
@@ -74,35 +74,35 @@ def test_rule6_choppy_no_alignment():
 
 def test_rule7_long_falling_below_vwap():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="LONG")
+    leg = FakeLeg(direction="long")
     v = guard.evaluate(leg, _state(vwap_position=-0.9, momentum_1m=-35.0), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "WAIT"
 
 
 def test_rule7b_short_rising_above_vwap():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="SHORT")
+    leg = FakeLeg(direction="short")
     v = guard.evaluate(leg, _state(vwap_position=0.9, momentum_1m=35.0), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "WAIT"
 
 
 def test_rule8_bearish_pattern_for_long():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="LONG")
+    leg = FakeLeg(direction="long")
     v = guard.evaluate(leg, _state(last_pattern_5m="bearish_engulf"), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "WAIT"
 
 
 def test_rule8_bullish_pattern_for_short():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="SHORT")
+    leg = FakeLeg(direction="short")
     v = guard.evaluate(leg, _state(last_pattern_5m="bullish_engulf"), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "WAIT"
 
 
 def test_rule10_clean_entry():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="LONG")
+    leg = FakeLeg(direction="long")
     v = guard.evaluate(leg, _state(momentum_1m=40.0, momentum_5m=45.0, volume_ratio=1.5, trend_alignment=True), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "ENTER"
     assert v.confidence > 0.6
@@ -110,7 +110,7 @@ def test_rule10_clean_entry():
 
 def test_gray_zone_low_confidence():
     guard = EntryGuard(max_drift_pct=5.0)
-    leg = FakeLeg(direction="LONG")
+    leg = FakeLeg(direction="long")
     # Mild positive momentum, nothing disqualifying, nothing strong
     v = guard.evaluate(leg, _state(momentum_1m=5.0, momentum_5m=8.0, volume_ratio=0.8, trend_alignment=True, body_dominance=0.4), 2450.0, datetime(2026, 9, 29, 9, 20))
     assert v.action == "ENTER"

@@ -56,7 +56,7 @@ class AdaptiveExitManager:
         """Evaluate exit priority chain, return highest-priority signal."""
         now_time = now.time() if isinstance(now, datetime) else now
         direction = state.leg.direction.value
-        is_long = direction == "LONG"
+        is_long = direction == "long"
 
         # P1: square-off — sacred, never overridden
         if now_time >= self._square_off_time:
@@ -112,7 +112,7 @@ class AdaptiveExitManager:
         Phase 3 (near T2): last 2 x 1min candles, tighter trail.
         Invariant: trail never widens (never below current_stop for longs).
         """
-        is_long = state.leg.direction.value == "LONG"
+        is_long = state.leg.direction.value == "long"
         breakeven = state.entry_fill_price
 
         # Phase 1: pre-T1 — no trailing

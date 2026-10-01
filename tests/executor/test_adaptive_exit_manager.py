@@ -22,7 +22,7 @@ def _state(**overrides) -> SymbolState:
 
 
 class FakeLegState:
-    def __init__(self, direction="LONG", entry_fill_price=2450.0,
+    def __init__(self, direction="long", entry_fill_price=2450.0,
                  stop=2430.0, t1=2470.0, t2=2490.0,
                  target_1_booked=False, filled_qty=10):
         self.leg = type("Leg", (), {
@@ -54,7 +54,7 @@ def test_stop_hit_long():
 
 def test_stop_hit_short():
     mgr = AdaptiveExitManager(square_off_time=time(15, 15))
-    ls = FakeLegState(direction="SHORT", entry_fill_price=2450.0, stop=2470.0)
+    ls = FakeLegState(direction="short", entry_fill_price=2450.0, stop=2470.0)
     d = mgr.decide(ls, _state(), 2471.0, datetime(2026, 9, 29, 10, 30))
     assert d == ExitDecision.STOP_HIT
 
@@ -160,7 +160,7 @@ def test_momentum_peak_not_overwritten_by_reversal():
 def test_momentum_exit_short():
     """F1 companion: SHORT momentum exit uses negative peak correctly."""
     mgr = AdaptiveExitManager(square_off_time=time(15, 15))
-    ls = FakeLegState(direction="SHORT", entry_fill_price=2450.0, stop=2470.0,
+    ls = FakeLegState(direction="short", entry_fill_price=2450.0, stop=2470.0,
                       t1=2430.0, t2=2410.0)
     # Peak negative momentum at -55 during downtrend
     mgr.track_peak_momentum("RELIANCE", -55.0)
