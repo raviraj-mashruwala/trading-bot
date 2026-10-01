@@ -16,7 +16,7 @@ from tradingbot.core.models import Mode
 router = APIRouter(prefix="/api")
 
 PROVIDERS = [
-    {"name": "anthropic", "models": ["claude-sonnet-5", "claude-haiku-4-5"]},
+    {"name": "anthropic", "models": ["claude-sonnet-4-6", "claude-sonnet-5-5", "claude-sonnet-5", "claude-haiku-4-5"]},
 ]
 
 
