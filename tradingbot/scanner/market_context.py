@@ -40,17 +40,19 @@ INDEX_LOOKBACK_DAYS = 120
 class MarketContextFetcher:
     """Assembles the MarketContext handed to the scanner LLM call.
 
-    Index and VIX data come from CandleStore (no yfinance dependency).
-    FII/DII data comes from the NSE public JSON API.
+    Index and VIX data come from MarketDataProvider (yfinance) or
+    CandleStore (legacy fallback). FII/DII from NSE JSON API.
     """
 
     def __init__(
         self,
         http_client: httpx.Client | None = None,
         candle_store: Any = None,
+        market_data_provider: Any = None,
     ) -> None:
         self.http_client = http_client or httpx.Client(headers=BROWSER_HEADERS, timeout=10.0)
         self._candles = candle_store
+        self._provider = market_data_provider
 
     def fetch(self) -> MarketContext:
         fii_net, dii_net = self._fetch_fii_dii()
@@ -97,44 +99,53 @@ class MarketContextFetcher:
         return "mixed"
 
     def _fetch_index_trend(self, symbol: str) -> tuple[float, bool, bool]:
-        """Return (last level, above SMA20, above SMA50) from CandleStore.
+        """Return (last level, above SMA20, above SMA50).
 
-        Returns (0.0, False, False) if candle_store is not injected or data
-        is unavailable — pipeline degrades to TRENDING_DOWN regime safely.
+        Uses MarketDataProvider (yfinance) if available, else CandleStore.
+        Returns (0.0, False, False) on failure — degrades safely.
         """
-        if self._candles is None:
-            logger.warning("No candle_store injected — index trend for %s unavailable", symbol)
+        df = self._read_index(symbol, INDEX_LOOKBACK_DAYS)
+        if df.empty or len(df) < 50:
+            logger.warning("Insufficient data for %s (%d rows)", symbol, len(df))
             return 0.0, False, False
         try:
-            from_dt = datetime.now(tz=IST) - timedelta(days=INDEX_LOOKBACK_DAYS)
-            df = self._candles.read(symbol, "day", from_dt, datetime.now(tz=IST))
-            if df.empty or len(df) < 50:
-                logger.warning("Insufficient candle data for %s (%d rows)", symbol, len(df))
-                return 0.0, False, False
             closes = df["close"]
             last = float(closes.iloc[-1])
             sma20 = float(closes.rolling(20).mean().iloc[-1])
             sma50 = float(closes.rolling(50).mean().iloc[-1])
             return last, last > sma20, last > sma50
         except Exception as exc:
-            logger.warning("Index trend fetch failed for %s: %s", symbol, exc)
+            logger.warning("Index trend failed for %s: %s", symbol, exc)
             return 0.0, False, False
 
     def _fetch_vix(self) -> float:
-        """Return India VIX last close from CandleStore. Defaults to 15.0 on failure."""
-        if self._candles is None:
-            logger.warning("No candle_store injected — VIX unavailable, defaulting to %.1f", VIX_DEFAULT)
+        """Return India VIX last close. Defaults to 15.0 on failure."""
+        df = self._read_index("INDIA VIX", 10)
+        if df.empty:
+            logger.warning("VIX unavailable, defaulting to %.1f", VIX_DEFAULT)
             return VIX_DEFAULT
         try:
-            from_dt = datetime.now(tz=IST) - timedelta(days=10)
-            df = self._candles.read("INDIA VIX", "day", from_dt, datetime.now(tz=IST))
-            if df.empty:
-                logger.warning("No VIX candle data, defaulting to %.1f", VIX_DEFAULT)
-                return VIX_DEFAULT
             return float(df["close"].iloc[-1])
         except Exception as exc:
-            logger.warning("VIX fetch failed, defaulting to %.1f: %s", VIX_DEFAULT, exc)
+            logger.warning("VIX parse failed, defaulting to %.1f: %s", VIX_DEFAULT, exc)
             return VIX_DEFAULT
+
+    def _read_index(self, symbol: str, days: int) -> "pd.DataFrame":
+        """Read index data from provider or candle_store fallback."""
+        import pandas as pd
+
+        if self._provider is not None:
+            try:
+                return self._provider.get_index(symbol, days=days)
+            except Exception as exc:
+                logger.warning("Provider index fetch failed for %s: %s", symbol, exc)
+        if self._candles is not None:
+            try:
+                from_dt = datetime.now(tz=IST) - timedelta(days=days)
+                return self._candles.read(symbol, "day", from_dt, datetime.now(tz=IST))
+            except Exception as exc:
+                logger.warning("CandleStore index fetch failed for %s: %s", symbol, exc)
+        return pd.DataFrame()
 
     def _fetch_fii_dii(self) -> tuple[float, float]:
         """Return (FII net, DII net) in crore. Zeros when NSE is unreachable."""
