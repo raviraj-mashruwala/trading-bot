@@ -7,7 +7,6 @@ from typing import Any
 
 from tradingbot.core.config import ScreeningConfig
 from tradingbot.core.models import ScoredStock
-from tradingbot.data.candle_store import CandleStore
 from tradingbot.screening.correlation_filter import CorrelationFilter
 from tradingbot.screening.factor_scorer import FactorScorer
 from tradingbot.screening.liquidity_filter import LiquidityFilter
@@ -18,9 +17,8 @@ log = logging.getLogger(__name__)
 class Tier1Screener:
     """Deterministic screening: ~1500 stocks -> ~50-100 candidates."""
 
-    def __init__(self, config: ScreeningConfig, candle_store: CandleStore):
+    def __init__(self, config: ScreeningConfig, candle_store=None):
         self._config = config
-        self._candle_store = candle_store
         self._liquidity = LiquidityFilter(
             min_volume=config.min_volume,
             min_price=config.min_price,

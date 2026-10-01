@@ -6,7 +6,6 @@ import pytest
 
 from tradingbot.core.database import Database
 from tradingbot.data.instrument_cache import InstrumentCache
-from tradingbot.data.candle_store import CandleStore
 from tradingbot.persistence.setup_store import SetupStore
 from tradingbot.persistence.run_store import RunStore
 
@@ -31,23 +30,13 @@ def test_all_modules_through_factory(data_dir):
         "instrument_type": "EQ", "segment": "NSE", "industry_type": "Refineries",
     }])
 
-    candles = CandleStore(data_dir / "candles.db")
-    candles.upsert("RELIANCE", "15minute", [{
-        "date": datetime(2026, 9, 30, 9, 15),
-        "open": 2450.0, "high": 2455.0, "low": 2448.0,
-        "close": 2453.0, "volume": 1000,
-    }])
-
     setups = SetupStore(data_dir / "analysis.db")
     runs = RunStore(data_dir / "analysis.db")
 
     assert cache.get_token("RELIANCE") == 738561
-    result = candles.read("RELIANCE", "15minute", date(2026, 9, 29), date(2026, 10, 1))
-    assert len(result) == 1
 
     db.close()
     cache.close()
-    candles.close()
     setups.close()
     runs.close()
 

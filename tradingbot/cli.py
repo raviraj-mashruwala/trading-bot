@@ -274,24 +274,14 @@ def plan_show(obj: dict, target: str | None) -> None:
 @click.pass_obj
 def backtest(obj: dict, strategy_name: str, symbol: str, days: int) -> None:
     """Replay one or every strategy over recent history."""
-    from tradingbot.data.candle_store import CandleStore
+    from tradingbot.data.market_data_provider import MarketDataProvider
 
     config: Config = obj["config"]
-    data_dir = Path("data")
-    store = CandleStore(data_dir / "candles.db")
+    provider = MarketDataProvider()
 
-    try:
-        from_date = date.today().replace(year=date.today().year)
-        import datetime as _dt
-        to_date = date.today()
-        from_date = to_date - _dt.timedelta(days=days)
-        candles = store.get_candles(symbol, "15minute", from_date, to_date)
-        if candles.empty:
-            _fail(f"no candle data for {symbol}. Run 'tradingbot sync' first.")
-    except Exception as exc:  # noqa: BLE001
-        _fail(f"could not load candles for {symbol}: {exc}")
-    finally:
-        store.close()
+    candles = provider.get_intraday(symbol, "15m", days=days)
+    if candles.empty:
+        _fail(f"no candle data for {symbol} from yfinance.")
 
     runner = Backtester()
 
@@ -346,46 +336,11 @@ def auth(obj: dict) -> None:
 @click.option("--intraday-days", default=60, type=int, help="Intraday candle lookback in days.")
 @click.pass_obj
 def sync(obj: dict, daily_days: int, intraday_days: int) -> None:
-    """Sync market data from Kite Connect to local cache."""
-    from tradingbot.data.candle_store import CandleStore
-    from tradingbot.data.data_sync import DataSync
-    from tradingbot.data.instrument_cache import InstrumentCache
-    from tradingbot.data.kite_client import KiteClient
-
-    config: Config = obj["config"]
-    data_dir = Path("data")
-    data_dir.mkdir(exist_ok=True)
-
-    token_path = Path.home() / ".tradingbot" / "kite_token"
-    if not token_path.exists():
-        _fail("No Kite token found. Run 'tradingbot auth' first.")
-
-    access_token = token_path.read_text().strip()
-    if not access_token:
-        _fail("Kite token is empty. Run 'tradingbot auth' to re-authenticate.")
-
-    from kiteconnect import KiteConnect
-
-    kite = KiteConnect(api_key=config.secrets.kite_api_key)
-    kite.set_access_token(access_token)
-
-    client = KiteClient(kite, rate_limit_per_sec=config.kite.rate_limit_per_sec)
-    cache = InstrumentCache(data_dir / "instruments.db")
-    store = CandleStore(data_dir / "candles.db")
-    sync_mgr = DataSync(client, cache, store)
-
-    click.echo(f"Syncing: instruments + {daily_days}d daily + {intraday_days}d intraday candles...")
-    try:
-        stats = sync_mgr.full_sync(daily_lookback=daily_days, intraday_lookback=intraday_days)
-    except Exception as exc:
-        _fail(f"Sync failed: {exc}")
-
-    click.echo(
-        f"Done: {stats['instruments']} instruments, {stats['symbols']} symbols, "
-        f"{stats['daily_candles']} daily candles, {stats['intraday_candles']} intraday candles"
-    )
-    cache.close()
-    store.close()
+    """Sync is no longer needed — analysis fetches data from yfinance on demand."""
+    click.echo("Sync is no longer needed. The analysis pipeline fetches market data")
+    click.echo("directly from yfinance when you run analysis. No local data cache required.")
+    click.echo("")
+    click.echo("To run analysis: use the web UI or 'tradingbot analyze'.")
 
 
 @cli.command()
