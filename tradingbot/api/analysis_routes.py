@@ -324,7 +324,8 @@ async def kite_callback(request: Request, request_token: str | None = None):
         })
         return RedirectResponse(url="http://localhost:3000/settings?kite=success")
     except Exception as exc:
-        return RedirectResponse(url=f"http://localhost:3000/settings?kite=error&detail={exc}")
+        logger.error("Kite token exchange failed: %s", exc)
+        return RedirectResponse(url="http://localhost:3000/settings?kite=error")
 
 
 @router.get("/auth/kite/status")
