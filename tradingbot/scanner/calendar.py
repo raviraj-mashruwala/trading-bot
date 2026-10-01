@@ -49,12 +49,15 @@ _holiday_cache: dict[int, list[HolidayInfo]] = {}
 def _calendar():
     """Lazy-load the BSE (XBOM) calendar — same holidays as NSE. Thread-safe."""
     global _cal
-    if _cal is None:
+    cal = _cal
+    if cal is None:
         with _lock:
-            if _cal is None:
+            cal = _cal
+            if cal is None:
                 import exchange_calendars as xcals
-                _cal = xcals.get_calendar("BSE")
-    return _cal
+                cal = xcals.get_calendar("BSE")
+                _cal = cal
+    return cal
 
 
 def clear_cache() -> None:

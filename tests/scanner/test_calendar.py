@@ -183,6 +183,38 @@ def test_clear_cache_does_not_raise():
     clear_cache()
 
 
+def test_calendar_returns_non_none_after_concurrent_clear():
+    """_calendar() must never return None even if clear_cache() runs between
+    the fast-path check and the return statement."""
+    import threading
+
+    results = []
+    barrier = threading.Barrier(2)
+
+    def call_is_trading_day():
+        barrier.wait()
+        try:
+            result = is_trading_day(date(2026, 9, 24))
+            results.append(("ok", result))
+        except AttributeError as e:
+            results.append(("error", str(e)))
+
+    def call_clear():
+        barrier.wait()
+        clear_cache()
+        results.append(("cleared", None))
+
+    t1 = threading.Thread(target=call_is_trading_day)
+    t2 = threading.Thread(target=call_clear)
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    errors = [r for r in results if r[0] == "error"]
+    assert not errors, f"Race condition: {errors}"
+
+
 # --- Coverage ---
 
 
