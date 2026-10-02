@@ -40,27 +40,37 @@ class MarketDataProvider:
         keep = [c for c in ["open", "high", "low", "close", "volume"] if c in df.columns]
         return df[keep]
 
+    _JUNK_SUFFIXES = ("-SG", "-GS", "-GB", "-IL", "-PP",
+                      "-N1", "-N2", "-N3", "-N4", "-N5", "-N6",
+                      "-SM", "-BE", "-BZ", "-ST", "-BL")
+
     def get_universe(self) -> list[dict[str, Any]]:
         """Get NSE equity instrument list from Kite (1 API call).
 
-        Falls back to empty list if Kite not available.
+        Filters out government bonds, state loans, and illiquid series
+        that yfinance can't handle.
         """
         if self._kite is None:
             raise RuntimeError("Kite client required for stock universe")
         try:
             raw = self._kite.kite.instruments("NSE")
-            return [
-                {
-                    "symbol": i["tradingsymbol"],
+            result = []
+            for i in raw:
+                if i.get("instrument_type") != "EQ" or i.get("segment") != "NSE":
+                    continue
+                sym = i["tradingsymbol"]
+                if any(sym.endswith(s) for s in self._JUNK_SUFFIXES):
+                    continue
+                result.append({
+                    "symbol": sym,
                     "token": i["instrument_token"],
                     "exchange": "NSE",
                     "lot_size": i.get("lot_size", 1),
                     "tick_size": i.get("tick_size", 0.05),
                     "sector": i.get("industry_type") or "unknown",
-                }
-                for i in raw
-                if i.get("instrument_type") == "EQ" and i.get("segment") == "NSE"
-            ]
+                })
+            log.info("Universe: %d equities (filtered from %d NSE instruments)", len(result), len(raw))
+            return result
         except Exception as exc:
             log.error("Failed to fetch instruments from Kite: %s", exc)
             return []

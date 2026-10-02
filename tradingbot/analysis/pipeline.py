@@ -108,13 +108,16 @@ class AnalysisPipeline:
         await self._bus.emit("analysis.started", {"run_id": run_id})
 
         # --- Tier 1: Deterministic screen ---
-        market_ctx = self._fetch_market_context()
+        import asyncio as _aio
+
+        market_ctx = await _aio.to_thread(self._fetch_market_context)
         self._bus.emit_sync("scan.context", {"regime": market_ctx.regime.value})
 
-        nifty_5d_change = self._compute_nifty_5d_change_from_store()
-        delivery_data = self._fetch_delivery_data(trade_date)
-        stock_metrics = self._build_stock_metrics(
-            nifty_5d_change=nifty_5d_change, delivery_data=delivery_data
+        nifty_5d_change = await _aio.to_thread(self._compute_nifty_5d_change_from_store)
+        delivery_data = await _aio.to_thread(self._fetch_delivery_data, trade_date)
+        stock_metrics = await _aio.to_thread(
+            self._build_stock_metrics,
+            nifty_5d_change, delivery_data,
         )
         self._bus.emit_sync("scan.universe", {"total": len(stock_metrics)})
 
