@@ -46,13 +46,14 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
 
         llm_provider = build_provider(config.llm, config.secrets, log_dir=log_dir / "llm")
 
-        kite_for_universe = None
-        if state.kite_auth and state.kite_auth.is_authenticated():
-            from tradingbot.data.kite_client import KiteClient
-            kite_for_universe = KiteClient(
-                state.kite_auth.kite,
-                rate_limit_per_sec=config.kite.rate_limit_per_sec,
-            )
+        auth = _ensure_kite_auth(state)
+        if not auth.is_authenticated():
+            raise RuntimeError("Kite not authenticated. Connect Kite first from Settings.")
+        from tradingbot.data.kite_client import KiteClient
+        kite_for_universe = KiteClient(
+            auth.kite,
+            rate_limit_per_sec=config.kite.rate_limit_per_sec,
+        )
         market_provider = MarketDataProvider(kite_client=kite_for_universe)
         market_provider.clear_cache()
 
@@ -324,8 +325,8 @@ async def kite_callback(request: Request, request_token: str | None = None):
 @router.get("/auth/kite/status")
 async def kite_status(request: Request):
     state: AppState = request.app.state.app_state
-    auth = state.kite_auth
-    return {"authenticated": auth.is_authenticated() if auth else False}
+    auth = _ensure_kite_auth(state)
+    return {"authenticated": auth.is_authenticated()}
 
 
 @router.get("/auth/kite/test")

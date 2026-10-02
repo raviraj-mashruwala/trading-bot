@@ -105,7 +105,7 @@ class AnalysisPipeline:
         llm_calls = 0
         total_cost = 0.0
 
-        self._bus.emit("analysis.started", {"run_id": run_id})
+        await self._bus.emit("analysis.started", {"run_id": run_id})
 
         # --- Tier 1: Deterministic screen ---
         market_ctx = self._fetch_market_context()
@@ -120,7 +120,7 @@ class AnalysisPipeline:
 
         scored = self._screener.screen(stock_metrics)
         self._bus.emit_sync("scan.filtered", {"candidates": len(scored)})
-        self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
+        await self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
         # --- Tier 2: LLM market + sector + shortlist ---
         sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
@@ -160,7 +160,7 @@ class AnalysisPipeline:
         shortlist = shortlist_result.get("shortlist", [])
 
         self._bus.emit_sync("scan.shortlist", {"shortlisted": len(shortlist)})
-        self._bus.emit("analysis.tier2_complete", {"shortlisted": len(shortlist)})
+        await self._bus.emit("analysis.tier2_complete", {"shortlisted": len(shortlist)})
 
         # Sync deep data for shortlisted symbols (skip when using yfinance provider)
         symbols = [s["symbol"] for s in shortlist]
@@ -301,7 +301,7 @@ class AnalysisPipeline:
             duration_seconds=duration,
         )
         self._runs.save(analysis_run)
-        self._bus.emit("analysis.complete", {"run_id": run_id})
+        await self._bus.emit("analysis.complete", {"run_id": run_id})
 
         log.info(
             "Pipeline complete: %s | regime=%s | scanned=%d | t1=%d | t2=%d | "

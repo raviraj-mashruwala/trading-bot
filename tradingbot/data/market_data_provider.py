@@ -46,8 +46,7 @@ class MarketDataProvider:
         Falls back to empty list if Kite not available.
         """
         if self._kite is None:
-            log.warning("No Kite client — universe unavailable")
-            return []
+            raise RuntimeError("Kite client required for stock universe")
         try:
             raw = self._kite.kite.instruments("NSE")
             return [
