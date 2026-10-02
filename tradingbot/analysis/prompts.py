@@ -33,10 +33,10 @@ REGIME_SCHEMA: dict[str, Any] = {
             "type": "string",
             "enum": [
                 "trending_up", "trending_down", "range_bound",
-                "volatile", "low_vol_squeeze",
-            ],
+                "volatile", "low_vol_squeeze"
+            ]
         },
-        "regime_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "regime_confidence": {"type": "number"},
         "bias": {"type": "string", "enum": ["bullish", "bearish", "neutral"]},
         "key_levels": {
             "type": "object",
@@ -44,28 +44,28 @@ REGIME_SCHEMA: dict[str, Any] = {
                 "nifty_support": {"type": "number"},
                 "nifty_resistance": {"type": "number"},
                 "banknifty_support": {"type": "number"},
-                "banknifty_resistance": {"type": "number"},
+                "banknifty_resistance": {"type": "number"}
             },
             "required": ["nifty_support", "nifty_resistance", "banknifty_support", "banknifty_resistance"],
-            "additionalProperties": False,
+            "additionalProperties": False
         },
         "sectors_in_play": {
-            "type": "array", "items": {"type": "string"}, "maxItems": 5,
+            "type": "array", "items": {"type": "string"}
         },
         "sectors_to_avoid": {
-            "type": "array", "items": {"type": "string"}, "maxItems": 3,
+            "type": "array", "items": {"type": "string"}
         },
         "risk_appetite": {
-            "type": "string", "enum": ["aggressive", "moderate", "defensive"],
+            "type": "string", "enum": ["aggressive", "moderate", "defensive"]
         },
-        "session_expectation": {"type": "string", "maxLength": 200},
-        "reasoning": {"type": "string"},
+        "session_expectation": {"type": "string"},
+        "reasoning": {"type": "string"}
     },
     "required": [
         "regime", "regime_confidence", "bias", "key_levels",
-        "sectors_in_play", "risk_appetite", "reasoning",
+        "sectors_in_play", "risk_appetite", "reasoning"
     ],
-    "additionalProperties": False,
+    "additionalProperties": False
 }
 
 REGIME_TOOL = ("submit_regime_analysis", "Submit market regime analysis", REGIME_SCHEMA)
@@ -95,21 +95,21 @@ SECTOR_SCHEMA: dict[str, Any] = {
                     "theme": {"type": "string"},
                     "intraday_bias": {
                         "type": "string",
-                        "enum": ["bullish", "bearish", "neutral"],
+                        "enum": ["bullish", "bearish", "neutral"]
                     },
-                    "catalyst": {"type": "string"},
+                    "catalyst": {"type": "string"}
                 },
                 "required": ["name", "intraday_bias", "theme", "catalyst"],
-                "additionalProperties": False,
-            },
+                "additionalProperties": False
+            }
         },
         "sector_pairs": {"type": "array", "items": {"type": "string"}},
         "sector_divergences": {"type": "array", "items": {"type": "string"}},
         "cross_sector_picks": {"type": "array", "items": {"type": "string"}},
-        "reasoning": {"type": "string"},
+        "reasoning": {"type": "string"}
     },
     "required": ["sectors", "reasoning"],
-    "additionalProperties": False,
+    "additionalProperties": False
 }
 
 SECTOR_TOOL = ("submit_sector_analysis", "Submit sector analysis", SECTOR_SCHEMA)
@@ -140,31 +140,29 @@ SHORTLIST_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "symbol": {"type": "string"},
                     "direction": {
-                        "type": "string", "enum": ["long", "short"],
+                        "type": "string", "enum": ["long", "short"]
                     },
                     "conviction": {
-                        "type": "string", "enum": ["high", "medium"],
+                        "type": "string", "enum": ["high", "medium"]
                     },
                     "primary_strategy": {"type": "string"},
-                    "reasoning": {"type": "string", "maxLength": 300},
+                    "reasoning": {"type": "string"},
                     "key_levels": {
                         "type": "object",
                         "properties": {
                             "support": {"type": "number"},
                             "resistance": {"type": "number"},
-                            "vwap": {"type": "number"},
+                            "vwap": {"type": "number"}
                         },
                         "required": ["support", "resistance", "vwap"],
-                        "additionalProperties": False,
+                        "additionalProperties": False
                     },
                     "risk_flag": {"type": "string"},
-                    "counter_argument": {"type": "string"},
+                    "counter_argument": {"type": "string"}
                 },
                 "required": ["symbol", "direction", "conviction", "reasoning", "primary_strategy", "key_levels", "risk_flag", "counter_argument"],
-                "additionalProperties": False,
-            },
-            "minItems": 1,
-            "maxItems": 20,
+                "additionalProperties": False
+            }
         },
         "avoid_list": {
             "type": "array",
@@ -172,17 +170,17 @@ SHORTLIST_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "properties": {
                     "symbol": {"type": "string"},
-                    "reason": {"type": "string"},
+                    "reason": {"type": "string"}
                 },
                 "required": ["symbol", "reason"],
-                "additionalProperties": False,
-            },
+                "additionalProperties": False
+            }
         },
-        "max_positions_today": {"type": "integer", "minimum": 1, "maximum": 10},
-        "reasoning": {"type": "string"},
+        "max_positions_today": {"type": "integer"},
+        "reasoning": {"type": "string"}
     },
     "required": ["shortlist", "max_positions_today", "reasoning"],
-    "additionalProperties": False,
+    "additionalProperties": False
 }
 
 SHORTLIST_TOOL = ("submit_shortlist", "Submit candidate shortlist", SHORTLIST_SCHEMA)
@@ -226,7 +224,7 @@ DEEP_ANALYSIS_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "strategy": {"type": "string"},
                     "direction": {
-                        "type": "string", "enum": ["long", "short"],
+                        "type": "string", "enum": ["long", "short"]
                     },
                     "entry_trigger": {"type": "string"},
                     "entry_price": {"type": "number"},
@@ -234,35 +232,34 @@ DEEP_ANALYSIS_SCHEMA: dict[str, Any] = {
                     "target_1": {"type": "number"},
                     "target_2": {"type": "number"},
                     "position_size_hint": {
-                        "type": "string", "enum": ["0.5x", "1x", "1.5x"],
+                        "type": "string", "enum": ["0.5x", "1x", "1.5x"]
                     },
                     "entry_window": {"type": "string"},
                     "exit_deadline": {"type": "string"},
                     "confidence": {
-                        "type": "number", "minimum": 0, "maximum": 1,
+                        "type": "number"
                     },
                     "edge_description": {"type": "string"},
                     "invalidation": {"type": "string"},
                     "bear_case": {"type": "string"},
-                    "confluence_count": {"type": "integer", "minimum": 0},
+                    "confluence_count": {"type": "integer"},
                     "timeframe_alignment": {
-                        "type": "array", "items": {"type": "string"},
-                    },
+                        "type": "array", "items": {"type": "string"}
+                    }
                 },
                 "required": [
                     "strategy", "direction", "entry_trigger", "entry_price", "stop_loss",
                     "target_1", "target_2", "position_size_hint", "entry_window",
                     "exit_deadline", "confidence", "edge_description",
-                    "invalidation", "bear_case", "confluence_count", "timeframe_alignment",
+                    "invalidation", "bear_case", "confluence_count", "timeframe_alignment"
                 ],
-                "additionalProperties": False,
-            },
-            "maxItems": 3,
+                "additionalProperties": False
+            }
         },
-        "no_trade_reason": {"type": ["string", "null"]},
+        "no_trade_reason": {"type": ["string", "null"]}
     },
     "required": ["symbol", "setups", "no_trade_reason"],
-    "additionalProperties": False,
+    "additionalProperties": False
 }
 
 DEEP_ANALYSIS_TOOL = (
@@ -308,13 +305,13 @@ ADVERSARIAL_SCHEMA: dict[str, Any] = {
                     "symbol": {"type": "string"},
                     "setup_index": {"type": "integer"},
                     "approval": {
-                        "type": "string", "enum": ["strong", "conditional"],
+                        "type": "string", "enum": ["strong", "conditional"]
                     },
-                    "adjustment": {"type": ["string", "null"]},
+                    "adjustment": {"type": ["string", "null"]}
                 },
                 "required": ["symbol", "setup_index", "approval", "adjustment"],
-                "additionalProperties": False,
-            },
+                "additionalProperties": False
+            }
         },
         "rejected": {
             "type": "array",
@@ -323,11 +320,11 @@ ADVERSARIAL_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "symbol": {"type": "string"},
                     "setup_index": {"type": "integer"},
-                    "reason": {"type": "string"},
+                    "reason": {"type": "string"}
                 },
                 "required": ["symbol", "setup_index", "reason"],
-                "additionalProperties": False,
-            },
+                "additionalProperties": False
+            }
         },
         "portfolio_risk_assessment": {
             "type": "object",
@@ -337,14 +334,14 @@ ADVERSARIAL_SCHEMA: dict[str, Any] = {
                 "max_correlated_exposure": {"type": "string"},
                 "regime_alignment": {"type": "string"},
                 "worst_case_loss": {"type": "string"},
-                "recommendation": {"type": "string"},
+                "recommendation": {"type": "string"}
             },
             "required": ["total_setups", "approved_count", "max_correlated_exposure", "regime_alignment", "worst_case_loss", "recommendation"],
-            "additionalProperties": False,
-        },
+            "additionalProperties": False
+        }
     },
     "required": ["approved", "rejected", "portfolio_risk_assessment"],
-    "additionalProperties": False,
+    "additionalProperties": False
 }
 
 ADVERSARIAL_TOOL = (
