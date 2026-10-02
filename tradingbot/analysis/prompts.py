@@ -46,7 +46,8 @@ REGIME_SCHEMA: dict[str, Any] = {
                 "banknifty_support": {"type": "number"},
                 "banknifty_resistance": {"type": "number"},
             },
-            "required": ["nifty_support", "nifty_resistance"],
+            "required": ["nifty_support", "nifty_resistance", "banknifty_support", "banknifty_resistance"],
+            "additionalProperties": False,
         },
         "sectors_in_play": {
             "type": "array", "items": {"type": "string"}, "maxItems": 5,
@@ -64,6 +65,7 @@ REGIME_SCHEMA: dict[str, Any] = {
         "regime", "regime_confidence", "bias", "key_levels",
         "sectors_in_play", "risk_appetite", "reasoning",
     ],
+    "additionalProperties": False,
 }
 
 REGIME_TOOL = ("submit_regime_analysis", "Submit market regime analysis", REGIME_SCHEMA)
@@ -97,7 +99,8 @@ SECTOR_SCHEMA: dict[str, Any] = {
                     },
                     "catalyst": {"type": "string"},
                 },
-                "required": ["name", "intraday_bias"],
+                "required": ["name", "intraday_bias", "theme", "catalyst"],
+                "additionalProperties": False,
             },
         },
         "sector_pairs": {"type": "array", "items": {"type": "string"}},
@@ -106,6 +109,7 @@ SECTOR_SCHEMA: dict[str, Any] = {
         "reasoning": {"type": "string"},
     },
     "required": ["sectors", "reasoning"],
+    "additionalProperties": False,
 }
 
 SECTOR_TOOL = ("submit_sector_analysis", "Submit sector analysis", SECTOR_SCHEMA)
@@ -150,11 +154,14 @@ SHORTLIST_SCHEMA: dict[str, Any] = {
                             "resistance": {"type": "number"},
                             "vwap": {"type": "number"},
                         },
+                        "required": ["support", "resistance", "vwap"],
+                        "additionalProperties": False,
                     },
                     "risk_flag": {"type": "string"},
                     "counter_argument": {"type": "string"},
                 },
-                "required": ["symbol", "direction", "conviction", "reasoning"],
+                "required": ["symbol", "direction", "conviction", "reasoning", "primary_strategy", "key_levels", "risk_flag", "counter_argument"],
+                "additionalProperties": False,
             },
             "minItems": 1,
             "maxItems": 20,
@@ -167,12 +174,15 @@ SHORTLIST_SCHEMA: dict[str, Any] = {
                     "symbol": {"type": "string"},
                     "reason": {"type": "string"},
                 },
+                "required": ["symbol", "reason"],
+                "additionalProperties": False,
             },
         },
         "max_positions_today": {"type": "integer", "minimum": 1, "maximum": 10},
         "reasoning": {"type": "string"},
     },
     "required": ["shortlist", "max_positions_today", "reasoning"],
+    "additionalProperties": False,
 }
 
 SHORTLIST_TOOL = ("submit_shortlist", "Submit candidate shortlist", SHORTLIST_SCHEMA)
@@ -240,15 +250,19 @@ DEEP_ANALYSIS_SCHEMA: dict[str, Any] = {
                     },
                 },
                 "required": [
-                    "strategy", "direction", "entry_price", "stop_loss",
-                    "target_1", "confidence", "invalidation", "confluence_count",
+                    "strategy", "direction", "entry_trigger", "entry_price", "stop_loss",
+                    "target_1", "target_2", "position_size_hint", "entry_window",
+                    "exit_deadline", "confidence", "edge_description",
+                    "invalidation", "bear_case", "confluence_count", "timeframe_alignment",
                 ],
+                "additionalProperties": False,
             },
             "maxItems": 3,
         },
         "no_trade_reason": {"type": ["string", "null"]},
     },
-    "required": ["symbol"],
+    "required": ["symbol", "setups", "no_trade_reason"],
+    "additionalProperties": False,
 }
 
 DEEP_ANALYSIS_TOOL = (
@@ -298,7 +312,8 @@ ADVERSARIAL_SCHEMA: dict[str, Any] = {
                     },
                     "adjustment": {"type": ["string", "null"]},
                 },
-                "required": ["symbol", "setup_index", "approval"],
+                "required": ["symbol", "setup_index", "approval", "adjustment"],
+                "additionalProperties": False,
             },
         },
         "rejected": {
@@ -310,7 +325,8 @@ ADVERSARIAL_SCHEMA: dict[str, Any] = {
                     "setup_index": {"type": "integer"},
                     "reason": {"type": "string"},
                 },
-                "required": ["symbol", "reason"],
+                "required": ["symbol", "setup_index", "reason"],
+                "additionalProperties": False,
             },
         },
         "portfolio_risk_assessment": {
@@ -323,10 +339,12 @@ ADVERSARIAL_SCHEMA: dict[str, Any] = {
                 "worst_case_loss": {"type": "string"},
                 "recommendation": {"type": "string"},
             },
-            "required": ["total_setups", "approved_count", "recommendation"],
+            "required": ["total_setups", "approved_count", "max_correlated_exposure", "regime_alignment", "worst_case_loss", "recommendation"],
+            "additionalProperties": False,
         },
     },
     "required": ["approved", "rejected", "portfolio_risk_assessment"],
+    "additionalProperties": False,
 }
 
 ADVERSARIAL_TOOL = (
