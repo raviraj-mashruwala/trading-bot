@@ -109,12 +109,17 @@ class AnalysisPipeline:
 
         # --- Tier 1: Deterministic screen ---
         market_ctx = self._fetch_market_context()
+        self._bus.emit_sync("scan.context", {"regime": market_ctx.regime.value})
+
         nifty_5d_change = self._compute_nifty_5d_change_from_store()
         delivery_data = self._fetch_delivery_data(trade_date)
         stock_metrics = self._build_stock_metrics(
             nifty_5d_change=nifty_5d_change, delivery_data=delivery_data
         )
+        self._bus.emit_sync("scan.universe", {"total": len(stock_metrics)})
+
         scored = self._screener.screen(stock_metrics)
+        self._bus.emit_sync("scan.filtered", {"candidates": len(scored)})
         self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
         # --- Tier 2: LLM market + sector + shortlist ---
@@ -154,6 +159,7 @@ class AnalysisPipeline:
             total_cost += shortlist_result.pop("_usage").cost_usd()
         shortlist = shortlist_result.get("shortlist", [])
 
+        self._bus.emit_sync("scan.shortlist", {"shortlisted": len(shortlist)})
         self._bus.emit("analysis.tier2_complete", {"shortlisted": len(shortlist)})
 
         # Sync deep data for shortlisted symbols (skip when using yfinance provider)
@@ -166,16 +172,24 @@ class AnalysisPipeline:
 
         # --- Backtest + Tier 3: per-stock deep analysis ---
         all_setups: list[dict[str, Any]] = []
-        for pick in shortlist:
+        for i, pick in enumerate(shortlist):
             sym = pick["symbol"]
             direction = pick.get("direction", "long")
 
             # Run backtest for regime-eligible strategies only
             bt_results: list[Any] = []
             self._run_backtests(sym, bt_results, regime=regime)
+            self._bus.emit_sync("strategy.backtest", {
+                "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
+                "strategies_passed": len(bt_results),
+            })
 
             # Fetch real indicators and price action for Claude's context
             indicators, price_action = self._fetch_indicators_for_symbol(sym)
+            self._bus.emit_sync("strategy.indicators", {
+                "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
+                "has_data": bool(indicators),
+            })
 
             # Tier 3 deep analysis
             deep = await self._tier3.deep_analyze(
@@ -191,6 +205,11 @@ class AnalysisPipeline:
             if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
                 total_cost += deep.pop("_usage").cost_usd()
             all_setups.append(deep)
+
+        self._bus.emit_sync("strategy.setups", {
+            "total_setups": sum(len(s.get("setups", [])) for s in all_setups),
+            "symbols_analyzed": len(shortlist),
+        })
 
         # --- Adversarial validation ---
         setups_with_data = [s for s in all_setups if s.get("setups")]
@@ -238,6 +257,11 @@ class AnalysisPipeline:
                     strategy_key = f"{sym}:{setup_data.get('strategy', 'unknown')}"
                     self._approved_setup_ids[strategy_key] = row_id
                     setups_approved += 1
+
+        self._bus.emit_sync("strategy.sized", {
+            "proposed": setups_proposed,
+            "approved": setups_approved,
+        })
 
         # --- Persist and emit completion ---
         duration = time.monotonic() - start
