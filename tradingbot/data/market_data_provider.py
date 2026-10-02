@@ -67,23 +67,28 @@ class MarketDataProvider:
             return []
 
     def get_daily_batch(
-        self, symbols: list[str], days: int = 365
+        self, symbols: list[str], days: int = 365, chunk_size: int = 100,
     ) -> dict[str, pd.DataFrame]:
-        """Batch download daily OHLCV for multiple symbols."""
+        """Batch download daily OHLCV in chunks to avoid thread exhaustion."""
         if not symbols:
             return {}
-        yf_symbols = [self.to_nse_symbol(s) for s in symbols]
+        result: dict[str, pd.DataFrame] = {}
         period = f"{days}d"
-        try:
-            raw = yf.download(
-                yf_symbols, period=period, interval="1d",
-                progress=False, threads=True,
-            )
-        except Exception as exc:
-            log.error("yfinance batch download failed: %s", exc)
-            return {}
 
-        return self._split_multi(raw, symbols, yf_symbols)
+        for i in range(0, len(symbols), chunk_size):
+            chunk_syms = symbols[i : i + chunk_size]
+            yf_syms = [self.to_nse_symbol(s) for s in chunk_syms]
+            try:
+                raw = yf.download(
+                    yf_syms, period=period, interval="1d",
+                    progress=False, threads=False,
+                )
+                result.update(self._split_multi(raw, chunk_syms, yf_syms))
+                log.info("Daily batch %d-%d: %d symbols fetched", i, i + len(chunk_syms), len(chunk_syms))
+            except Exception as exc:
+                log.error("yfinance batch chunk %d failed: %s", i, exc)
+
+        return result
 
     def get_intraday(
         self, symbol: str, interval: str = "15m", days: int = 60
@@ -104,22 +109,27 @@ class MarketDataProvider:
             return pd.DataFrame(columns=["open", "high", "low", "close", "volume"])
 
     def get_intraday_batch(
-        self, symbols: list[str], interval: str = "15m", days: int = 60
+        self, symbols: list[str], interval: str = "15m", days: int = 60,
+        chunk_size: int = 50,
     ) -> dict[str, pd.DataFrame]:
-        """Batch download intraday candles."""
+        """Batch download intraday candles in chunks."""
         if not symbols:
             return {}
-        yf_symbols = [self.to_nse_symbol(s) for s in symbols]
-        try:
-            raw = yf.download(
-                yf_symbols, period=f"{days}d", interval=interval,
-                progress=False, threads=True,
-            )
-        except Exception as exc:
-            log.error("yfinance intraday batch failed: %s", exc)
-            return {}
+        result: dict[str, pd.DataFrame] = {}
 
-        return self._split_multi(raw, symbols, yf_symbols)
+        for i in range(0, len(symbols), chunk_size):
+            chunk_syms = symbols[i : i + chunk_size]
+            yf_syms = [self.to_nse_symbol(s) for s in chunk_syms]
+            try:
+                raw = yf.download(
+                    yf_syms, period=f"{days}d", interval=interval,
+                    progress=False, threads=False,
+                )
+                result.update(self._split_multi(raw, chunk_syms, yf_syms))
+            except Exception as exc:
+                log.error("yfinance intraday batch chunk %d failed: %s", i, exc)
+
+        return result
 
     def get_index(self, name: str, days: int = 120) -> pd.DataFrame:
         """Fetch index or VIX daily data."""
