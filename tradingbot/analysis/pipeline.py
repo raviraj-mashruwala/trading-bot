@@ -212,10 +212,22 @@ class AnalysisPipeline:
         })
 
         # --- Adversarial validation ---
+        no_setup_symbols = [s["symbol"] for s in all_setups if not s.get("setups")]
+        if no_setup_symbols:
+            log.info("LLM returned no setups for: %s", ", ".join(no_setup_symbols))
+
         setups_with_data = [s for s in all_setups if s.get("setups")]
+        pre_corr = sum(len(s.get("setups", [])) for s in setups_with_data)
         setups_with_data = self._drop_correlated_setups(setups_with_data)
         setups_proposed = sum(len(s.get("setups", [])) for s in setups_with_data)
+        if pre_corr > setups_proposed:
+            log.info("Correlation filter dropped %d setups", pre_corr - setups_proposed)
         setups_approved = 0
+
+        log.info(
+            "FUNNEL: %d screened → %d shortlisted → %d with setups → %d proposed",
+            len(stock_metrics), len(shortlist), len(setups_with_data), setups_proposed,
+        )
 
         if setups_with_data:
             validation = await self._tier3.validate_portfolio(
@@ -224,6 +236,12 @@ class AnalysisPipeline:
             llm_calls += 1
             if isinstance(validation.get("_usage") if isinstance(validation, dict) else None, LLMUsage):
                 total_cost += validation.pop("_usage").cost_usd()
+
+            for rejected in validation.get("rejected", []):
+                log.info(
+                    "ADVERSARIAL REJECTED %s: %s",
+                    rejected.get("symbol", "?"), rejected.get("reason", "no reason"),
+                )
 
             for approved in validation.get("approved", []):
                 sym = approved["symbol"]
@@ -645,14 +663,13 @@ class AnalysisPipeline:
         return REGIME_STRATEGY_GATE.get(regime_name, frozenset(STRATEGY_REGISTRY.keys()))
 
     def _run_backtests(self, symbol: str, results: list, regime: dict | None = None) -> None:
-        """Run backtest for regime-eligible strategies on one symbol.
+        """Run ALL strategies on one symbol — direction-agnostic.
 
-        Reads candles once outside the strategy loop. Uses self._backtest
-        (injected WalkForwardEngine). Appends passing BacktestReports to results.
+        Every strategy gets a chance regardless of regime. The LLM and
+        quality gates filter bad setups; the regime gate was dropping
+        valid setups in stocks that bucked the broader trend.
         """
         from tradingbot.strategy.strategies import STRATEGY_REGISTRY
-
-        eligible = self._get_regime_eligible_strategies(regime or {})
 
         if self._provider is not None:
             df = self._provider.get_intraday(symbol, "15m", days=60)
@@ -663,10 +680,8 @@ class AnalysisPipeline:
             return
 
         for strategy_name, strategy in STRATEGY_REGISTRY.items():
-            if strategy_name not in eligible:
-                continue
             report = self._backtest.run(symbol, df, strategy)
-            if report.total_trades >= 5:
+            if report.total_trades >= 3:
                 trade_pnls = (
                     [report.avg_winner] * report.winners
                     + [report.avg_loser] * report.losers
@@ -675,3 +690,9 @@ class AnalysisPipeline:
                 gate = self._gates.evaluate(report, mc)
                 if gate.passed:
                     results.append(report)
+                else:
+                    log.info(
+                        "Backtest gate FAILED %s/%s: %s",
+                        symbol, strategy_name.value,
+                        ", ".join(gate.failures) if gate.failures else "unknown",
+                    )

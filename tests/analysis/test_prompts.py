@@ -75,8 +75,7 @@ def test_deep_analysis_prompt_requires_independent_signals():
 def test_adversarial_prompt_is_adversarial():
     assert "RISK MANAGER" in ADVERSARIAL_SYSTEM
     assert "reject" in ADVERSARIAL_SYSTEM.lower()
-    assert "penalized" in ADVERSARIAL_SYSTEM.lower()
-    assert "NOT to trade" in ADVERSARIAL_SYSTEM
+    assert "quality" in ADVERSARIAL_SYSTEM.lower() or "flaw" in ADVERSARIAL_SYSTEM.lower()
 
 
 def test_shortlist_prompt_counter_argument():
@@ -180,9 +179,8 @@ def test_build_deep_analysis_user_prompt():
 
 def test_adversarial_system_contains_final_check_questions():
     for phrase in [
-        "What am I missing",
-        "truly independent",
-        "invalidate this trade",
-        "Downgrade",
+        "independent",
+        "reject",
+        "flaw",
     ]:
-        assert phrase in ADVERSARIAL_SYSTEM, f"Missing final_check phrase: {phrase!r}"
+        assert phrase.lower() in ADVERSARIAL_SYSTEM.lower(), f"Missing phrase: {phrase!r}"

@@ -64,7 +64,9 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             tier3=Tier3Analyzer(llm_provider),
             backtest_engine=WalkForwardEngine(),
             monte_carlo=MonteCarloSimulator(capital=state.capital),
-            quality_gates=QualityGates(),
+            quality_gates=QualityGates(
+                min_trades=10, min_win_rate=0.40, min_profit_factor=1.2,
+            ),
             run_store=state.run_store,
             setup_store=state.setup_store,
             event_bus=state.event_bus,
