@@ -74,6 +74,7 @@ class Executor:
         clock=now_ist,
         event_bus=None,
         intelligence: ExecutionIntelligence | None = None,
+        regime_monitor=None,
     ) -> None:
         self.broker = broker
         self.plan = plan
@@ -84,6 +85,8 @@ class Executor:
         self.clock = clock
         self.event_bus = event_bus
         self._intelligence = intelligence
+        self._regime_monitor = regime_monitor
+        self._current_regime: str | None = None
 
         if intelligence is None:
             import warnings
@@ -166,6 +169,12 @@ class Executor:
                 self.kill_switch_tripped = True
                 self._halt_everything(now)
                 return
+
+        if self._regime_monitor and self._regime_monitor.should_check(now):
+            result = self._regime_monitor.check({}, self._current_regime or "unknown")
+            if result.changed:
+                self._current_regime = result.new_regime
+                logger.warning("Regime shift to %s — monitoring positions", result.new_regime)
 
         for state in self.states:
             if state.is_finished:
