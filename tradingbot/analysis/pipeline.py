@@ -53,6 +53,7 @@ class AnalysisPipeline:
         db_path: Any = None,
         market_data_provider: Any = None,
         screening_config: Any = None,
+        jev_config: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
@@ -73,6 +74,14 @@ class AnalysisPipeline:
         self._capital = capital
         self._screening = screening_config
         self._approved_setup_ids: dict[str, int] = {}
+
+        self._jev_tier2 = None
+        if jev_config and getattr(jev_config, "enabled", False):
+            from tradingbot.core.jev_client import JevClient
+            jev_client = JevClient(jev_config)
+            if jev_client.available:
+                from tradingbot.analysis.jev_tier2 import JevTier2Analyzer
+                self._jev_tier2 = JevTier2Analyzer(jev_client)
 
     async def run(self, trade_date: date) -> AnalysisRun:
         """Execute full analysis pipeline for a given trade date.
@@ -107,26 +116,32 @@ class AnalysisPipeline:
         self._bus.emit_sync("scan.filtered", {"candidates": len(scored)})
         await self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
-        # --- Tier 2: LLM market + sector + shortlist ---
+        # --- Tier 2: regime + sectors (Jev when available, Claude fallback) ---
         sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
-        regime = await self._tier2.analyze_regime(
-            nifty=market_ctx.nifty_level,
-            banknifty=0,
-            vix=market_ctx.india_vix,
-            nifty_5d_change=nifty_5d_change,
-            fii_5d_net=market_ctx.fii_net_cr,
-            dii_5d_net=market_ctx.dii_net_cr,
-            advance_decline=0,
-            sector_data=sector_data,
+        _regime_args = dict(
+            nifty=market_ctx.nifty_level, banknifty=0,
+            vix=market_ctx.india_vix, nifty_5d_change=nifty_5d_change,
+            fii_5d_net=market_ctx.fii_net_cr, dii_5d_net=market_ctx.dii_net_cr,
+            advance_decline=0, sector_data=sector_data,
         )
-        llm_calls += 1
-        if isinstance(regime.get("_usage"), LLMUsage):
-            total_cost += regime.pop("_usage").cost_usd()
 
-        sectors = await self._tier2.analyze_sectors(regime, {}, {})
-        llm_calls += 1
-        if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
-            total_cost += sectors.pop("_usage").cost_usd()
+        regime = None
+        if self._jev_tier2 is not None:
+            regime = await self._jev_tier2.analyze_regime(**_regime_args)
+        if regime is None:
+            regime = await self._tier2.analyze_regime(**_regime_args)
+            llm_calls += 1
+            if isinstance(regime.get("_usage"), LLMUsage):
+                total_cost += regime.pop("_usage").cost_usd()
+
+        sectors = None
+        if self._jev_tier2 is not None:
+            sectors = await self._jev_tier2.analyze_sectors(regime, {}, {})
+        if sectors is None:
+            sectors = await self._tier2.analyze_sectors(regime, {}, {})
+            llm_calls += 1
+            if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
+                total_cost += sectors.pop("_usage").cost_usd()
 
         scored_dicts = [
             {

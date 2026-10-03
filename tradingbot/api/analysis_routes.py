@@ -77,6 +77,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             db_path=Path(state.data_dir) / "tradingbot.db",
             market_data_provider=market_provider,
             screening_config=config.screening,
+            jev_config=config.jev,
         )
 
         await state.event_bus.emit("analysis.started", {
