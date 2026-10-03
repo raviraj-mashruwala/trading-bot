@@ -182,6 +182,16 @@ class LLMConfig:
 
 
 @dataclass(frozen=True)
+class JevConfig:
+    enabled: bool = False
+    model: str = "jev-latest"
+    entry_confidence_threshold: float = 0.6
+    exit_confidence_threshold: float = 0.75
+    uncertainty_threshold: float = 0.3
+    timeout_ms: int = 2000
+
+
+@dataclass(frozen=True)
 class PaperConfig:
     slippage_pct: float
     initial_capital: float
@@ -210,6 +220,7 @@ class Config:
     screening: ScreeningConfig
     backtest: BacktestConfig
     kite: KiteConfig
+    jev: JevConfig = field(default_factory=lambda: JevConfig())
 
 
 def _require_env(name: str) -> str:
@@ -304,6 +315,7 @@ def load_config(config_path: Path | None = None) -> Config:
     screening_raw = data.get("screening", {})
     backtest_raw = data.get("backtest", {})
     kite_raw = data.get("kite", {})
+    jev_raw = data.get("jev", {})
 
     return Config(
         general=GeneralConfig(
@@ -379,5 +391,13 @@ def load_config(config_path: Path | None = None) -> Config:
             sync_hour=int(kite_raw.get("sync_hour", 6)),
             sync_minute=int(kite_raw.get("sync_minute", 0)),
             rate_limit_per_sec=int(kite_raw.get("rate_limit_per_sec", 3)),
+        ),
+        jev=JevConfig(
+            enabled=bool(jev_raw.get("enabled", False)),
+            model=str(jev_raw.get("model", "jev-latest")),
+            entry_confidence_threshold=float(jev_raw.get("entry_confidence_threshold", 0.6)),
+            exit_confidence_threshold=float(jev_raw.get("exit_confidence_threshold", 0.75)),
+            uncertainty_threshold=float(jev_raw.get("uncertainty_threshold", 0.3)),
+            timeout_ms=int(jev_raw.get("timeout_ms", 2000)),
         ),
     )
