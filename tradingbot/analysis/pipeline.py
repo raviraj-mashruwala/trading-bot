@@ -18,36 +18,13 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from tradingbot.core.llm.provider import LLMUsage
-from tradingbot.core.models import AnalysisRun, MarketRegime, StrategyName
+from tradingbot.core.models import AnalysisRun, MarketRegime
 from tradingbot.persistence.review_store import TradeReviewStore
 from tradingbot.screening.candlestick import score_patterns as _score_candlestick
 from tradingbot.screening.volume_profile_score import score_volume_profile as _score_volume_profile
 
 IST = ZoneInfo("Asia/Kolkata")
 log = logging.getLogger(__name__)
-
-REGIME_STRATEGY_GATE: dict[str, frozenset[StrategyName]] = {
-    "trending_up": frozenset({
-        StrategyName.MOMENTUM, StrategyName.BREAKOUT, StrategyName.GAP_AND_GO,
-        StrategyName.RELATIVE_STRENGTH, StrategyName.ORB,
-    }),
-    "trending_down": frozenset({
-        StrategyName.MEAN_REVERSION, StrategyName.VWAP_BOUNCE,
-        StrategyName.RELATIVE_STRENGTH, StrategyName.ORB,
-    }),
-    "range_bound": frozenset({
-        StrategyName.MEAN_REVERSION, StrategyName.VWAP_BOUNCE,
-        StrategyName.PIVOT_POINT, StrategyName.BOLLINGER_SQUEEZE,
-        StrategyName.SUPPLY_DEMAND,
-    }),
-    "volatile": frozenset({
-        StrategyName.ORB, StrategyName.GAP_AND_GO,
-        StrategyName.VWAP_BOUNCE, StrategyName.BREAKOUT,
-    }),
-    "low_vol_squeeze": frozenset({
-        StrategyName.BOLLINGER_SQUEEZE, StrategyName.BREAKOUT,
-    }),
-}
 
 
 class AnalysisPipeline:
@@ -75,6 +52,7 @@ class AnalysisPipeline:
         lookback_days: int = 365,
         db_path: Any = None,
         market_data_provider: Any = None,
+        screening_config: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
@@ -93,6 +71,7 @@ class AnalysisPipeline:
         self._setups = setup_store
         self._bus = event_bus
         self._capital = capital
+        self._screening = screening_config
         self._approved_setup_ids: dict[str, int] = {}
 
     async def run(self, trade_date: date) -> AnalysisRun:
@@ -113,11 +92,14 @@ class AnalysisPipeline:
         market_ctx = await _aio.to_thread(self._fetch_market_context)
         self._bus.emit_sync("scan.context", {"regime": market_ctx.regime.value})
 
+        instruments = await _aio.to_thread(self._fetch_universe)
+        self._bus.emit_sync("scan.universe", {"total": len(instruments), "status": "fetching"})
+
         nifty_5d_change = await _aio.to_thread(self._compute_nifty_5d_change_from_store)
         delivery_data = await _aio.to_thread(self._fetch_delivery_data, trade_date)
         stock_metrics = await _aio.to_thread(
-            self._build_stock_metrics,
-            nifty_5d_change, delivery_data,
+            self._build_stock_metrics_from_instruments,
+            instruments, nifty_5d_change, delivery_data,
         )
         self._bus.emit_sync("scan.universe", {"total": len(stock_metrics)})
 
@@ -314,17 +296,34 @@ class AnalysisPipeline:
         )
         return analysis_run
 
+    def _fetch_universe(self) -> list[dict]:
+        """Fetch instrument universe (fast — 1 Kite API call)."""
+        if self._provider is not None:
+            price_kwargs: dict = {}
+            if self._screening is not None:
+                price_kwargs["min_price"] = self._screening.min_price
+                price_kwargs["max_price"] = self._screening.max_price
+            return self._provider.get_universe(**price_kwargs)
+        elif self._instrument_cache is not None:
+            return self._instrument_cache.get_all()
+        return []
+
     def _build_stock_metrics(
         self, nifty_5d_change: float = 0.0, delivery_data: dict | None = None
     ) -> list[dict]:
         """Compute all 9 screening factor scores for all instruments."""
-        if self._provider is not None:
-            instruments = self._provider.get_universe()
-        elif self._instrument_cache is not None:
-            instruments = self._instrument_cache.get_all()
-        else:
-            return []
+        instruments = self._fetch_universe()
+        return self._build_stock_metrics_from_instruments(
+            instruments, nifty_5d_change, delivery_data,
+        )
 
+    def _build_stock_metrics_from_instruments(
+        self,
+        instruments: list[dict],
+        nifty_5d_change: float = 0.0,
+        delivery_data: dict | None = None,
+    ) -> list[dict]:
+        """Compute screening factor scores from pre-fetched instruments."""
         if not instruments:
             return []
 
@@ -658,12 +657,6 @@ class AnalysisPipeline:
             lines.append(f"Calibration: {cal}")
 
         return "\n".join(lines)
-
-    def _get_regime_eligible_strategies(self, regime: dict) -> frozenset[StrategyName]:
-        """Return strategy names valid for the current regime. Fail-open on unknown."""
-        from tradingbot.strategy.strategies import STRATEGY_REGISTRY
-        regime_name = regime.get("regime", "range_bound")
-        return REGIME_STRATEGY_GATE.get(regime_name, frozenset(STRATEGY_REGISTRY.keys()))
 
     def _run_backtests(self, symbol: str, results: list, regime: dict | None = None) -> None:
         """Run ALL strategies on one symbol — direction-agnostic.

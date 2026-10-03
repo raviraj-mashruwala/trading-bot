@@ -28,7 +28,7 @@ def pipeline_deps(tmp_path):
         "quality_gates": MagicMock(),
         "run_store": RunStore(db),
         "setup_store": SetupStore(db),
-        "event_bus": MagicMock(),
+        "event_bus": MagicMock(emit=AsyncMock()),
         "capital": 400000,
     }
 
@@ -268,53 +268,11 @@ async def test_pipeline_range_bound_regime(pipeline_deps):
     assert run.market_regime == MarketRegime.RANGE_BOUND
 
 
-# ── Regime strategy gate tests ────────────────────────────────────────────────
+# ── WalkForwardEngine usage test ──────────────────────────────────────────────
 
 import numpy as np
 import pandas as pd
 from tradingbot.core.models import StrategyName
-
-
-def _make_minimal_pipeline(deps):
-    return AnalysisPipeline(**deps)
-
-
-def test_trending_up_excludes_mean_reversion(pipeline_deps):
-    p = _make_minimal_pipeline(pipeline_deps)
-    eligible = p._get_regime_eligible_strategies({"regime": "trending_up"})
-    assert StrategyName.MEAN_REVERSION not in eligible
-    assert StrategyName.MOMENTUM in eligible
-
-
-def test_range_bound_excludes_momentum(pipeline_deps):
-    p = _make_minimal_pipeline(pipeline_deps)
-    eligible = p._get_regime_eligible_strategies({"regime": "range_bound"})
-    assert StrategyName.MOMENTUM not in eligible
-    assert StrategyName.MEAN_REVERSION in eligible
-
-
-def test_unknown_regime_returns_all_strategies(pipeline_deps):
-    """Fail-open: unknown regime must not produce empty strategy set."""
-    from tradingbot.strategy.strategies import STRATEGY_REGISTRY
-    p = _make_minimal_pipeline(pipeline_deps)
-    eligible = p._get_regime_eligible_strategies({"regime": "alien_regime"})
-    assert eligible == frozenset(STRATEGY_REGISTRY.keys())
-
-
-def test_volatile_includes_orb_and_gap_and_go(pipeline_deps):
-    p = _make_minimal_pipeline(pipeline_deps)
-    eligible = p._get_regime_eligible_strategies({"regime": "volatile"})
-    assert StrategyName.ORB in eligible
-    assert StrategyName.GAP_AND_GO in eligible
-
-
-def test_low_vol_squeeze_includes_bollinger(pipeline_deps):
-    p = _make_minimal_pipeline(pipeline_deps)
-    eligible = p._get_regime_eligible_strategies({"regime": "low_vol_squeeze"})
-    assert StrategyName.BOLLINGER_SQUEEZE in eligible
-
-
-# ── WalkForwardEngine usage test ──────────────────────────────────────────────
 
 def _make_candle_df(n=300):
     closes = 100 + np.cumsum(np.random.randn(n) * 0.5)

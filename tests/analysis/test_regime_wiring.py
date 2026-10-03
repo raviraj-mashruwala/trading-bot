@@ -2,10 +2,13 @@
 
 import pytest
 from datetime import date
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 from zoneinfo import ZoneInfo
 from tradingbot.analysis.pipeline import AnalysisPipeline
 from tradingbot.core.models import MarketContext, MarketRegime
+from tradingbot.persistence.run_store import RunStore
+from tradingbot.persistence.setup_store import SetupStore
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -19,7 +22,7 @@ def _mock_context():
     )
 
 
-def _make_pipeline(context_fetcher=None):
+def _make_pipeline(context_fetcher=None, tmp_path=None):
     tier2 = AsyncMock()
     tier2.analyze_regime.return_value = {
         "regime": "trending_up", "regime_confidence": 0.82,
@@ -30,6 +33,7 @@ def _make_pipeline(context_fetcher=None):
     tier2.analyze_sectors.return_value = {"sectors": [], "reasoning": "test"}
     tier2.shortlist.return_value = {"shortlist": [], "max_positions_today": 3, "reasoning": "none"}
 
+    db = (tmp_path or Path("/tmp")) / "test_regime.db"
     pipeline = AnalysisPipeline(
         data_sync=MagicMock(),
         candle_store=MagicMock(),
@@ -39,9 +43,9 @@ def _make_pipeline(context_fetcher=None):
         backtest_engine=MagicMock(),
         monte_carlo=MagicMock(),
         quality_gates=MagicMock(),
-        run_store=MagicMock(),
-        setup_store=MagicMock(),
-        event_bus=MagicMock(),
+        run_store=RunStore(db),
+        setup_store=SetupStore(db),
+        event_bus=MagicMock(emit=AsyncMock()),
         capital=400000,
         instrument_cache=MagicMock(get_all=MagicMock(return_value=[])),
         context_fetcher=context_fetcher,
@@ -49,10 +53,10 @@ def _make_pipeline(context_fetcher=None):
     return pipeline, tier2
 
 
-async def test_pipeline_passes_real_market_data():
+async def test_pipeline_passes_real_market_data(tmp_path):
     ctx = MagicMock()
     ctx.fetch.return_value = _mock_context()
-    pipeline, tier2 = _make_pipeline(context_fetcher=ctx)
+    pipeline, tier2 = _make_pipeline(context_fetcher=ctx, tmp_path=tmp_path)
 
     await pipeline.run(date(2026, 9, 28))
 
@@ -63,10 +67,10 @@ async def test_pipeline_passes_real_market_data():
     assert kwargs["fii_5d_net"] == -500.0
 
 
-async def test_pipeline_uses_defaults_on_fetch_failure():
+async def test_pipeline_uses_defaults_on_fetch_failure(tmp_path):
     ctx = MagicMock()
     ctx.fetch.side_effect = Exception("Network error")
-    pipeline, tier2 = _make_pipeline(context_fetcher=ctx)
+    pipeline, tier2 = _make_pipeline(context_fetcher=ctx, tmp_path=tmp_path)
 
     await pipeline.run(date(2026, 9, 28))
 
@@ -75,8 +79,8 @@ async def test_pipeline_uses_defaults_on_fetch_failure():
     assert kwargs["vix"] == 15.0  # safe default
 
 
-async def test_pipeline_uses_defaults_when_no_fetcher():
-    pipeline, tier2 = _make_pipeline(context_fetcher=None)
+async def test_pipeline_uses_defaults_when_no_fetcher(tmp_path):
+    pipeline, tier2 = _make_pipeline(context_fetcher=None, tmp_path=tmp_path)
 
     await pipeline.run(date(2026, 9, 28))
 

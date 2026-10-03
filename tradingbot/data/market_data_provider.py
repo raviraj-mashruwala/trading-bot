@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import pandas as pd
@@ -43,23 +44,35 @@ class MarketDataProvider:
     _JUNK_SUFFIXES = ("-SG", "-GS", "-GB", "-IL", "-PP",
                       "-N1", "-N2", "-N3", "-N4", "-N5", "-N6",
                       "-SM", "-BE", "-BZ", "-ST", "-BL")
+    _JUNK_RE = re.compile(r"-[A-Z]{2}$")
 
-    def get_universe(self) -> list[dict[str, Any]]:
+    def get_universe(
+        self,
+        min_price: float = 0.0,
+        max_price: float = float("inf"),
+    ) -> list[dict[str, Any]]:
         """Get NSE equity instrument list from Kite (1 API call).
 
-        Filters out government bonds, state loans, and illiquid series
-        that yfinance can't handle.
+        Filters out government bonds, NCDs, illiquid series, and instruments
+        outside the price range using Kite's last_price metadata.
         """
         if self._kite is None:
             raise RuntimeError("Kite client required for stock universe")
         try:
             raw = self._kite.kite.instruments("NSE")
             result = []
+            price_filtered = 0
             for i in raw:
                 if i.get("instrument_type") != "EQ" or i.get("segment") != "NSE":
                     continue
                 sym = i["tradingsymbol"]
                 if any(sym.endswith(s) for s in self._JUNK_SUFFIXES):
+                    continue
+                if self._JUNK_RE.search(sym):
+                    continue
+                lp = float(i.get("last_price", 0) or 0)
+                if lp > 0 and not (min_price <= lp <= max_price):
+                    price_filtered += 1
                     continue
                 result.append({
                     "symbol": sym,
@@ -68,8 +81,12 @@ class MarketDataProvider:
                     "lot_size": i.get("lot_size", 1),
                     "tick_size": i.get("tick_size", 0.05),
                     "sector": i.get("industry_type") or "unknown",
+                    "last_price": lp,
                 })
-            log.info("Universe: %d equities (filtered from %d NSE instruments)", len(result), len(raw))
+            log.info(
+                "Universe: %d equities (filtered from %d NSE instruments, %d price-excluded)",
+                len(result), len(raw), price_filtered,
+            )
             return result
         except Exception as exc:
             log.error("Failed to fetch instruments from Kite: %s", exc)

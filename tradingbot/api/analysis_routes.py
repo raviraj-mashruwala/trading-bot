@@ -76,6 +76,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             lookback_days=config.backtest.lookback_days,
             db_path=Path(state.data_dir) / "tradingbot.db",
             market_data_provider=market_provider,
+            screening_config=config.screening,
         )
 
         await state.event_bus.emit("analysis.started", {

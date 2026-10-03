@@ -45,11 +45,14 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
 
     if (PIPELINE_STEPS.includes(type as (typeof PIPELINE_STEPS)[number])) {
       const steps = { ...get().steps };
-      steps[type] = { status: "complete", data, timestamp };
-      const stepIndex = PIPELINE_STEPS.indexOf(type as (typeof PIPELINE_STEPS)[number]);
-      const nextStep = PIPELINE_STEPS[stepIndex + 1];
-      if (nextStep && steps[nextStep]?.status === "pending") {
-        steps[nextStep] = { ...steps[nextStep], status: "active" };
+      const stepStatus = data?.status === "fetching" ? "active" : "complete";
+      steps[type] = { status: stepStatus, data, timestamp };
+      if (stepStatus === "complete") {
+        const stepIndex = PIPELINE_STEPS.indexOf(type as (typeof PIPELINE_STEPS)[number]);
+        const nextStep = PIPELINE_STEPS[stepIndex + 1];
+        if (nextStep && steps[nextStep]?.status === "pending") {
+          steps[nextStep] = { ...steps[nextStep], status: "active" };
+        }
       }
       set({ steps });
     }

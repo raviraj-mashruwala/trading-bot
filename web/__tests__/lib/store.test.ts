@@ -26,18 +26,32 @@ describe("pipeline store", () => {
     expect(getState().status).toBe("running");
   });
 
-  it("marks scan.universe step complete", () => {
+  it("marks scan.universe active when status is fetching", () => {
     getState().handleEvent(makeEvent("analysis.started"));
-    getState().handleEvent(makeEvent("scan.universe", { count: 500, symbols: ["RELIANCE"] }));
+    getState().handleEvent(makeEvent("scan.universe", { total: 500, status: "fetching" }));
+    expect(getState().steps["scan.universe"].status).toBe("active");
+    expect(getState().steps["scan.universe"].data?.total).toBe(500);
+  });
+
+  it("marks scan.universe complete on second emit without status", () => {
+    getState().handleEvent(makeEvent("analysis.started"));
+    getState().handleEvent(makeEvent("scan.universe", { total: 500, status: "fetching" }));
+    getState().handleEvent(makeEvent("scan.universe", { total: 480 }));
     expect(getState().steps["scan.universe"].status).toBe("complete");
-    expect(getState().steps["scan.universe"].data?.count).toBe(500);
+    expect(getState().steps["scan.universe"].data?.total).toBe(480);
   });
 
   it("marks scan.filtered step complete after scan.universe", () => {
     getState().handleEvent(makeEvent("analysis.started"));
-    getState().handleEvent(makeEvent("scan.universe", { count: 500 }));
+    getState().handleEvent(makeEvent("scan.universe", { total: 500 }));
     getState().handleEvent(makeEvent("scan.filtered", { passed: 120, failed: 380, pass_rate: 0.24 }));
     expect(getState().steps["scan.filtered"].status).toBe("complete");
+  });
+
+  it("does not advance next step when current is active (fetching)", () => {
+    getState().handleEvent(makeEvent("analysis.started"));
+    getState().handleEvent(makeEvent("scan.universe", { total: 500, status: "fetching" }));
+    expect(getState().steps["scan.filtered"].status).toBe("pending");
   });
 
   it("handles all 8 pipeline events in sequence", () => {
@@ -69,7 +83,7 @@ describe("pipeline store", () => {
 
   it("reset clears all state", () => {
     getState().handleEvent(makeEvent("analysis.started"));
-    getState().handleEvent(makeEvent("scan.universe", { count: 100 }));
+    getState().handleEvent(makeEvent("scan.universe", { total: 100 }));
     getState().reset();
     expect(getState().status).toBe("idle");
     expect(Object.keys(getState().steps)).toHaveLength(0);
