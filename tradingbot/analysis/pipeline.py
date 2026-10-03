@@ -269,6 +269,24 @@ class AnalysisPipeline:
                 )
                 if source and idx < len(source.get("setups", [])):
                     setup_data = source["setups"][idx]
+
+                    # Jev quality check — overfit/credibility gate
+                    if self._jev_tier2 is not None:
+                        from tradingbot.analysis.jev_quality_check import jev_quality_check
+                        qc = await jev_quality_check(
+                            self._jev_tier2._jev, setup_data,
+                            {"win_rate": 0, "profit_factor": 0, "max_drawdown": 0,
+                             "n_trades": 0, "avg_r": 0},
+                        )
+                        if not qc["pass"]:
+                            log.info(
+                                "JEV QUALITY REJECTED %s: score=%.2f, overfit=%.2f, credible=%.2f",
+                                sym, qc["quality_score"],
+                                qc["details"].get("overfit_risk", 0),
+                                qc["details"].get("backtest_credible", 0),
+                            )
+                            continue
+
                     row_id = self._setups.save({
                         "run_id": run_id,
                         "trade_date": str(trade_date),
