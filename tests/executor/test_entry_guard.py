@@ -123,6 +123,79 @@ def test_verdict_is_frozen():
         v.action = "VETO"
 
 
+# --- Jev enhancement tests ---
+
+from unittest.mock import MagicMock
+from types import SimpleNamespace
+
+
+def _mock_jev(enter_now=0.7, momentum_quality=0.6, fading_risk=0.3):
+    """Build a mock JevClient that returns canned validate answers."""
+    client = MagicMock()
+    client.available = True
+    client.evaluate = MagicMock(return_value={
+        "enter_now": SimpleNamespace(noul=enter_now),
+        "momentum_quality": SimpleNamespace(score=momentum_quality * 4, confidence=0.8),
+        "fading_risk": SimpleNamespace(noul=fading_risk),
+    })
+    return client
+
+
+def test_jev_fading_overrides_enter():
+    guard = EntryGuard(max_drift_pct=5.0, jev_client=_mock_jev(fading_risk=0.75))
+    leg = FakeLeg(direction="long")
+    v = guard.evaluate(
+        leg,
+        _state(momentum_1m=40.0, momentum_5m=45.0, volume_ratio=1.5, trend_alignment=True),
+        2450.0,
+        datetime(2026, 9, 29, 9, 20),
+    )
+    assert v.action == "WAIT"
+    assert "fading" in v.reason.lower()
+
+
+def test_jev_low_quality_overrides_enter():
+    guard = EntryGuard(max_drift_pct=5.0, jev_client=_mock_jev(momentum_quality=0.1))
+    leg = FakeLeg(direction="long")
+    v = guard.evaluate(
+        leg,
+        _state(momentum_1m=40.0, momentum_5m=45.0, volume_ratio=1.5, trend_alignment=True),
+        2450.0,
+        datetime(2026, 9, 29, 9, 20),
+    )
+    assert v.action == "WAIT"
+    assert "momentum" in v.reason.lower() or "quality" in v.reason.lower()
+
+
+def test_jev_confirms_boosts_confidence():
+    guard = EntryGuard(max_drift_pct=5.0, jev_client=_mock_jev(enter_now=0.9, momentum_quality=0.8, fading_risk=0.1))
+    leg = FakeLeg(direction="long")
+    v = guard.evaluate(
+        leg,
+        _state(momentum_1m=40.0, momentum_5m=45.0, volume_ratio=1.5, trend_alignment=True),
+        2450.0,
+        datetime(2026, 9, 29, 9, 20),
+    )
+    assert v.action == "ENTER"
+    assert v.confidence > 0.8
+
+
+def test_jev_unavailable_uses_deterministic():
+    failing_jev = MagicMock()
+    failing_jev.available = True
+    failing_jev.evaluate = MagicMock(return_value=None)
+    guard = EntryGuard(max_drift_pct=5.0, jev_client=failing_jev)
+    leg = FakeLeg(direction="long")
+    v = guard.evaluate(
+        leg,
+        _state(momentum_1m=40.0, momentum_5m=45.0, volume_ratio=1.5, trend_alignment=True),
+        2450.0,
+        datetime(2026, 9, 29, 9, 20),
+    )
+    assert v.action == "ENTER"
+    assert v.confidence == 0.8
+
+
 def test_max_entry_wait_auto_veto():
     guard = EntryGuard(max_drift_pct=5.0)
     leg = FakeLeg(max_entry_wait=time(9, 18))

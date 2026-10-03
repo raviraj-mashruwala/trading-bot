@@ -5,10 +5,12 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from tradingbot.core.jev_client import JevClient
 from tradingbot.executor.candle_aggregator import CandleAggregator, LiveCandle
 from tradingbot.executor.momentum_scorer import MomentumScorer
 from tradingbot.executor.entry_guard import EntryGuard
 from tradingbot.executor.adaptive_exit_manager import AdaptiveExitManager
+from tradingbot.executor.jev_escalator import JevEscalator
 from tradingbot.executor.llm_escalator import LLMEscalator
 
 logger = logging.getLogger(__name__)
@@ -42,9 +44,24 @@ class ExecutionIntelligence:
 
         self.aggregator = CandleAggregator()
         self.scorer = MomentumScorer()
-        self.entry_guard = EntryGuard(max_drift_pct=config.max_entry_price_drift_pct)
+
+        jev_config = getattr(config, "jev", None)
+        jev_client = None
+        if jev_config and jev_config.enabled:
+            jev_client = JevClient(jev_config)
+
+        self.entry_guard = EntryGuard(
+            max_drift_pct=config.max_entry_price_drift_pct,
+            jev_client=jev_client,
+        )
         self.adaptive_exit = AdaptiveExitManager(square_off_time=config.square_off_time)
-        self.escalator = LLMEscalator()
+
+        llm_escalator = LLMEscalator()
+        if jev_client and jev_client.available:
+            self.escalator = JevEscalator(jev_client, jev_config, llm_fallback=llm_escalator)
+        else:
+            self.escalator = llm_escalator
+
         self.health = TickerHealth()
 
     @property
