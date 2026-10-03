@@ -213,71 +213,31 @@ class IntelligentScreener:
 
         log.info("Evaluating %d near-miss stocks with Jev", len(near_misses))
         rescued = []
-
-        # Batch evaluate with Jev
-        from typesafe_sdk import Noul, Score
+        questions = self._build_rescue_questions()
 
         for stock in near_misses:
             try:
-                response = self._jev.system_one(
-                    state={
-                        "symbol": stock["symbol"],
-                        "last_price": stock["last_price"],
-                        "avg_volume": stock["avg_volume"],
-                        "today_volume": stock.get("today_volume", 0),
-                        "volume_ratio": (
-                            stock.get("today_volume", 0) / max(stock["avg_volume"], 1)
-                        ),
-                        "market_cap_cr": stock["market_cap_cr"],
-                        "atr_pct": stock.get("atr_pct", 0),
-                        "sector": stock.get("sector", "unknown"),
-                        "factor_scores": stock.get("factor_scores", {}),
-                        "failed_checks": self._identify_failures(stock),
-                    },
-                    questions={
-                        "unusual_activity": Noul(
-                            instructions=(
-                                "Despite failing standard liquidity thresholds, "
-                                "does this stock show unusual activity that makes "
-                                "it worth investigating as an intraday trade?"
-                            ),
-                            criteria={
-                                "true": (
-                                    "Today's volume is significantly above average, "
-                                    "or strong technical factors compensate for "
-                                    "slightly below-threshold liquidity"
-                                ),
-                                "false": (
-                                    "No unusual activity — stock rightfully filtered "
-                                    "out by standard screening"
-                                ),
-                            },
-                        ),
-                        "tradeable_despite_threshold": Noul(
-                            instructions=(
-                                "Can this stock be safely traded intraday despite "
-                                "barely missing one or more screening thresholds? "
-                                "Consider: can you enter and exit without excessive "
-                                "slippage?"
-                            ),
-                        ),
-                        "opportunity_quality": Score(
-                            instructions=(
-                                "How strong is the trading opportunity for this stock, "
-                                "ignoring the screening threshold it failed?"
-                            ),
-                            criteria=[
-                                "Weak — no compelling setup even if liquid enough",
-                                "Moderate — decent setup, worth watching",
-                                "Strong — clear opportunity being missed by rigid filter",
-                            ],
-                        ),
-                    },
-                )
+                state = {
+                    "symbol": stock["symbol"],
+                    "last_price": stock["last_price"],
+                    "avg_volume": stock["avg_volume"],
+                    "today_volume": stock.get("today_volume", 0),
+                    "volume_ratio": (
+                        stock.get("today_volume", 0) / max(stock["avg_volume"], 1)
+                    ),
+                    "market_cap_cr": stock["market_cap_cr"],
+                    "atr_pct": stock.get("atr_pct", 0),
+                    "sector": stock.get("sector", "unknown"),
+                    "factor_scores": stock.get("factor_scores", {}),
+                    "failed_checks": self._identify_failures(stock),
+                }
+                answers = self._jev.evaluate(state=state, questions=questions)
+                if answers is None:
+                    continue
 
-                unusual = response.answers["unusual_activity"].noul
-                tradeable = response.answers["tradeable_despite_threshold"].noul
-                quality = response.answers["opportunity_quality"].score / 2
+                unusual = answers["unusual_activity"].noul
+                tradeable = answers["tradeable_despite_threshold"].noul
+                quality = answers["opportunity_quality"].score / 2
 
                 rescue_score = 0.4 * unusual + 0.3 * tradeable + 0.3 * quality
 
@@ -293,6 +253,54 @@ class IntelligentScreener:
                 log.debug("Jev rescue failed for %s, skipping", stock["symbol"])
 
         return rescued
+
+    @staticmethod
+    def _build_rescue_questions() -> dict:
+        try:
+            from tradingbot.core.jev_client import Noul, Score
+            if Noul is None:
+                return {}
+        except Exception:
+            return {}
+        return {
+            "unusual_activity": Noul(
+                instructions=(
+                    "Despite failing standard liquidity thresholds, "
+                    "does this stock show unusual activity that makes "
+                    "it worth investigating as an intraday trade?"
+                ),
+                criteria={
+                    "true": (
+                        "Today's volume is significantly above average, "
+                        "or strong technical factors compensate for "
+                        "slightly below-threshold liquidity"
+                    ),
+                    "false": (
+                        "No unusual activity — stock rightfully filtered "
+                        "out by standard screening"
+                    ),
+                },
+            ),
+            "tradeable_despite_threshold": Noul(
+                instructions=(
+                    "Can this stock be safely traded intraday despite "
+                    "barely missing one or more screening thresholds? "
+                    "Consider: can you enter and exit without excessive "
+                    "slippage?"
+                ),
+            ),
+            "opportunity_quality": Score(
+                instructions=(
+                    "How strong is the trading opportunity for this stock, "
+                    "ignoring the screening threshold it failed?"
+                ),
+                criteria=[
+                    "Weak — no compelling setup even if liquid enough",
+                    "Moderate — decent setup, worth watching",
+                    "Strong — clear opportunity being missed by rigid filter",
+                ],
+            ),
+        }
 
     def _compute_proximity(self, stock: dict[str, Any]) -> float:
         """How close to passing the stock was (0 = far, 1 = barely missed)."""

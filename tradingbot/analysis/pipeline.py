@@ -75,6 +75,17 @@ class AnalysisPipeline:
         self._screening = screening_config
         self._approved_setup_ids: dict[str, int] = {}
 
+        # Intelligent screener wraps deterministic screener with Jev layer
+        self._intelligent_screener = None
+        if jev_config and getattr(jev_config, "enabled", False):
+            from tradingbot.core.jev_client import JevClient
+            _jev_for_screening = JevClient(jev_config)
+            if _jev_for_screening.available:
+                from tradingbot.screening.intelligent_screener import IntelligentScreener
+                self._intelligent_screener = IntelligentScreener(
+                    screening_config, jev_client=_jev_for_screening,
+                ) if screening_config else None
+
         self._jev_tier2 = None
         if jev_config and getattr(jev_config, "enabled", False):
             from tradingbot.core.jev_client import JevClient
@@ -112,7 +123,14 @@ class AnalysisPipeline:
         )
         self._bus.emit_sync("scan.universe", {"total": len(stock_metrics)})
 
-        scored = self._screener.screen(stock_metrics)
+        if self._intelligent_screener is not None:
+            scored = self._intelligent_screener.screen(
+                stock_metrics,
+                regime=market_ctx.regime.value,
+                regime_confidence=0.7,
+            )
+        else:
+            scored = self._screener.screen(stock_metrics)
         self._bus.emit_sync("scan.filtered", {"candidates": len(scored)})
         await self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
