@@ -15,6 +15,7 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "exchange_calendars>=4.5",
+    "typesafe-sdk>=0.7.2",
 ]
 
 [project.optional-dependencies]

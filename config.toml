@@ -30,7 +30,7 @@ min_reward_risk = 1.5
 max_trades_per_day = 2
 
 [jev]
-enabled = false
+enabled = true
 model = "jev-latest"
 entry_confidence_threshold = 0.6
 exit_confidence_threshold = 0.75
