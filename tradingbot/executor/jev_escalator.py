@@ -102,9 +102,13 @@ def _state_from_entry(leg: Any, state: SymbolState, candles_5m: list[LiveCandle]
 
 
 def _state_from_exit(leg_state: Any, state: SymbolState, candles_5m: list[LiveCandle]) -> dict:
+    leg = getattr(leg_state, "leg", None)
     return {
         "position": {
             "symbol": state.symbol,
+            "direction": getattr(getattr(leg, "direction", None), "value", "unknown"),
+            "entry_price": getattr(leg_state, "entry_fill_price", None),
+            "current_stop": getattr(leg_state, "current_stop", None),
             "momentum_1m": state.momentum_1m,
             "momentum_5m": state.momentum_5m,
             "volume_ratio": state.volume_ratio,
@@ -168,25 +172,29 @@ class JevEscalator:
         if answers is None:
             return await self._entry_fallback(leg, state, candles_1m, candles_5m, ticker_degraded)
 
-        self._call_count += 1
-        reasoning = _format_entry_reasoning(answers)
+        try:
+            self._call_count += 1
+            reasoning = _format_entry_reasoning(answers)
 
-        if answers["invalidated"].noul > 0.7:
-            return EscalationResult("SKIP", reasoning, answers["invalidated"].noul, False)
+            if answers["invalidated"].noul > 0.7:
+                return EscalationResult("SKIP", reasoning, answers["invalidated"].noul, False)
 
-        if answers["timing"].choice == "skip":
-            return EscalationResult("SKIP", reasoning, answers["timing"].confidence, False)
+            if answers["timing"].choice == "skip":
+                return EscalationResult("SKIP", reasoning, answers["timing"].confidence, False)
 
-        se = answers["should_enter"].noul
-        if se >= self._config.entry_confidence_threshold:
-            return EscalationResult("ENTER", reasoning, se, False)
+            se = answers["should_enter"].noul
+            if se >= self._config.entry_confidence_threshold:
+                return EscalationResult("ENTER", reasoning, se, False)
 
-        if se < self._config.uncertainty_threshold:
-            log.info("Jev uncertain (%.2f < %.2f), trying Claude fallback",
-                     se, self._config.uncertainty_threshold)
+            if se < self._config.uncertainty_threshold:
+                log.info("Jev uncertain (%.2f < %.2f), trying Claude fallback",
+                         se, self._config.uncertainty_threshold)
+                return await self._entry_fallback(leg, state, candles_1m, candles_5m, ticker_degraded)
+
+            return EscalationResult("WAIT", reasoning, se, False)
+        except Exception:
+            log.warning("Jev entry answer parsing failed, using fallback", exc_info=True)
             return await self._entry_fallback(leg, state, candles_1m, candles_5m, ticker_degraded)
-
-        return EscalationResult("WAIT", reasoning, se, False)
 
     async def evaluate_exit(
         self,
@@ -203,23 +211,27 @@ class JevEscalator:
         if answers is None:
             return await self._exit_fallback(leg_state, state, candles_1m, candles_5m)
 
-        self._call_count += 1
-        reasoning = _format_exit_reasoning(answers)
+        try:
+            self._call_count += 1
+            reasoning = _format_exit_reasoning(answers)
 
-        ex = answers["exit_now"].noul
-        if ex >= self._config.exit_confidence_threshold:
-            return EscalationResult("EXIT", reasoning, ex, False)
+            ex = answers["exit_now"].noul
+            if ex >= self._config.exit_confidence_threshold:
+                return EscalationResult("EXIT", reasoning, ex, False)
 
-        reversal_norm = answers["reversal_risk"].score / 4.0
-        exhaustion = answers["momentum_exhaustion"].noul
-        if reversal_norm > 0.7 and exhaustion > 0.6:
-            return EscalationResult("HOLD", f"{reasoning}; tighten_stop", reversal_norm, False)
+            reversal_norm = answers["reversal_risk"].score / 4.0
+            exhaustion = answers["momentum_exhaustion"].noul
+            if reversal_norm > 0.7 and exhaustion > 0.6:
+                return EscalationResult("HOLD", f"{reasoning}; tighten_stop", reversal_norm, False)
 
-        if ex < self._config.uncertainty_threshold:
-            log.info("Jev exit uncertain (%.2f), trying Claude fallback", ex)
+            if ex < self._config.uncertainty_threshold:
+                log.info("Jev exit uncertain (%.2f), trying Claude fallback", ex)
+                return await self._exit_fallback(leg_state, state, candles_1m, candles_5m)
+
+            return EscalationResult("HOLD", reasoning, 1.0 - ex, False)
+        except Exception:
+            log.warning("Jev exit answer parsing failed, using fallback", exc_info=True)
             return await self._exit_fallback(leg_state, state, candles_1m, candles_5m)
-
-        return EscalationResult("HOLD", reasoning, 1.0 - ex, False)
 
     async def _entry_fallback(self, leg, state, candles_1m, candles_5m, ticker_degraded):
         if self._fallback is None:

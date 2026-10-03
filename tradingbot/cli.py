@@ -148,6 +148,7 @@ def execute(obj: dict, paper: bool, target: str | None, once: bool) -> None:
         ticker, config.execution,
         instrument_cache=instrument_cache,
         kite_client=data_kite_client,
+        jev_config=config.jev,
     )
 
     executor = Executor(

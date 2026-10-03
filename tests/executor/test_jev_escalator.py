@@ -227,6 +227,34 @@ async def test_exit_tighten_stop():
 
 
 @pytest.mark.asyncio
+async def test_entry_malformed_answers_uses_fallback():
+    from tradingbot.executor.jev_escalator import JevEscalator
+    answers = {"should_enter": _noul(0.85)}  # missing invalidated, timing
+    jev = _mock_jev_client(answers)
+    llm = AsyncMock()
+    llm.evaluate_entry = AsyncMock(
+        return_value=EscalationResult("WAIT", "LLM fallback", 0.4, False),
+    )
+    esc = JevEscalator(jev, _jev_config(), llm_fallback=llm)
+    result = await esc.evaluate_entry(FakeLeg(), _state(), [], [])
+    llm.evaluate_entry.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_exit_malformed_answers_uses_fallback():
+    from tradingbot.executor.jev_escalator import JevEscalator
+    answers = {"exit_now": _noul(0.9)}  # missing momentum_exhaustion, reversal_risk
+    jev = _mock_jev_client(answers)
+    llm = AsyncMock()
+    llm.evaluate_exit = AsyncMock(
+        return_value=EscalationResult("HOLD", "LLM fallback", 0.5, False),
+    )
+    esc = JevEscalator(jev, _jev_config(), llm_fallback=llm)
+    result = await esc.evaluate_exit(MagicMock(), _state(), [], [])
+    llm.evaluate_exit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_reasoning_contains_scores():
     from tradingbot.executor.jev_escalator import JevEscalator
     answers = {

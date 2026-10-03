@@ -74,12 +74,16 @@ class JevClient:
         if not self._available:
             return None
         try:
+            import asyncio
             start = _time.monotonic()
             async with AsyncTypeSafeClient(
                 api_key=self._api_key,
                 model=self._config.model,
             ) as client:
-                response = await client.system_one(state=state, questions=questions)
+                response = await asyncio.wait_for(
+                    client.system_one(state=state, questions=questions),
+                    timeout=self._config.timeout_ms / 1000,
+                )
             elapsed_ms = (_time.monotonic() - start) * 1000
             self._calls += 1
             self._total_latency_ms += elapsed_ms

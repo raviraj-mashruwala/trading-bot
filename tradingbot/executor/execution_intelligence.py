@@ -33,6 +33,7 @@ class ExecutionIntelligence:
         config: Any,
         instrument_cache: Any | None = None,
         kite_client: Any | None = None,
+        jev_config: Any | None = None,
     ) -> None:
         self._ticker = ticker
         self._config = config
@@ -45,7 +46,6 @@ class ExecutionIntelligence:
         self.aggregator = CandleAggregator()
         self.scorer = MomentumScorer()
 
-        jev_config = getattr(config, "jev", None)
         jev_client = None
         if jev_config and jev_config.enabled:
             jev_client = JevClient(jev_config)
