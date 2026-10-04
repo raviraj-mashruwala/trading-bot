@@ -42,8 +42,25 @@ INDEX_TOKENS = {
     "NIFTY BANK": 260105,
 }
 
+MIS_MARGINS_URL = "https://api.kite.trade/margins/equity"
+
 MAX_RETRIES = 3
 RETRY_BACKOFF = [1, 2, 4]
+
+
+def _fetch_mis_symbols() -> list[str]:
+    """Fetch stocks with MIS (intraday) margins from Kite. ~1,672 stocks."""
+    import httpx
+    try:
+        resp = httpx.get(MIS_MARGINS_URL, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        symbols = [item["tradingsymbol"] for item in data if "tradingsymbol" in item]
+        log.info("MIS margin universe: %d stocks", len(symbols))
+        return symbols
+    except Exception as exc:
+        log.warning("Failed to fetch MIS margins list: %s", exc)
+        return []
 
 
 @dataclass
@@ -106,35 +123,21 @@ class KiteDataSync:
         self._cancelled = False
         today = date.today()
 
-        # Fetch fresh instrument list from Kite and filter to tradeable equities
+        # Fetch MIS margin stocks — only stocks Zerodha allows for intraday trading
+        mis_symbols = await asyncio.to_thread(_fetch_mis_symbols)
+        if not mis_symbols:
+            log.error("Cannot proceed without MIS stock list")
+            return report
+
+        # Refresh instrument cache for token resolution
         try:
             raw_instruments = await asyncio.to_thread(self._kite.fetch_instruments, "NSE")
-            _JUNK = ("-SG", "-GS", "-GB", "-IL", "-PP", "-SM", "-BE", "-BZ", "-ST", "-BL",
-                     "-N1", "-N2", "-N3", "-N4", "-N5", "-N6")
-            import re
-            _JUNK_RE = re.compile(r"-[A-Z]{2}$")
-            min_price = self._screening.min_price if self._screening else 20.0
-            max_price = (self._screening.max_price if self._screening else 50000.0) * 2  # 2x buffer
-            filtered = []
-            for i in raw_instruments:
-                if i.get("instrument_type") != "EQ" or i.get("segment") != "NSE":
-                    continue
-                sym = i["tradingsymbol"]
-                if any(sym.endswith(s) for s in _JUNK) or _JUNK_RE.search(sym):
-                    continue
-                lp = float(i.get("last_price", 0) or 0)
-                if lp > 0 and not (min_price <= lp <= max_price):
-                    continue
-                filtered.append({"symbol": sym, "token": i["instrument_token"]})
-            # Update instrument cache with fresh data
             self._instruments.refresh(raw_instruments)
         except Exception as exc:
-            log.warning("Fresh instrument fetch failed, using cache: %s", exc)
-            filtered = self._instruments.get_all()
+            log.warning("Instrument refresh failed, using cache: %s", exc)
 
-        all_symbols = [i["symbol"] for i in filtered]
-        log.info("Initial fill: %d tradeable stocks (filtered from %d raw instruments)",
-                 len(all_symbols), len(raw_instruments) if 'raw_instruments' in dir() else 0)
+        all_symbols = mis_symbols
+        log.info("Initial fill: %d MIS-margin stocks", len(all_symbols))
 
         for store_interval, config in TARGET_DEPTHS.items():
             if self._cancelled:
@@ -171,11 +174,17 @@ class KiteDataSync:
         self._cancelled = False
         today = date.today()
 
+        # Use MIS list — only sync stocks we can actually trade
+        mis_symbols = await asyncio.to_thread(_fetch_mis_symbols)
+        mis_set = set(mis_symbols) if mis_symbols else None
+
         for store_interval in TARGET_DEPTHS:
             if self._cancelled:
                 break
             kite_interval = INTERVAL_MAP[store_interval]
-            symbols = self._store.symbols_with_data(store_interval)
+            cached = self._store.symbols_with_data(store_interval)
+            # Only sync stocks that are both cached AND in current MIS list
+            symbols = [s for s in cached if mis_set is None or s in mis_set or s in INDEX_TOKENS]
 
             if not symbols:
                 continue
