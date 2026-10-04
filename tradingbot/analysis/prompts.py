@@ -376,24 +376,64 @@ def build_shortlist_user_prompt(
     sector_analysis: dict,
     scored_stocks: list[dict],
 ) -> str:
-    """Build user prompt for candidate shortlisting."""
-    stocks_text = "\n".join(
-        f"  {s['symbol']}: score={s['composite_score']:.0f}, "
-        f"sector={s['sector']}, price={s['last_price']:.0f}, "
-        f"vol_surge={s.get('factor_scores', {}).get('volume_surge', 'N/A')}, "
-        f"RS={s.get('factor_scores', {}).get('relative_strength', 'N/A')}"
-        for s in scored_stocks[:80]
+    """Build XML-structured user prompt for candidate shortlisting."""
+    regime_block = (
+        f"<regime>\n"
+        f"  regime: {regime_analysis.get('regime', 'unknown')}\n"
+        f"  confidence: {regime_analysis.get('regime_confidence', 0):.0%}\n"
+        f"  bias: {regime_analysis.get('bias', 'neutral')}\n"
+        f"  risk_appetite: {regime_analysis.get('risk_appetite', 'moderate')}\n"
+        f"  sectors_in_play: {regime_analysis.get('sectors_in_play', [])}\n"
+        f"  sectors_to_avoid: {regime_analysis.get('sectors_to_avoid', [])}\n"
+        f"</regime>"
     )
-    return (
-        f"Market Regime: {regime_analysis.get('regime', 'unknown')} "
-        f"(confidence: {regime_analysis.get('regime_confidence', 0):.0%})\n"
-        f"Bias: {regime_analysis.get('bias', 'neutral')}\n"
-        f"Risk Appetite: {regime_analysis.get('risk_appetite', 'moderate')}\n\n"
-        f"Sectors in play: {regime_analysis.get('sectors_in_play', [])}\n"
-        f"Sectors to avoid: {regime_analysis.get('sectors_to_avoid', [])}\n\n"
-        f"Scored Stocks (top candidates from Tier 1 screen):\n{stocks_text}\n\n"
-        f"Select 10-15 high-conviction intraday candidates with direction and reasoning."
+
+    sector_block = ""
+    if sector_analysis:
+        sectors = sector_analysis.get("sectors", [])
+        if sectors:
+            sector_lines = "\n".join(
+                f"  {s.get('name', '?')}: bias={s.get('intraday_bias', '?')}, "
+                f"theme={s.get('theme', '?')}"
+                for s in sectors[:10]
+            )
+            sector_block = f"\n\n<sectors>\n{sector_lines}\n</sectors>"
+
+    stock_lines = []
+    for s in scored_stocks[:30]:
+        fs = s.get("factor_scores", {})
+        parts = [
+            f"  <stock symbol=\"{s['symbol']}\" composite_score=\"{s['composite_score']:.0f}\" "
+            f"sector=\"{s['sector']}\" price=\"{s['last_price']:.0f}\">",
+            f"    vol_surge={fs.get('volume_surge', 'N/A')}, "
+            f"RS={fs.get('relative_strength', 'N/A')}, "
+            f"atr_expansion={fs.get('atr_expansion', 'N/A')}, "
+            f"price_structure={fs.get('price_structure', 'N/A')}",
+            f"    delivery_pct={fs.get('delivery_pct', 'N/A')}, "
+            f"sector_momentum={fs.get('sector_momentum', 'N/A')}, "
+            f"gap_analysis={fs.get('gap_analysis', 'N/A')}",
+            f"    candlestick_pattern={fs.get('candlestick_pattern', 'N/A')}, "
+            f"volume_profile={fs.get('volume_profile', 'N/A')}",
+        ]
+        if "jev_composite" in s:
+            parts.append(
+                f"    jev_composite={s['jev_composite']:.4f}, "
+                f"jev_setup_confidence={s.get('jev_setup_confidence', 0):.4f}"
+            )
+        parts.append("  </stock>")
+        stock_lines.append("\n".join(parts))
+
+    candidates_block = "<candidates>\n" + "\n".join(stock_lines) + "\n</candidates>"
+
+    task_block = (
+        "<task>\n"
+        "  Select 10-15 high-conviction intraday candidates with direction and reasoning.\n"
+        "  Use all factor scores and Jev AI scores (when present) to inform your selection.\n"
+        "  Higher composite_score, volume_surge, and candlestick_pattern scores suggest stronger setups.\n"
+        "</task>"
     )
+
+    return f"{regime_block}{sector_block}\n\n{candidates_block}\n\n{task_block}"
 
 
 def build_deep_analysis_user_prompt(

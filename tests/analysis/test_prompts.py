@@ -145,17 +145,87 @@ def test_build_regime_user_prompt():
     assert "banking" in prompt
 
 
+def _make_stock(symbol="RELIANCE", composite=85, sector="energy", price=2500,
+                factor_scores=None, jev_composite=None, jev_setup_confidence=None):
+    """Helper to build a scored stock dict for prompt tests."""
+    fs = factor_scores or {
+        "volume_surge": 72.0, "relative_strength": 68.0,
+        "atr_expansion": 61.0, "price_structure": 75.0,
+        "delivery_pct": 55.0, "sector_momentum": 80.0,
+        "gap_analysis": 45.0, "candlestick_pattern": 82.0,
+        "volume_profile": 70.0,
+    }
+    d = {"symbol": symbol, "composite_score": composite, "sector": sector,
+         "last_price": price, "factor_scores": fs}
+    if jev_composite is not None:
+        d["jev_composite"] = jev_composite
+    if jev_setup_confidence is not None:
+        d["jev_setup_confidence"] = jev_setup_confidence
+    return d
+
+
 def test_build_shortlist_user_prompt():
     regime = {"regime": "trending_up", "regime_confidence": 0.82,
               "bias": "bullish", "sectors_in_play": ["banking"],
               "sectors_to_avoid": ["pharma"], "risk_appetite": "moderate"}
-    stocks = [{"symbol": "RELIANCE", "composite_score": 85,
-               "sector": "energy", "last_price": 2500,
-               "factor_scores": {"volume_surge": 1.5, "relative_strength": 0.8}}]
+    stocks = [_make_stock()]
     prompt = build_shortlist_user_prompt(regime, {}, stocks)
     assert "RELIANCE" in prompt
     assert "trending_up" in prompt
     assert "bullish" in prompt
+
+
+def test_build_shortlist_user_prompt_xml_structure():
+    regime = {"regime": "trending_up", "regime_confidence": 0.82,
+              "bias": "bullish", "sectors_in_play": ["banking"],
+              "sectors_to_avoid": ["pharma"], "risk_appetite": "moderate"}
+    stocks = [_make_stock()]
+    prompt = build_shortlist_user_prompt(regime, {}, stocks)
+    assert "<regime>" in prompt
+    assert "</regime>" in prompt
+    assert "<candidates>" in prompt
+    assert "</candidates>" in prompt
+    assert "<task>" in prompt
+    assert "</task>" in prompt
+
+
+def test_build_shortlist_user_prompt_includes_all_factor_scores():
+    stocks = [_make_stock()]
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, stocks)
+    assert "atr_expansion" in prompt
+    assert "price_structure" in prompt
+    assert "candlestick_pattern" in prompt
+    assert "volume_profile" in prompt
+    assert "delivery_pct" in prompt
+    assert "sector_momentum" in prompt
+    assert "gap_analysis" in prompt
+
+
+def test_build_shortlist_user_prompt_includes_jev_scores():
+    stocks = [_make_stock(jev_composite=0.78, jev_setup_confidence=0.85)]
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, stocks)
+    assert "jev_composite" in prompt or "0.78" in prompt
+    assert "jev_setup_confidence" in prompt or "0.85" in prompt
+
+
+def test_build_shortlist_user_prompt_handles_missing_jev():
+    stocks = [_make_stock()]
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, stocks)
+    assert "RELIANCE" in prompt
+
+
+def test_build_shortlist_user_prompt_caps_at_30():
+    stocks = [_make_stock(symbol=f"STOCK{i}", composite=100 - i) for i in range(50)]
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, stocks)
+    assert "STOCK0" in prompt
+    assert "STOCK29" in prompt
+    assert "STOCK30" not in prompt
+
+
+def test_build_shortlist_user_prompt_empty_stocks():
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, [])
+    assert "<candidates>" in prompt
+    assert "</candidates>" in prompt
 
 
 def test_build_deep_analysis_user_prompt():
