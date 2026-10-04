@@ -476,6 +476,7 @@ def build_shortlist_user_prompt(
         "  Select 10-15 high-conviction intraday candidates with direction and reasoning.\n"
         "  Use all factor scores and Jev AI scores (when present) to inform your selection.\n"
         "  Higher composite_score, volume_surge, and candlestick_pattern scores suggest stronger setups.\n"
+        "  Note: factor scores of exactly 50.0 may indicate unavailable data — treat as neutral, not as signal.\n"
         "</task>"
     )
 

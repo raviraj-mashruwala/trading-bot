@@ -248,6 +248,13 @@ def test_build_shortlist_user_prompt_empty_stocks():
     assert "</candidates>" in prompt
 
 
+def test_build_shortlist_user_prompt_warns_about_default_scores():
+    stocks = [_make_stock()]
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, stocks)
+    task_block = prompt[prompt.index("<task>"):prompt.index("</task>")]
+    assert "50" in task_block or "default" in task_block.lower() or "unavailable" in task_block.lower()
+
+
 def test_build_deep_analysis_user_prompt():
     prompt = build_deep_analysis_user_prompt(
         symbol="RELIANCE", direction="long",
