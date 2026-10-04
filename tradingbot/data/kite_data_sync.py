@@ -106,8 +106,35 @@ class KiteDataSync:
         self._cancelled = False
         today = date.today()
 
-        all_instruments = self._instruments.get_all()
-        all_symbols = [i["symbol"] for i in all_instruments]
+        # Fetch fresh instrument list from Kite and filter to tradeable equities
+        try:
+            raw_instruments = await asyncio.to_thread(self._kite.fetch_instruments, "NSE")
+            _JUNK = ("-SG", "-GS", "-GB", "-IL", "-PP", "-SM", "-BE", "-BZ", "-ST", "-BL",
+                     "-N1", "-N2", "-N3", "-N4", "-N5", "-N6")
+            import re
+            _JUNK_RE = re.compile(r"-[A-Z]{2}$")
+            min_price = self._screening.min_price if self._screening else 20.0
+            max_price = (self._screening.max_price if self._screening else 50000.0) * 2  # 2x buffer
+            filtered = []
+            for i in raw_instruments:
+                if i.get("instrument_type") != "EQ" or i.get("segment") != "NSE":
+                    continue
+                sym = i["tradingsymbol"]
+                if any(sym.endswith(s) for s in _JUNK) or _JUNK_RE.search(sym):
+                    continue
+                lp = float(i.get("last_price", 0) or 0)
+                if lp > 0 and not (min_price <= lp <= max_price):
+                    continue
+                filtered.append({"symbol": sym, "token": i["instrument_token"]})
+            # Update instrument cache with fresh data
+            self._instruments.refresh(raw_instruments)
+        except Exception as exc:
+            log.warning("Fresh instrument fetch failed, using cache: %s", exc)
+            filtered = self._instruments.get_all()
+
+        all_symbols = [i["symbol"] for i in filtered]
+        log.info("Initial fill: %d tradeable stocks (filtered from %d raw instruments)",
+                 len(all_symbols), len(raw_instruments) if 'raw_instruments' in dir() else 0)
 
         for store_interval, config in TARGET_DEPTHS.items():
             if self._cancelled:
