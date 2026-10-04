@@ -396,8 +396,6 @@ class AnalysisPipeline:
         daily_data = {}
         if getattr(self, '_duckdb', None) is not None:
             daily_data = self._duckdb.read_batch(symbols, "day", days=30)
-        if not daily_data and self._provider is not None:
-            daily_data = self._provider.get_daily_batch(symbols, days=30)
         if not daily_data and self._candles is not None:
             for sym in symbols:
                 df = self._candles.read(sym, "day", from_dt, now)
@@ -511,8 +509,6 @@ class AnalysisPipeline:
             df = None
             if getattr(self, '_duckdb', None) is not None:
                 df = self._duckdb.read("NIFTY 50", "day", days=10)
-            if (df is None or df.empty) and self._provider is not None:
-                df = self._provider.get_index("NIFTY 50", days=10)
             if (df is None or df.empty) and self._candles is not None:
                 df = self._candles.read(
                     "NIFTY 50", "day",
@@ -561,8 +557,6 @@ class AnalysisPipeline:
             df = None
             if getattr(self, '_duckdb', None) is not None:
                 df = self._duckdb.read(symbol, "15m", days=60)
-            if (df is None or df.empty) and self._provider is not None:
-                df = self._provider.get_intraday(symbol, "15m", days=60)
             if (df is None or df.empty) and self._candles is not None:
                 from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
                 df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
@@ -624,8 +618,7 @@ class AnalysisPipeline:
         corr_data = {}
         if getattr(self, '_duckdb', None) is not None and corr_symbols:
             corr_data = self._duckdb.read_batch(corr_symbols, "day", days=30)
-        if not corr_data and self._provider is not None and corr_symbols:
-            corr_data = self._provider.get_daily_batch(corr_symbols, days=30)
+        # corr_data from DuckDB only — no yfinance fallback
         for s in setups_with_data:
             sym = s["symbol"]
             try:

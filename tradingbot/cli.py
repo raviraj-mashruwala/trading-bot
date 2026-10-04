@@ -279,9 +279,7 @@ def backtest(obj: dict, strategy_name: str, symbol: str, days: int) -> None:
 
     provider = MarketDataProvider()
 
-    candles = provider.get_intraday(symbol, "15m", days=days)
-    if candles.empty:
-        _fail(f"no candle data for {symbol} from yfinance.")
+    _fail("backtest CLI requires CandleStore — use the web UI instead.")
 
     runner = Backtester()
 
@@ -336,11 +334,9 @@ def auth(obj: dict) -> None:
 @click.option("--intraday-days", default=60, type=int, help="Intraday candle lookback in days.")
 @click.pass_obj
 def sync(obj: dict, daily_days: int, intraday_days: int) -> None:
-    """Sync is no longer needed — analysis fetches data from yfinance on demand."""
-    click.echo("Sync is no longer needed. The analysis pipeline fetches market data")
-    click.echo("directly from yfinance when you run analysis. No local data cache required.")
-    click.echo("")
-    click.echo("To run analysis: use the web UI or 'tradingbot analyze'.")
+    """Sync historical data from Kite into local DuckDB cache."""
+    click.echo("Data sync is now handled via the web UI Settings page.")
+    click.echo("Go to Settings → Data Cache → Start Initial Fill.")
 
 
 @cli.command()
