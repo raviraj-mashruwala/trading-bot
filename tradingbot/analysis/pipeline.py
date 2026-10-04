@@ -54,9 +54,11 @@ class AnalysisPipeline:
         market_data_provider: Any = None,
         screening_config: Any = None,
         jev_config: Any = None,
+        duckdb_store: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
+        self._duckdb = duckdb_store
         self._db_path = db_path
         self._instrument_cache = instrument_cache
         self._provider = market_data_provider
@@ -388,14 +390,18 @@ class AnalysisPipeline:
         symbols = [inst["symbol"] for inst in instruments]
         inst_map = {inst["symbol"]: inst for inst in instruments}
 
-        if self._provider is not None:
+        if getattr(self, '_duckdb', None) is not None:
+            daily_data = self._duckdb.read_batch(symbols, "day", days=30)
+        elif self._provider is not None:
             daily_data = self._provider.get_daily_batch(symbols, days=30)
-        else:
+        elif self._candles is not None:
             daily_data = {}
             for sym in symbols:
                 df = self._candles.read(sym, "day", from_dt, now)
                 if not df.empty:
                     daily_data[sym] = df
+        else:
+            daily_data = {}
 
         sector_returns: dict[str, list[float]] = {}
         metrics = []
@@ -501,7 +507,9 @@ class AnalysisPipeline:
     def _compute_nifty_5d_change_from_store(self) -> float:
         """5-day Nifty50 return. Uses provider or CandleStore fallback."""
         try:
-            if self._provider is not None:
+            if getattr(self, '_duckdb', None) is not None:
+                df = self._duckdb.read("NIFTY 50", "day", days=10)
+            elif self._provider is not None:
                 df = self._provider.get_index("NIFTY 50", days=10)
             elif self._candles is not None:
                 df = self._candles.read(
@@ -548,14 +556,16 @@ class AnalysisPipeline:
         from tradingbot.strategy.indicators import compute_snapshot, InsufficientDataError
 
         try:
-            if self._provider is not None:
+            if getattr(self, '_duckdb', None) is not None:
+                df = self._duckdb.read(symbol, "15m", days=60)
+            elif self._provider is not None:
                 df = self._provider.get_intraday(symbol, "15m", days=60)
+            elif self._candles is not None:
+                from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
+                df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
             else:
-                df = self._candles.read(
-                    symbol, "15minute",
-                    datetime.now(tz=IST) - timedelta(days=self._lookback_days),
-                    datetime.now(tz=IST),
-                )
+                import pandas as _pd
+                df = _pd.DataFrame()
             if df.empty or len(df) < 30:
                 return {}, f"{symbol}: insufficient candle data for indicators"
 
@@ -608,7 +618,9 @@ class AnalysisPipeline:
 
         symbol_returns: dict[str, list[float]] = {}
         corr_symbols = [s["symbol"] for s in setups_with_data]
-        if self._provider is not None and corr_symbols:
+        if getattr(self, '_duckdb', None) is not None and corr_symbols:
+            corr_data = self._duckdb.read_batch(corr_symbols, "day", days=30)
+        elif self._provider is not None and corr_symbols:
             corr_data = self._provider.get_daily_batch(corr_symbols, days=30)
         else:
             corr_data = {}
@@ -718,11 +730,16 @@ class AnalysisPipeline:
         """
         from tradingbot.strategy.strategies import STRATEGY_REGISTRY
 
-        if self._provider is not None:
+        if getattr(self, '_duckdb', None) is not None:
+            df = self._duckdb.read(symbol, "15m", days=60)
+        elif self._provider is not None:
             df = self._provider.get_intraday(symbol, "15m", days=60)
-        else:
+        elif self._candles is not None:
             from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
             df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
+        else:
+            import pandas as _pd
+            df = _pd.DataFrame()
         if len(df) == 0:
             return
 

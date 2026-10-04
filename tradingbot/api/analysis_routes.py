@@ -60,6 +60,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         pipeline = AnalysisPipeline(
             data_sync=None,
             candle_store=None,
+            duckdb_store=getattr(state, 'candle_store', None),
             screener=Tier1Screener(config.screening, candle_store=None),
             tier2=Tier2Analyzer(llm_provider),
             tier3=Tier3Analyzer(llm_provider),
