@@ -118,13 +118,37 @@ async def sync_status(request: Request):
             if freshness:
                 result["freshness"] = {k: v.isoformat() for k, v in freshness.items()}
                 result["row_counts"] = candle_store.row_count()
-                # Check if daily data is stale (not from yesterday or today)
+                # Check if daily data is stale using exchange calendar
                 day_date = freshness.get("day")
                 if day_date is not None:
-                    today = _date.today()
-                    days_stale = (today - day_date).days
-                    result["daily_stale"] = days_stale > 1
-                    result["days_behind"] = days_stale
+                    try:
+                        from exchange_calendars import get_calendar
+                        from datetime import timedelta as _td
+                        cal = get_calendar("XBOM")
+                        today = _date.today()
+                        # Find last trading day (today or before)
+                        check = today
+                        for _ in range(10):
+                            if cal.is_session(str(check)):
+                                break
+                            check -= _td(days=1)
+                        last_trading = check
+                        trading_days_behind = 0
+                        if day_date < last_trading:
+                            from exchange_calendars import get_calendar
+                            cal = get_calendar("XBOM")
+                            sessions = cal.sessions_in_range(
+                                str(day_date), str(last_trading)
+                            )
+                            trading_days_behind = max(0, len(sessions) - 1)
+                        result["daily_stale"] = trading_days_behind > 0
+                        result["days_behind"] = trading_days_behind
+                        result["last_trading_day"] = last_trading.isoformat()
+                    except Exception:
+                        today = _date.today()
+                        days_stale = (today - day_date).days
+                        result["daily_stale"] = days_stale > 1
+                        result["days_behind"] = days_stale
         except Exception:
             pass
     return result
