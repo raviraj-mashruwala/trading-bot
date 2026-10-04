@@ -53,8 +53,39 @@ def create_app(
             candle_store=candle_store,
         )
 
+        # Scheduled daily sync at 8 PM IST
+        from tradingbot.api.sync_routes import _run_sync
+        from zoneinfo import ZoneInfo
+        from datetime import datetime as _dt
+
+        IST = ZoneInfo("Asia/Kolkata")
+
+        async def _daily_sync_scheduler():
+            last_sync_date = None
+            while True:
+                await asyncio.sleep(60)
+                try:
+                    now = _dt.now(tz=IST)
+                    today = now.date()
+                    if now.hour == 20 and now.minute == 0 and last_sync_date != today:
+                        import logging
+                        logging.getLogger(__name__).info("Scheduled daily sync triggered at 8 PM IST")
+                        state = app.state.app_state
+                        if state.sync_task is None or state.sync_task.done():
+                            state.sync_task = asyncio.create_task(_run_sync(state))
+                            last_sync_date = today
+                except Exception:
+                    pass
+
+        scheduler_task = asyncio.create_task(_daily_sync_scheduler())
+
         yield
 
+        scheduler_task.cancel()
+        try:
+            await scheduler_task
+        except asyncio.CancelledError:
+            pass
         candle_store.close()
         await event_bus.shutdown()
         flush_task.cancel()

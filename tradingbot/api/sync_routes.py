@@ -107,9 +107,10 @@ async def start_sync(request: Request):
 
 @router.get("/status")
 async def sync_status(request: Request):
+    from datetime import date as _date
     state = get_state(request)
     result = dict(state.sync_status)
-    # Always include current cache state
+    # Always include current cache state + staleness check
     candle_store = getattr(state, "candle_store", None)
     if candle_store is not None:
         try:
@@ -117,6 +118,13 @@ async def sync_status(request: Request):
             if freshness:
                 result["freshness"] = {k: v.isoformat() for k, v in freshness.items()}
                 result["row_counts"] = candle_store.row_count()
+                # Check if daily data is stale (not from yesterday or today)
+                day_date = freshness.get("day")
+                if day_date is not None:
+                    today = _date.today()
+                    days_stale = (today - day_date).days
+                    result["daily_stale"] = days_stale > 1
+                    result["days_behind"] = days_stale
         except Exception:
             pass
     return result
