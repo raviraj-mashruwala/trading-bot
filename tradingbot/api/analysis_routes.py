@@ -137,6 +137,13 @@ async def start_analysis(request: Request):
     if state.analysis_status == "running":
         raise HTTPException(status_code=409, detail="analysis already running")
 
+    candle_store = getattr(state, "candle_store", None)
+    if candle_store is None or not candle_store.freshness():
+        raise HTTPException(
+            status_code=400,
+            detail="Data cache is empty. Go to Settings → Data Cache → Start Initial Fill before running analysis.",
+        )
+
     if "trade_date" in body:
         trade_date = date.fromisoformat(body["trade_date"])
         if not is_trading_day(trade_date):
