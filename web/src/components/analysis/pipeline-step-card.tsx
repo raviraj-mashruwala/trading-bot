@@ -48,6 +48,9 @@ export function PipelineStepCard({ label, stepNumber, status, data, isLast }: Pr
           <span className={cn("text-[13px] font-medium", cfg.text)}>{label}</span>
           <span className={cn("text-[10px] uppercase tracking-wider", cfg.text)}>{cfg.label}</span>
         </div>
+        {status === "active" && data?.message && (
+          <p className="mt-1 text-[11px] text-muted-foreground">{String(data.message)}</p>
+        )}
         {expanded && data && (
           <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/30 p-2 text-[11px] text-muted-foreground">
             {JSON.stringify(data, null, 2)}
