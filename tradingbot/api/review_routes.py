@@ -57,6 +57,30 @@ async def get_scorecard(request: Request, trade_id: int):
         rs.close()
 
 
+@router.post("/scorecards/{trade_id}/grade")
+async def grade_scorecard(request: Request, trade_id: int):
+    state: AppState = request.app.state.app_state
+    if not getattr(state.config, "jev", None) or not state.config.jev.enabled:
+        raise HTTPException(status_code=400, detail="Jev not enabled")
+
+    from tradingbot.core.jev_client import JevClient
+    jev = JevClient(state.config.jev)
+    if not jev.available:
+        raise HTTPException(status_code=503, detail="Jev service unavailable")
+
+    rs = _get_review_store(state)
+    try:
+        card = rs.get_scorecard(trade_id)
+        if card is None:
+            raise HTTPException(status_code=404, detail="Trade not found")
+
+        from tradingbot.analysis.jev_trade_grader import grade_trade
+        grade = await grade_trade(jev, _serialize_scorecard(card))
+        return {"trade_id": trade_id, **grade}
+    finally:
+        rs.close()
+
+
 @router.get("/stats")
 async def get_stats(request: Request, days: int = 30):
     state: AppState = request.app.state.app_state

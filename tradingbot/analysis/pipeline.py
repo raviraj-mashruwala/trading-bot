@@ -173,6 +173,16 @@ class AnalysisPipeline:
             }
             for s in scored
         ]
+
+        if self._jev_tier2 is not None:
+            from tradingbot.analysis.jev_shortlist_scorer import score_candidates
+            regime_str = regime.get("regime", "range_bound") if isinstance(regime, dict) else "range_bound"
+            scored_dicts = score_candidates(
+                self._jev_tier2._jev, scored_dicts, regime_str,
+            )
+            log.info("Jev pre-scored %d candidates, top: %s", len(scored_dicts),
+                     [(s["symbol"], s.get("jev_composite")) for s in scored_dicts[:5]])
+
         shortlist_result = await self._tier2.shortlist(regime, sectors, scored_dicts)
         llm_calls += 1
         if isinstance(shortlist_result.get("_usage"), LLMUsage):
