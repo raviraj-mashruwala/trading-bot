@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/sync", tags=["sync"])
 
 
-async def _run_sync(state: AppState) -> None:
+async def _run_sync(state: AppState, force_full: bool = False) -> None:
     """Background task: run initial fill or daily sync."""
     try:
         config = state.config
@@ -59,7 +59,7 @@ async def _run_sync(state: AppState) -> None:
             }
 
         freshness = candle_store.freshness()
-        if not freshness:
+        if not freshness or force_full:
             state.sync_status = {"status": "running", "message": "Starting initial fill..."}
             report = await sync.initial_fill(progress_callback=progress)
         else:
@@ -95,8 +95,13 @@ async def start_sync(request: Request):
     state = get_state(request)
     if state.sync_task and not state.sync_task.done():
         raise HTTPException(status_code=409, detail="Sync already running")
+    body = {}
+    raw = await request.body()
+    if raw:
+        body = await request.json()
+    force_full = body.get("force_full", False)
     state.sync_status = {"status": "starting"}
-    state.sync_task = asyncio.create_task(_run_sync(state))
+    state.sync_task = asyncio.create_task(_run_sync(state, force_full=force_full))
     return {"status": "started"}
 
 

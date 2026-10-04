@@ -33,9 +33,9 @@ export function DataSyncSection() {
     return () => clearInterval(interval);
   }, [polling]);
 
-  const handleStart = async () => {
+  const handleStart = async (forceFull = false) => {
     try {
-      await api.startSync();
+      await api.startSync(forceFull || isEmpty);
       setPolling(true);
       await fetchStatus();
     } catch (e: unknown) {

@@ -110,7 +110,8 @@ export const api = {
   refreshMarketCalendar: () => post<MarketCalendarResponse>("/api/market-calendar/refresh"),
 
   // Data Sync
-  startSync: () => post<{ status: string }>("/api/sync/start"),
+  startSync: (forceFull = false) =>
+    post<{ status: string }>("/api/sync/start", forceFull ? { force_full: true } : undefined),
   getSyncStatus: () => get<Record<string, unknown>>("/api/sync/status"),
   cancelSync: () => post<{ status: string }>("/api/sync/cancel"),
 };
