@@ -108,4 +108,9 @@ export const api = {
   // Market Calendar
   getMarketCalendar: () => get<MarketCalendarResponse>("/api/market-calendar"),
   refreshMarketCalendar: () => post<MarketCalendarResponse>("/api/market-calendar/refresh"),
+
+  // Data Sync
+  startSync: () => post<{ status: string }>("/api/sync/start"),
+  getSyncStatus: () => get<Record<string, unknown>>("/api/sync/status"),
+  cancelSync: () => post<{ status: string }>("/api/sync/cancel"),
 };

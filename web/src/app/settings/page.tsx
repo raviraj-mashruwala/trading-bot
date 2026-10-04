@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { ConfigSection } from "@/components/settings/config-section";
 import { LlmTestButton } from "@/components/settings/llm-test-button";
 import { KiteConnectButton } from "@/components/auth/kite-connect-button";
+import { DataSyncSection } from "@/components/settings/data-sync-section";
 
 const MAIN_SECTIONS = ["general", "llm"];
 const ADVANCED_SECTIONS = ["strategy", "execution", "screening", "backtest", "risk", "kite", "paper"];
@@ -78,6 +79,9 @@ export default function SettingsPage() {
         <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#d4a015]/80">Broker</div>
         <KiteConnectButton />
       </div>
+
+      {/* Data sync */}
+      <DataSyncSection />
 
       {/* Main sections */}
       {MAIN_SECTIONS.map((section) => {

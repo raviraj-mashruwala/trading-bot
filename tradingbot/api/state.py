@@ -51,6 +51,10 @@ class AppState:
     # DuckDB candle cache (set by app.py lifespan)
     candle_store: object | None = None
 
+    # Data sync state
+    sync_status: dict = field(default_factory=lambda: {"status": "idle"})
+    sync_task: asyncio.Task | None = None
+
     # Capital cache
     _cached_capital: float = 0.0
     _capital_fetched_at: float = 0.0
