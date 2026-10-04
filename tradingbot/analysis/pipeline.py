@@ -192,6 +192,9 @@ class AnalysisPipeline:
 
         # --- Backtest + Tier 3: per-stock deep analysis ---
         all_setups: list[dict[str, Any]] = []
+        if not shortlist:
+            self._bus.emit_sync("strategy.indicators", {"status": "skipped", "reason": "no shortlisted stocks"})
+            self._bus.emit_sync("strategy.backtest", {"status": "skipped", "reason": "no shortlisted stocks"})
         for i, pick in enumerate(shortlist):
             sym = pick["symbol"]
             direction = pick.get("direction", "long")
@@ -390,18 +393,16 @@ class AnalysisPipeline:
         symbols = [inst["symbol"] for inst in instruments]
         inst_map = {inst["symbol"]: inst for inst in instruments}
 
+        daily_data = {}
         if getattr(self, '_duckdb', None) is not None:
             daily_data = self._duckdb.read_batch(symbols, "day", days=30)
-        elif self._provider is not None:
+        if not daily_data and self._provider is not None:
             daily_data = self._provider.get_daily_batch(symbols, days=30)
-        elif self._candles is not None:
-            daily_data = {}
+        if not daily_data and self._candles is not None:
             for sym in symbols:
                 df = self._candles.read(sym, "day", from_dt, now)
                 if not df.empty:
                     daily_data[sym] = df
-        else:
-            daily_data = {}
 
         sector_returns: dict[str, list[float]] = {}
         metrics = []
@@ -507,17 +508,18 @@ class AnalysisPipeline:
     def _compute_nifty_5d_change_from_store(self) -> float:
         """5-day Nifty50 return. Uses provider or CandleStore fallback."""
         try:
+            df = None
             if getattr(self, '_duckdb', None) is not None:
                 df = self._duckdb.read("NIFTY 50", "day", days=10)
-            elif self._provider is not None:
+            if (df is None or df.empty) and self._provider is not None:
                 df = self._provider.get_index("NIFTY 50", days=10)
-            elif self._candles is not None:
+            if (df is None or df.empty) and self._candles is not None:
                 df = self._candles.read(
                     "NIFTY 50", "day",
                     datetime.now(tz=IST) - timedelta(days=self._lookback_days),
                     datetime.now(tz=IST),
                 )
-            else:
+            if df is None or df.empty:
                 return 0.0
             if len(df) >= 6:
                 return float((df["close"].iloc[-1] / df["close"].iloc[-6] - 1) * 100)
@@ -556,14 +558,15 @@ class AnalysisPipeline:
         from tradingbot.strategy.indicators import compute_snapshot, InsufficientDataError
 
         try:
+            df = None
             if getattr(self, '_duckdb', None) is not None:
                 df = self._duckdb.read(symbol, "15m", days=60)
-            elif self._provider is not None:
+            if (df is None or df.empty) and self._provider is not None:
                 df = self._provider.get_intraday(symbol, "15m", days=60)
-            elif self._candles is not None:
+            if (df is None or df.empty) and self._candles is not None:
                 from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
                 df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
-            else:
+            if df is None:
                 import pandas as _pd
                 df = _pd.DataFrame()
             if df.empty or len(df) < 30:
@@ -618,12 +621,11 @@ class AnalysisPipeline:
 
         symbol_returns: dict[str, list[float]] = {}
         corr_symbols = [s["symbol"] for s in setups_with_data]
+        corr_data = {}
         if getattr(self, '_duckdb', None) is not None and corr_symbols:
             corr_data = self._duckdb.read_batch(corr_symbols, "day", days=30)
-        elif self._provider is not None and corr_symbols:
+        if not corr_data and self._provider is not None and corr_symbols:
             corr_data = self._provider.get_daily_batch(corr_symbols, days=30)
-        else:
-            corr_data = {}
         for s in setups_with_data:
             sym = s["symbol"]
             try:
@@ -730,14 +732,15 @@ class AnalysisPipeline:
         """
         from tradingbot.strategy.strategies import STRATEGY_REGISTRY
 
+        df = None
         if getattr(self, '_duckdb', None) is not None:
             df = self._duckdb.read(symbol, "15m", days=60)
-        elif self._provider is not None:
+        if (df is None or df.empty) and self._provider is not None:
             df = self._provider.get_intraday(symbol, "15m", days=60)
-        elif self._candles is not None:
+        if (df is None or df.empty) and self._candles is not None:
             from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
             df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
-        else:
+        if df is None:
             import pandas as _pd
             df = _pd.DataFrame()
         if len(df) == 0:
