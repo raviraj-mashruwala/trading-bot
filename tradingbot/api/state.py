@@ -48,6 +48,9 @@ class AppState:
     # WebSocket manager (set by app.py after construction)
     ws_manager: object | None = None
 
+    # DuckDB candle cache (set by app.py lifespan)
+    candle_store: object | None = None
+
     # Capital cache
     _cached_capital: float = 0.0
     _capital_fetched_at: float = 0.0

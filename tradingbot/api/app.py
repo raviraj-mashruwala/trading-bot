@@ -36,6 +36,9 @@ def create_app(
 
         plan_store = PlanStore(resolved_data_dir / "trade_plans")
 
+        from tradingbot.data.candle_store import CandleStore
+        candle_store = CandleStore(resolved_data_dir / "candles.duckdb")
+
         event_bus.subscribe(lambda event: asyncio.ensure_future(manager.broadcast(event)))
         flush_task = asyncio.create_task(event_bus.flush_loop())
 
@@ -47,10 +50,12 @@ def create_app(
             config_path=str(config_path or "config.toml"),
             data_dir=str(resolved_data_dir),
             ws_manager=manager,
+            candle_store=candle_store,
         )
 
         yield
 
+        candle_store.close()
         await event_bus.shutdown()
         flush_task.cancel()
         try:
