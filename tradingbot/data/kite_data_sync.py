@@ -29,11 +29,16 @@ INTERVAL_MAP = {
     "1m": "minute",
 }
 
-TARGET_DEPTHS = {
+# Initial fill + daily sync: daily only for full MIS universe
+SYNC_DEPTHS = {
     "day": {"years": 11, "stocks": "all"},
-    "15m": {"years": 11, "stocks": "liquid"},
-    "5m": {"years": 5, "stocks": "liquid"},
-    "1m": {"years": 5, "stocks": "liquid"},
+}
+
+# On-demand fetch for shortlisted stocks: 7 years, all intervals
+ON_DEMAND_DEPTHS = {
+    "15m": 7,
+    "5m": 7,
+    "1m": 7,
 }
 
 INDEX_TOKENS = {
@@ -139,18 +144,14 @@ class KiteDataSync:
         all_symbols = mis_symbols
         log.info("Initial fill: %d MIS-margin stocks", len(all_symbols))
 
-        for store_interval, config in TARGET_DEPTHS.items():
+        for store_interval, config in SYNC_DEPTHS.items():
             if self._cancelled:
                 break
             kite_interval = INTERVAL_MAP[store_interval]
             max_days = KITE_LIMITS[kite_interval]
             start_date = date(max(2015, today.year - config["years"]), 1, 1)
 
-            if config["stocks"] == "all":
-                symbols = all_symbols
-            else:
-                symbols = self._get_liquid_symbols(all_symbols)
-
+            symbols = all_symbols
             if store_interval == "day":
                 symbols = list(set(symbols) | set(INDEX_TOKENS.keys()))
 
@@ -178,7 +179,7 @@ class KiteDataSync:
         mis_symbols = await asyncio.to_thread(_fetch_mis_symbols)
         mis_set = set(mis_symbols) if mis_symbols else None
 
-        for store_interval in TARGET_DEPTHS:
+        for store_interval in SYNC_DEPTHS:
             if self._cancelled:
                 break
             kite_interval = INTERVAL_MAP[store_interval]
@@ -216,24 +217,87 @@ class KiteDataSync:
                  report.stocks_synced, report.rows_written, report.duration_sec)
         return report
 
-    async def fetch_on_demand(self, symbol: str, intervals: list[str] | None = None) -> None:
+    async def fetch_on_demand(
+        self,
+        symbol: str,
+        intervals: list[str] | None = None,
+        years: int | None = None,
+        progress_callback: Callable | None = None,
+    ) -> int:
+        """Fetch historical data for a single stock. Paginated, gap-aware.
+
+        If stock has no cached data: fetches `years` of history (default from ON_DEMAND_DEPTHS).
+        If stock has cached data: fetches only from last_date to today (gap fill).
+        Returns total rows written.
+        """
         if intervals is None:
-            intervals = ["day", "15m"]
+            intervals = list(ON_DEMAND_DEPTHS.keys())
         today = date.today()
+        total_written = 0
+
         for store_interval in intervals:
             last = self._store.last_date(symbol, store_interval)
             kite_interval = INTERVAL_MAP.get(store_interval, store_interval)
             max_days = KITE_LIMITS.get(kite_interval, 60)
-            from_date = last + timedelta(days=1) if last else today - timedelta(days=max_days)
-            try:
-                token = self._resolve_token(symbol)
-                raw = await asyncio.to_thread(
-                    self._kite.fetch_historical, token, kite_interval, from_date, today
-                )
-                df = _kite_rows_to_df(raw)
-                self._store.write(symbol, store_interval, df)
-            except Exception:
-                log.warning("On-demand fetch failed for %s/%s", symbol, store_interval, exc_info=True)
+
+            if last is not None:
+                from_date = last + timedelta(days=1)
+                if from_date > today:
+                    continue
+            else:
+                depth_years = years or ON_DEMAND_DEPTHS.get(store_interval, 7)
+                from_date = date(max(2015, today.year - depth_years), 1, 1)
+
+            chunks = _date_chunks(from_date, today, max_days)
+            for chunk_from, chunk_to in chunks:
+                if self._cancelled:
+                    return total_written
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        token = self._resolve_token(symbol)
+                        raw = await asyncio.to_thread(
+                            self._kite.fetch_historical, token, kite_interval, chunk_from, chunk_to
+                        )
+                        df = _kite_rows_to_df(raw)
+                        written = self._store.write(symbol, store_interval, df)
+                        total_written += written
+                        break
+                    except Exception as exc:
+                        if attempt < MAX_RETRIES - 1:
+                            await asyncio.sleep(RETRY_BACKOFF[attempt])
+                        else:
+                            log.warning("On-demand fetch failed for %s/%s %s-%s: %s",
+                                        symbol, store_interval, chunk_from, chunk_to, exc)
+
+            if progress_callback:
+                progress_callback(f"{symbol} {store_interval}: {'gap fill' if last else 'full fetch'} done")
+
+        return total_written
+
+    async def fetch_shortlist_data(
+        self,
+        symbols: list[str],
+        progress_callback: Callable | None = None,
+    ) -> dict[str, int]:
+        """Fetch 7-year intraday data for shortlisted stocks. Gap-aware.
+
+        New stocks get full 7-year fetch. Returning stocks get gap fill only.
+        Returns {symbol: rows_written}.
+        """
+        results = {}
+        for i, symbol in enumerate(symbols):
+            if self._cancelled:
+                break
+            if progress_callback:
+                last = self._store.last_date(symbol, "15m")
+                action = "updating" if last else "fetching 7yr"
+                progress_callback(f"Intraday data: {action} {symbol} ({i+1}/{len(symbols)})")
+            rows = await self.fetch_on_demand(symbol, progress_callback=None)
+            results[symbol] = rows
+        if progress_callback:
+            total = sum(results.values())
+            progress_callback(f"Intraday data: {len(symbols)} stocks, {total:,} rows")
+        return results
 
     async def _sync_interval(
         self,

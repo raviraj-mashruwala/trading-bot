@@ -182,10 +182,37 @@ class AnalysisPipeline:
         self._bus.emit_sync("scan.shortlist", {"shortlisted": len(shortlist)})
         await self._bus.emit("analysis.tier2_complete", {"shortlisted": len(shortlist)})
 
-        # Sync deep data for shortlisted symbols (skip when using yfinance provider)
+        # --- Fetch intraday data for shortlisted stocks (on-demand from Kite) ---
         symbols = [s["symbol"] for s in shortlist]
-        if self._provider is None and symbols and hasattr(self._sync, "deep_fetch"):
-            self._sync.deep_fetch(symbols)
+        if symbols and getattr(self, '_duckdb', None) is not None:
+            self._bus.emit_sync("strategy.indicators", {
+                "status": "fetching", "message": f"Fetching intraday data for {len(symbols)} stocks...",
+            })
+            try:
+                from tradingbot.data.kite_data_sync import KiteDataSync
+                from tradingbot.data.kite_client import KiteClient
+                from kiteconnect import KiteConnect
+                from pathlib import Path
+                import os
+
+                config = getattr(self, '_config', None)
+                token_path = Path.home() / ".tradingbot" / "kite_token"
+                kite_api_key = os.environ.get("KITE_API_KEY", "")
+                if token_path.exists() and kite_api_key:
+                    kite = KiteConnect(api_key=kite_api_key)
+                    kite.set_access_token(token_path.read_text().strip())
+                    kite_client = KiteClient(kite, rate_limit_per_sec=3)
+
+                    sync = KiteDataSync(kite_client, self._duckdb, self._instrument_cache)
+
+                    def _progress(msg):
+                        self._bus.emit_sync("strategy.indicators", {"status": "fetching", "message": msg})
+
+                    await sync.fetch_shortlist_data(symbols, progress_callback=_progress)
+                else:
+                    log.warning("Kite auth not available — skipping intraday fetch")
+            except Exception as exc:
+                log.warning("On-demand intraday fetch failed: %s", exc, exc_info=True)
 
         # --- Performance context for LLM ---
         perf_ctx = self._build_performance_context()
