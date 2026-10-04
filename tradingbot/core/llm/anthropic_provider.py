@@ -57,7 +57,6 @@ class AnthropicProvider(LLMProvider):
             "name": tool_name,
             "description": tool_description,
             "input_schema": input_schema,
-            "strict": True,
         }
 
         attempts = self.config.max_retries + 1
