@@ -67,8 +67,8 @@ export function DataSyncSection() {
 
       {isEmpty && !isRunning && !isComplete && (
         <div className="mb-3 rounded bg-[#d4a015]/10 px-3 py-2 text-sm text-[#d4a015]">
-          Cache empty — run initial fill to download historical data from Kite.
-          This takes ~60 minutes and runs in the background.
+          Cache empty — run initial fill to download daily data for ~1,675 stocks from Kite.
+          Intraday data is fetched on demand during analysis for shortlisted stocks only.
         </div>
       )}
 

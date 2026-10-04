@@ -108,7 +108,18 @@ async def start_sync(request: Request):
 @router.get("/status")
 async def sync_status(request: Request):
     state = get_state(request)
-    return state.sync_status
+    result = dict(state.sync_status)
+    # Always include current cache state
+    candle_store = getattr(state, "candle_store", None)
+    if candle_store is not None:
+        try:
+            freshness = candle_store.freshness()
+            if freshness:
+                result["freshness"] = {k: v.isoformat() for k, v in freshness.items()}
+                result["row_counts"] = candle_store.row_count()
+        except Exception:
+            pass
+    return result
 
 
 @router.post("/cancel")
