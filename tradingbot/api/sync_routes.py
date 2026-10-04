@@ -7,7 +7,7 @@ import logging
 import time as _time
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from tradingbot.api.app import get_state
 from tradingbot.api.state import AppState
@@ -91,7 +91,7 @@ async def _run_sync(state: AppState) -> None:
 
 
 @router.post("/start")
-async def start_sync(request):
+async def start_sync(request: Request):
     state = get_state(request)
     if state.sync_task and not state.sync_task.done():
         raise HTTPException(status_code=409, detail="Sync already running")
@@ -101,13 +101,13 @@ async def start_sync(request):
 
 
 @router.get("/status")
-async def sync_status(request):
+async def sync_status(request: Request):
     state = get_state(request)
     return state.sync_status
 
 
 @router.post("/cancel")
-async def cancel_sync(request):
+async def cancel_sync(request: Request):
     state = get_state(request)
     if state.sync_task and not state.sync_task.done():
         state.sync_task.cancel()
