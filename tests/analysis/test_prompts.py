@@ -82,6 +82,26 @@ def test_shortlist_prompt_counter_argument():
     assert "counter" in SHORTLIST_SYSTEM.lower() or "COUNTER" in SHORTLIST_SYSTEM
 
 
+def test_shortlist_system_has_rubric():
+    lower = SHORTLIST_SYSTEM.lower()
+    assert "regime alignment" in lower
+    assert "volume" in lower
+    assert "risk" in lower
+
+
+def test_shortlist_system_has_self_check():
+    lower = SHORTLIST_SYSTEM.lower()
+    assert "self-check" in lower or "before finalizing" in lower or "verify" in lower
+
+
+def test_shortlist_system_has_example():
+    assert "<example>" in SHORTLIST_SYSTEM or "Example" in SHORTLIST_SYSTEM
+
+
+def test_shortlist_system_has_scoring_weights():
+    assert "%" in SHORTLIST_SYSTEM or "weight" in SHORTLIST_SYSTEM.lower()
+
+
 # ── Schema field checks ──
 
 
