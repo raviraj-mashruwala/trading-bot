@@ -134,11 +134,6 @@ class MarketContextFetcher:
         """Read index data from provider or candle_store fallback."""
         import pandas as pd
 
-        if self._provider is not None:
-            try:
-                return self._provider.get_index(symbol, days=days)
-            except Exception as exc:
-                logger.warning("Provider index fetch failed for %s: %s", symbol, exc)
         if self._candles is not None:
             try:
                 from_dt = datetime.now(tz=IST) - timedelta(days=days)

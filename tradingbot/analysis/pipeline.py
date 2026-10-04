@@ -765,8 +765,6 @@ class AnalysisPipeline:
         df = None
         if getattr(self, '_duckdb', None) is not None:
             df = self._duckdb.read(symbol, "15m", days=60)
-        if (df is None or df.empty) and self._provider is not None:
-            df = self._provider.get_intraday(symbol, "15m", days=60)
         if (df is None or df.empty) and self._candles is not None:
             from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
             df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))

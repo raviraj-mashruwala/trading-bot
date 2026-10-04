@@ -55,7 +55,6 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             rate_limit_per_sec=config.kite.rate_limit_per_sec,
         )
         market_provider = MarketDataProvider(kite_client=kite_for_universe)
-        market_provider.clear_cache()
 
         pipeline = AnalysisPipeline(
             data_sync=None,
