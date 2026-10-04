@@ -14,3 +14,4 @@ logs/
 .DS_Store
 :memory:*
 *.db-info
+*.duckdb
