@@ -57,7 +57,14 @@ class AnthropicProvider(LLMProvider):
             "name": tool_name,
             "description": tool_description,
             "input_schema": input_schema,
+            "cache_control": {"type": "ephemeral"},
         }
+
+        system_blocks = [{
+            "type": "text",
+            "text": system_prompt,
+            "cache_control": {"type": "ephemeral"},
+        }]
 
         attempts = self.config.max_retries + 1
         last_error: Exception | None = None
@@ -67,7 +74,7 @@ class AnthropicProvider(LLMProvider):
                 response = await self.client.messages.create(
                     model=self.config.model,
                     max_tokens=MAX_TOKENS,
-                    system=system_prompt,
+                    system=system_blocks,
                     messages=[{"role": "user", "content": user_prompt}],
                     tools=[tool],
                 )
@@ -92,6 +99,8 @@ class AnthropicProvider(LLMProvider):
             payload["_usage"] = LLMUsage(
                 input_tokens=getattr(usage, "input_tokens", 0) if usage else 0,
                 output_tokens=getattr(usage, "output_tokens", 0) if usage else 0,
+                cache_read_tokens=getattr(usage, "cache_read_input_tokens", 0) if usage else 0,
+                cache_creation_tokens=getattr(usage, "cache_creation_input_tokens", 0) if usage else 0,
                 model=self.config.model,
             )
 

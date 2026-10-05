@@ -40,7 +40,9 @@ def make_client(responses):
 
 def tool_use_response(payload, tool_name="emit_result"):
     block = SimpleNamespace(type="tool_use", name=tool_name, input=payload)
-    return SimpleNamespace(content=[block], stop_reason="tool_use")
+    usage = SimpleNamespace(input_tokens=0, output_tokens=0,
+                            cache_read_input_tokens=0, cache_creation_input_tokens=0)
+    return SimpleNamespace(content=[block], stop_reason="tool_use", usage=usage)
 
 
 def text_only_response(text="I cannot help with that."):
@@ -71,9 +73,11 @@ async def test_analyze_sends_the_configured_model_and_tool(tmp_path):
 
     sent = client.messages.calls[0]
     assert sent["model"] == "claude-sonnet-5"
-    assert sent["system"] == "sys"
+    assert sent["system"][0]["text"] == "sys"
+    assert sent["system"][0]["cache_control"] == {"type": "ephemeral"}
     assert sent["tools"][0]["name"] == "emit_result"
     assert sent["tools"][0]["input_schema"] == SCHEMA
+    assert sent["tools"][0]["cache_control"] == {"type": "ephemeral"}
     assert sent["messages"] == [{"role": "user", "content": "user"}]
 
 
@@ -141,3 +145,17 @@ async def test_health_check_is_false_when_the_call_fails(tmp_path):
     provider = AnthropicProvider(make_config(), api_key="sk-ant-test", client=client, log_dir=tmp_path)
 
     assert await provider.health_check() is False
+
+
+async def test_analyze_tracks_cache_tokens_in_usage(tmp_path):
+    resp = tool_use_response({"picks": ["A"]})
+    resp.usage = SimpleNamespace(input_tokens=200, output_tokens=50,
+                                 cache_read_input_tokens=500, cache_creation_input_tokens=0)
+    client = make_client([resp])
+    provider = AnthropicProvider(make_config(), api_key="sk-ant-test", client=client, log_dir=tmp_path)
+
+    result = await provider.analyze("sys", "user", "emit_result", "desc", SCHEMA)
+
+    usage = result["_usage"]
+    assert usage.cache_read_tokens == 500
+    assert usage.cache_creation_tokens == 0

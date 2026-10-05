@@ -7,11 +7,13 @@ from dataclasses import dataclass
 from typing import Any
 
 MODEL_PRICING: dict[str, dict[str, float]] = {
-    "claude-sonnet-4-20250514": {"input": 3.0, "output": 15.0},
-    "claude-opus-4-20250514": {"input": 15.0, "output": 75.0},
-    "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.0},
+    "claude-sonnet-4-20250514": {"input": 3.0, "output": 15.0, "cache_read": 0.30, "cache_write": 3.75},
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0, "cache_read": 0.30, "cache_write": 3.75},
+    "claude-opus-4-20250514": {"input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write": 18.75},
+    "claude-opus-4-6": {"input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write": 18.75},
+    "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.0, "cache_read": 0.08, "cache_write": 1.0},
 }
-DEFAULT_PRICING: dict[str, float] = {"input": 3.0, "output": 15.0}
+DEFAULT_PRICING: dict[str, float] = {"input": 3.0, "output": 15.0, "cache_read": 0.30, "cache_write": 3.75}
 
 
 @dataclass
@@ -21,12 +23,16 @@ class LLMUsage:
     input_tokens: int
     output_tokens: int
     model: str
+    cache_read_tokens: int = 0
+    cache_creation_tokens: int = 0
 
     def cost_usd(self) -> float:
         pricing = MODEL_PRICING.get(self.model, DEFAULT_PRICING)
         return (
             self.input_tokens * pricing["input"] / 1_000_000
             + self.output_tokens * pricing["output"] / 1_000_000
+            + self.cache_read_tokens * pricing.get("cache_read", 0.30) / 1_000_000
+            + self.cache_creation_tokens * pricing.get("cache_write", 3.75) / 1_000_000
         )
 
 
