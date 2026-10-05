@@ -18,8 +18,10 @@ class CorrelationFilter:
         sector_counts: dict[str, int] = {}
         result: list[ScoredStock] = []
         for stock in sorted_stocks:
-            count = sector_counts.get(stock.sector, 0)
-            if count < self._max:
-                result.append(stock)
+            if stock.sector and stock.sector != "unknown":
+                count = sector_counts.get(stock.sector, 0)
+                if count >= self._max:
+                    continue
                 sector_counts[stock.sector] = count + 1
+            result.append(stock)
         return result
