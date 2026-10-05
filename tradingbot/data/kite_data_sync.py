@@ -277,17 +277,13 @@ class KiteDataSync:
     async def fetch_shortlist_data(
         self,
         symbols: list[str],
-        intervals: list[str] | None = None,
         progress_callback: Callable | None = None,
     ) -> dict[str, int]:
-        """Fetch intraday data for shortlisted stocks. Gap-aware.
+        """Fetch 7-year intraday data for shortlisted stocks. Gap-aware.
 
         New stocks get full 7-year fetch. Returning stocks get gap fill only.
-        Only fetches specified intervals (default: 15m only for analysis speed).
         Returns {symbol: rows_written}.
         """
-        if intervals is None:
-            intervals = ["15m"]
         results = {}
         for i, symbol in enumerate(symbols):
             if self._cancelled:
@@ -296,7 +292,7 @@ class KiteDataSync:
                 last = self._store.last_date(symbol, "15m")
                 action = "updating" if last else "fetching 7yr"
                 progress_callback(f"Intraday data: {action} {symbol} ({i+1}/{len(symbols)})")
-            rows = await self.fetch_on_demand(symbol, intervals=intervals, progress_callback=None)
+            rows = await self.fetch_on_demand(symbol, progress_callback=None)
             results[symbol] = rows
         if progress_callback:
             total = sum(results.values())
