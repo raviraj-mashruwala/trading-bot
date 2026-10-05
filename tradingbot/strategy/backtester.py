@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 WARMUP_CANDLES = 50
 MAX_HOLD_CANDLES = 26  # roughly one session of 15 minute bars
+SUPPORT_RESISTANCE_INTERVAL = 25
 
 
 class Backtester:
@@ -39,19 +40,37 @@ class Backtester:
                 avg_reward_risk=0.0,
             )
 
+        from tradingbot.strategy.indicators import precompute_indicator_series
+
+        indicator_series = precompute_indicator_series(symbol, df)
+
         trades = 0
         wins = 0
         reward_risks: list[float] = []
         index = WARMUP_CANDLES
+        last_sr_index = -SUPPORT_RESISTANCE_INTERVAL
+        supports: list[float] = []
+        resistances: list[float] = []
+        vol_prof = {"poc": 0.0, "vah": 0.0, "val": 0.0}
 
         while index < len(df):
-            window = df.iloc[:index]
-            try:
-                snapshot = compute_snapshot(symbol, window)
-            except InsufficientDataError:
-                snapshot = self._lenient_snapshot(symbol, window)
+            if index - last_sr_index >= SUPPORT_RESISTANCE_INTERVAL:
+                from tradingbot.strategy.indicators import support_resistance, volume_profile
+                window = df.iloc[:index]
+                try:
+                    supports, resistances = support_resistance(window)
+                except Exception:
+                    supports, resistances = [], []
+                try:
+                    vol_prof = volume_profile(window)
+                except Exception:
+                    vol_prof = {"poc": 0.0, "vah": 0.0, "val": 0.0}
+                last_sr_index = index
 
-            signal = strategy.generate_signal(window, snapshot)
+            snapshot = self._snapshot_at(symbol, indicator_series, index,
+                                         supports, resistances, vol_prof)
+
+            signal = strategy.generate_signal(df.iloc[:index], snapshot)
             if signal is None:
                 index += 1
                 continue
@@ -75,6 +94,57 @@ class Backtester:
             wins=wins,
             win_rate=wins / trades if trades else 0.0,
             avg_reward_risk=sum(reward_risks) / len(reward_risks) if reward_risks else 0.0,
+        )
+
+    @staticmethod
+    def _snapshot_at(
+        symbol: str,
+        series: dict,
+        index: int,
+        supports: list[float],
+        resistances: list[float],
+        vol_prof: dict,
+    ):
+        import numpy as np
+        from tradingbot.core.models import IndicatorSnapshot
+
+        def safe(s, idx, fallback=0.0):
+            if isinstance(s, pd.Series) and idx < len(s):
+                val = s.iloc[idx]
+                return float(val) if not (isinstance(val, float) and np.isnan(val)) else fallback
+            return fallback
+
+        last_close = safe(series["last_close"], index, 100.0)
+        return IndicatorSnapshot(
+            symbol=symbol,
+            last_close=last_close,
+            rsi_14=safe(series["rsi_14"], index, 50.0),
+            macd=safe(series["macd"], index),
+            macd_signal=safe(series["macd_signal"], index),
+            bb_upper=safe(series["bb_upper"], index, last_close),
+            bb_middle=safe(series["bb_middle"], index, last_close),
+            bb_lower=safe(series["bb_lower"], index, last_close),
+            atr_14=safe(series["atr_14"], index, 1.0),
+            sma_9=safe(series.get("sma_9", pd.Series(dtype=float)), index, last_close),
+            sma_20=safe(series["sma_20"], index, last_close),
+            sma_50=safe(series["sma_50"], index, last_close),
+            sma_200=safe(series["sma_200"], index, last_close),
+            ema_9=safe(series.get("ema_9", pd.Series(dtype=float)), index, last_close),
+            ema_12=safe(series["ema_12"], index, last_close),
+            ema_26=safe(series["ema_26"], index, last_close),
+            vwap=safe(series["vwap"], index, last_close),
+            pivot=safe(series["pivot"], index, last_close),
+            support_levels=supports,
+            resistance_levels=resistances,
+            adx_14=safe(series["adx_14"], index),
+            supertrend=safe(series["supertrend"], index),
+            supertrend_direction=int(safe(series["supertrend_direction"], index, 1)),
+            bb_bandwidth=safe(series["bb_bandwidth"], index),
+            vwap_upper_1=safe(series["vwap_upper_1"], index),
+            vwap_lower_1=safe(series["vwap_lower_1"], index),
+            poc=vol_prof.get("poc", 0.0),
+            vah=vol_prof.get("vah", 0.0),
+            val=vol_prof.get("val", 0.0),
         )
 
     def run_all(self, symbol: str, df: pd.DataFrame) -> list[BacktestResult]:

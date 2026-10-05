@@ -119,3 +119,13 @@ def test_backtesting_never_mutates_the_candle_frame():
     Backtester().run("RELIANCE", df, AlwaysLongStrategy())
 
     pd.testing.assert_frame_equal(df, before)
+
+
+def test_backtest_2000_candles_completes_under_15_seconds():
+    import time
+    df = make_candles(np.arange(100, 2100, dtype=float))
+    start = time.monotonic()
+    result = Backtester().run("PERF", df, AlwaysLongStrategy())
+    elapsed = time.monotonic() - start
+    assert elapsed < 15.0, f"Backtest took {elapsed:.1f}s, expected < 15s"
+    assert result.trades > 0
