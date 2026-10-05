@@ -259,7 +259,7 @@ class KiteDataSync:
                             self._kite.fetch_historical, token, kite_interval, chunk_from, chunk_to
                         )
                         df = _kite_rows_to_df(raw)
-                        written = self._store.write(symbol, store_interval, df)
+                        written = await asyncio.to_thread(self._store.write, symbol, store_interval, df)
                         total_written += written
                         break
                     except Exception as exc:
@@ -338,7 +338,7 @@ class KiteDataSync:
                             self._kite.fetch_historical, token, kite_interval, chunk_from, chunk_to
                         )
                         df = _kite_rows_to_df(raw)
-                        written = self._store.write(symbol, store_interval, df)
+                        written = await asyncio.to_thread(self._store.write, symbol, store_interval, df)
                         sym_rows += written
                         break
                     except Exception as exc:
