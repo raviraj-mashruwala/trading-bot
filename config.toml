@@ -15,8 +15,8 @@ max_entry_price_drift_pct = 2.0
 [llm]
 provider = "anthropic"
 model = "claude-sonnet-4-6"
-timeout_sec = 120
-max_retries = 1
+timeout_sec = 300
+max_retries = 3
 
 [paper]
 slippage_pct = 0.05
