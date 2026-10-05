@@ -148,7 +148,13 @@ async def start_analysis(request: Request):
         if not is_trading_day(trade_date):
             raise HTTPException(status_code=400, detail=f"{trade_date} is not a trading day")
     else:
-        trade_date = next_trading_day(now_ist().date())
+        from tradingbot.scanner.calendar import MARKET_POST_CLOSE
+        now = now_ist()
+        today = now.date()
+        if is_trading_day(today) and now.time() <= MARKET_POST_CLOSE:
+            trade_date = today
+        else:
+            trade_date = next_trading_day(today)
 
     state.analysis_status = "running"
     state.analysis_trade_date = trade_date.isoformat()
