@@ -781,8 +781,11 @@ class AnalysisPipeline:
             df = _pd.DataFrame()
         if len(df) == 0:
             return
+        if len(df) > 500:
+            df = df.tail(500).reset_index(drop=True)
 
         for strategy_name, strategy in STRATEGY_REGISTRY.items():
+            log.info("Backtesting %s/%s (%d candles)", symbol, strategy_name.value, len(df))
             report = self._backtest.run(symbol, df, strategy)
             if report.total_trades >= 3:
                 trade_pnls = (
