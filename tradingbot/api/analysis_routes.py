@@ -56,6 +56,10 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         )
         market_provider = MarketDataProvider(kite_client=kite_for_universe)
 
+        from tradingbot.data.instrument_cache import InstrumentCache
+        inst_cache = InstrumentCache(Path(state.data_dir) / "instruments.db")
+        inst_cache.refresh(kite_for_universe.kite.instruments("NSE"))
+
         pipeline = AnalysisPipeline(
             data_sync=None,
             candle_store=None,
@@ -72,6 +76,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             setup_store=state.setup_store,
             event_bus=state.event_bus,
             capital=state.capital,
+            instrument_cache=inst_cache,
             context_fetcher=MarketContextFetcher(market_data_provider=market_provider),
             lookback_days=config.backtest.lookback_days,
             db_path=Path(state.data_dir) / "tradingbot.db",
