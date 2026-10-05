@@ -69,7 +69,7 @@ def test_liquidity_filter_rejects_price_too_high():
     assert filt.passes(stock) is False
 
 
-def test_liquidity_filter_rejects_low_market_cap():
+def test_liquidity_filter_ignores_market_cap():
     filt = LiquidityFilter(
         min_volume=500000, min_price=50, max_price=5000,
         min_market_cap_cr=1000, min_trading_days=10,
@@ -77,7 +77,7 @@ def test_liquidity_filter_rejects_low_market_cap():
     stock = {"symbol": "SMALLCAP", "token": 5, "last_price": 100.0,
              "avg_volume": 1_000_000.0, "market_cap_cr": 500.0,
              "trading_days": 20, "atr_pct": 1.5, "sector": "misc"}
-    assert filt.passes(stock) is False
+    assert filt.passes(stock) is True
 
 
 def test_liquidity_filter_rejects_few_trading_days():

@@ -155,6 +155,17 @@ class CandleStore:
         ).fetchall()
         return {r[0]: r[1] for r in rows}
 
+    def purge_intervals(self, intervals: list[str]) -> dict[str, int]:
+        """Delete all rows for given intervals. Returns {interval: rows_deleted}."""
+        result = {}
+        for iv in intervals:
+            before = self._conn.execute(
+                "SELECT COUNT(*) FROM candles WHERE interval = $1", [iv]
+            ).fetchone()[0]
+            self._conn.execute("DELETE FROM candles WHERE interval = $1", [iv])
+            result[iv] = before
+        return result
+
     def _count(self, symbol: str, interval: str) -> int:
         row = self._conn.execute(
             "SELECT COUNT(*) FROM candles WHERE symbol = $1 AND interval = $2",

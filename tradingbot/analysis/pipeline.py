@@ -251,6 +251,10 @@ class AnalysisPipeline:
                 "has_data": bool(indicators),
             })
 
+            if not indicators:
+                log.warning("Skipping %s — no indicator data, would waste LLM call", sym)
+                continue
+
             # Tier 3 deep analysis
             deep = await self._tier3.deep_analyze(
                 symbol=sym,

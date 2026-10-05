@@ -161,3 +161,17 @@ async def cancel_sync(request: Request):
         state.sync_task.cancel()
         return {"status": "cancelling"}
     return {"status": "not_running"}
+
+
+@router.post("/purge-intraday")
+async def purge_intraday(request: Request):
+    """Delete all cached 15m/5m/1m data. Daily data is preserved."""
+    state = get_state(request)
+    if state.sync_task and not state.sync_task.done():
+        raise HTTPException(status_code=409, detail="Sync running — cancel first")
+    candle_store = getattr(state, "candle_store", None)
+    if candle_store is None:
+        raise HTTPException(status_code=400, detail="CandleStore not initialized")
+    deleted = candle_store.purge_intervals(["15m", "5m", "1m"])
+    log.info("Purged intraday data: %s", deleted)
+    return {"purged": deleted, "remaining": candle_store.row_count()}
