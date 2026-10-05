@@ -442,12 +442,15 @@ class AnalysisPipeline:
                 df = self._candles.read(sym, "day", from_dt, now)
                 if not df.empty:
                     daily_data[sym] = df
+        log.info("FUNNEL: %d instruments, %d with daily data in DuckDB", len(symbols), len(daily_data))
 
         sector_returns: dict[str, list[float]] = {}
         metrics = []
+        skipped_short = 0
 
         for symbol, df in daily_data.items():
             if df.empty or len(df) < 5:
+                skipped_short += 1
                 continue
             inst = inst_map.get(symbol, {"symbol": symbol, "token": 0, "sector": "unknown"})
 
@@ -533,6 +536,7 @@ class AnalysisPipeline:
             m["factor_scores"]["sector_momentum"] = min(100.0, max(0.0, 50.0 + med * 5.0))
             del m["_stock_5d_return"]
 
+        log.info("FUNNEL: %d skipped (< 5 rows), %d metrics built", skipped_short, len(metrics))
         return metrics
 
     def _fetch_delivery_data(self, trade_date: "date") -> dict[str, float]:
