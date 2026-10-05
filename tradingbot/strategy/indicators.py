@@ -308,3 +308,53 @@ def compute_snapshot(symbol: str, df: pd.DataFrame) -> IndicatorSnapshot:
         ema_9=float(ema(close, 9).iloc[-1]),
         sma_9=float(sma(close, 9).iloc[-1]),
     )
+
+
+def precompute_indicator_series(symbol: str, df: pd.DataFrame) -> dict[str, Any]:
+    """Compute all indicator Series once over the full dataframe.
+
+    Returns a dict of indicator_name -> pd.Series (same length as df).
+    Used by the backtester to avoid recomputing per candle.
+    """
+    close = df["close"]
+
+    macd_line, signal_line = macd(close)
+    upper, middle, lower = bollinger_bands(close)
+    atr_series = atr(df)
+    adx_series = adx(df, period=14)
+    st_upper, st_lower, st_dir = supertrend(df, period=10, multiplier=3.0)
+    bb_bw = bollinger_bandwidth(close)
+    vwap_line, vwap_u1, vwap_l1, _, _ = vwap_bands(df)
+    pivots = pivot_points(df)
+
+    st_values = pd.Series(
+        [float(st_upper.iloc[i]) if st_dir.iloc[i] == -1 else float(st_lower.iloc[i])
+         for i in range(len(df))],
+        index=df.index,
+    )
+
+    return {
+        "last_close": close.astype(float),
+        "rsi_14": rsi(close),
+        "macd": macd_line,
+        "macd_signal": signal_line,
+        "bb_upper": upper,
+        "bb_middle": middle,
+        "bb_lower": lower,
+        "atr_14": atr_series,
+        "sma_9": sma(close, 9),
+        "sma_20": sma(close, 20),
+        "sma_50": sma(close, 50),
+        "sma_200": sma(close, 200),
+        "ema_9": ema(close, 9),
+        "ema_12": ema(close, 12),
+        "ema_26": ema(close, 26),
+        "vwap": vwap_line,
+        "vwap_upper_1": vwap_u1,
+        "vwap_lower_1": vwap_l1,
+        "pivot": pd.Series(pivots["pivot"], index=df.index),
+        "adx_14": adx_series,
+        "supertrend": st_values,
+        "supertrend_direction": st_dir,
+        "bb_bandwidth": bb_bw,
+    }

@@ -155,3 +155,48 @@ def test_indicator_functions_never_mutate_the_input_frame():
     support_resistance(df)
 
     pd.testing.assert_frame_equal(df, before)
+
+
+# ── precompute_indicator_series tests ──
+
+
+from tradingbot.strategy.indicators import precompute_indicator_series
+
+
+def _make_ohlcv(n=300):
+    np.random.seed(42)
+    closes = 100 + np.cumsum(np.random.randn(n) * 0.5)
+    return pd.DataFrame({
+        "open": closes - 0.2,
+        "high": closes + 1.0,
+        "low": closes - 1.0,
+        "close": closes,
+        "volume": np.random.randint(1000, 50000, n).astype(float),
+    }, index=pd.date_range("2026-01-01 09:15", periods=n, freq="15min", tz="Asia/Kolkata"))
+
+
+def test_precompute_returns_all_indicator_keys():
+    df = _make_ohlcv(300)
+    series = precompute_indicator_series("TEST", df)
+    expected_keys = {"rsi_14", "macd", "macd_signal", "bb_upper", "bb_middle",
+                     "bb_lower", "atr_14", "sma_20", "sma_50", "sma_200",
+                     "ema_12", "ema_26", "ema_9", "sma_9", "vwap",
+                     "adx_14", "supertrend", "supertrend_direction",
+                     "bb_bandwidth", "vwap_upper_1", "vwap_lower_1", "pivot",
+                     "last_close"}
+    assert expected_keys.issubset(set(series.keys()))
+
+
+def test_precompute_series_length_matches_input():
+    df = _make_ohlcv(300)
+    series = precompute_indicator_series("TEST", df)
+    for key, val in series.items():
+        if isinstance(val, pd.Series):
+            assert len(val) == len(df), f"{key} length mismatch"
+
+
+def test_precompute_handles_short_dataframe():
+    df = _make_ohlcv(60)
+    series = precompute_indicator_series("TEST", df)
+    assert "rsi_14" in series
+    assert len(series["rsi_14"]) == 60
