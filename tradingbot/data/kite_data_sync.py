@@ -288,14 +288,18 @@ class KiteDataSync:
         for i, symbol in enumerate(symbols):
             if self._cancelled:
                 break
+            last = self._store.last_date(symbol, "15m")
+            action = "updating" if last else "fetching 7yr"
+            msg = f"Intraday data: {action} {symbol} ({i+1}/{len(symbols)})"
+            log.info(msg)
             if progress_callback:
-                last = self._store.last_date(symbol, "15m")
-                action = "updating" if last else "fetching 7yr"
-                progress_callback(f"Intraday data: {action} {symbol} ({i+1}/{len(symbols)})")
+                progress_callback(msg)
             rows = await self.fetch_on_demand(symbol, progress_callback=None)
+            log.info("Intraday data: %s done, %d rows written", symbol, rows)
             results[symbol] = rows
+        total = sum(results.values())
+        log.info("Intraday fetch complete: %d stocks, %d rows", len(symbols), total)
         if progress_callback:
-            total = sum(results.values())
             progress_callback(f"Intraday data: {len(symbols)} stocks, {total:,} rows")
         return results
 
