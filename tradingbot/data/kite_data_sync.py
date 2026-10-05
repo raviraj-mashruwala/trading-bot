@@ -17,9 +17,9 @@ log = logging.getLogger(__name__)
 
 KITE_LIMITS = {
     "day": 2000,
-    "15minute": 200,
-    "5minute": 100,
-    "minute": 60,
+    "15minute": 180,
+    "5minute": 90,
+    "minute": 30,
 }
 
 INTERVAL_MAP = {
