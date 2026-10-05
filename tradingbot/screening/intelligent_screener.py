@@ -404,11 +404,13 @@ class IntelligentScreener:
         sector_counts: dict[str, int] = {}
         result: list[ScoredStock] = []
         for stock in stocks:
-            cap = sector_caps.get(stock.sector, base_cap)
-            count = sector_counts.get(stock.sector, 0)
-            if count < cap:
-                result.append(stock)
+            if stock.sector and stock.sector != "unknown":
+                cap = sector_caps.get(stock.sector, base_cap)
+                count = sector_counts.get(stock.sector, 0)
+                if count >= cap:
+                    continue
                 sector_counts[stock.sector] = count + 1
+            result.append(stock)
 
         log.info(
             "Smart sector caps: %s",
@@ -424,8 +426,10 @@ class IntelligentScreener:
         sector_counts: dict[str, int] = {}
         result: list[ScoredStock] = []
         for stock in stocks:
-            count = sector_counts.get(stock.sector, 0)
-            if count < max_per:
-                result.append(stock)
+            if stock.sector and stock.sector != "unknown":
+                count = sector_counts.get(stock.sector, 0)
+                if count >= max_per:
+                    continue
                 sector_counts[stock.sector] = count + 1
+            result.append(stock)
         return result
