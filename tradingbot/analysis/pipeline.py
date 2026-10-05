@@ -793,7 +793,8 @@ class AnalysisPipeline:
                 mc = self._mc.run(trade_pnls) if trade_pnls else None
                 gate = self._gates.evaluate(report, mc)
                 if gate.passed:
-                    results.append(report)
+                    from dataclasses import asdict
+                    results.append(asdict(report))
                 else:
                     log.info(
                         "Backtest gate FAILED %s/%s: %s",
