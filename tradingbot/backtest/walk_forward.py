@@ -15,7 +15,13 @@ import pandas as pd
 
 from tradingbot.backtest.costs import ZerodhaCosts
 from tradingbot.core.models import BacktestReport, StrategyName
-from tradingbot.strategy.indicators import InsufficientDataError, compute_snapshot
+from tradingbot.strategy.indicators import (
+    InsufficientDataError,
+    compute_snapshot,
+    precompute_indicator_series,
+    support_resistance,
+    volume_profile,
+)
 from tradingbot.strategy.strategies.base import Signal, Strategy
 
 WARMUP = 200
@@ -48,6 +54,8 @@ class WalkForwardEngine:
         if window_size < 20:
             return self._empty_report(symbol, strategy.name, df)
 
+        indicator_series = precompute_indicator_series(symbol, df)
+
         is_wins: list[float] = []
         oos_wins: list[float] = []
         all_trades: list[dict] = []
@@ -58,14 +66,13 @@ class WalkForwardEngine:
             window = usable.iloc[start:end]
             split = int(len(window) * self._train_pct)
 
-            is_data = df.iloc[: WARMUP + start + split]
-            oos_data = df.iloc[: WARMUP + start + end]
-
             is_trades = self._simulate(
-                symbol, is_data, strategy, WARMUP + start, WARMUP + start + split
+                symbol, df, strategy, WARMUP + start, WARMUP + start + split,
+                indicator_series=indicator_series,
             )
             oos_trades = self._simulate(
-                symbol, oos_data, strategy, WARMUP + start + split, WARMUP + start + end
+                symbol, df, strategy, WARMUP + start + split, WARMUP + start + end,
+                indicator_series=indicator_series,
             )
 
             if is_trades:
@@ -87,16 +94,40 @@ class WalkForwardEngine:
         strategy: Strategy,
         start_idx: int,
         end_idx: int,
+        indicator_series: dict | None = None,
     ) -> list[dict]:
         trades: list[dict] = []
+        end_idx = min(end_idx, len(full_df))
         i = start_idx
+        last_sr_idx = -25
+        supports: list[float] = []
+        resistances: list[float] = []
+        vol_prof = {"poc": 0.0, "vah": 0.0, "val": 0.0}
+
         while i < end_idx - 1:
             window = full_df.iloc[: i + 1]
-            try:
-                snapshot = compute_snapshot(symbol, window)
-            except InsufficientDataError:
-                i += 1
-                continue
+
+            if indicator_series is not None:
+                if i - last_sr_idx >= 25:
+                    try:
+                        supports, resistances = support_resistance(window)
+                    except Exception:
+                        supports, resistances = [], []
+                    try:
+                        vol_prof = volume_profile(window)
+                    except Exception:
+                        vol_prof = {"poc": 0.0, "vah": 0.0, "val": 0.0}
+                    last_sr_idx = i
+                from tradingbot.strategy.backtester import Backtester
+                snapshot = Backtester._snapshot_at(
+                    symbol, indicator_series, i, supports, resistances, vol_prof,
+                )
+            else:
+                try:
+                    snapshot = compute_snapshot(symbol, window)
+                except InsufficientDataError:
+                    i += 1
+                    continue
 
             signal = strategy.generate_signal(window, snapshot)
             if signal is None:
@@ -146,7 +177,7 @@ class WalkForwardEngine:
         signal: Signal,
         max_idx: int,
     ) -> tuple[bool, int, float]:
-        for j in range(entry_idx + 1, min(entry_idx + MAX_HOLD + 1, max_idx)):
+        for j in range(entry_idx + 1, min(entry_idx + MAX_HOLD + 1, max_idx, len(df))):
             price = float(df.iloc[j]["close"])
             if signal.direction.value == "long":
                 if price <= signal.stop_loss:
@@ -159,7 +190,7 @@ class WalkForwardEngine:
                 if price <= signal.target_1:
                     return True, j, signal.target_1
 
-        last_idx = min(entry_idx + MAX_HOLD, max_idx - 1)
+        last_idx = min(entry_idx + MAX_HOLD, max_idx - 1, len(df) - 1)
         last = float(df.iloc[last_idx]["close"])
         if signal.direction.value == "long":
             won = last > signal.entry_price
