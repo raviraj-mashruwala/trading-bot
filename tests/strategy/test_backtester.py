@@ -129,3 +129,25 @@ def test_backtest_2000_candles_completes_under_15_seconds():
     elapsed = time.monotonic() - start
     assert elapsed < 15.0, f"Backtest took {elapsed:.1f}s, expected < 15s"
     assert result.trades > 0
+
+
+class SnapshotRecorder(Strategy):
+    """Records the snapshot it receives so tests can inspect for lookahead."""
+    name = StrategyName.BREAKOUT
+    snapshots: list = []
+
+    def generate_signal(self, df, snapshot):
+        self.snapshots.append((len(df), snapshot.last_close))
+        return None
+
+
+def test_snapshot_does_not_leak_future_candle():
+    closes = np.arange(100.0, 200.0)
+    df = make_candles(closes)
+    recorder = SnapshotRecorder()
+    recorder.snapshots = []
+    Backtester().run("TEST", df, recorder)
+    for window_len, snap_close in recorder.snapshots:
+        expected_close = closes[window_len - 1]
+        assert snap_close == pytest.approx(expected_close, abs=0.01), \
+            f"At window_len={window_len}: snapshot.last_close={snap_close} but last candle close={expected_close}"

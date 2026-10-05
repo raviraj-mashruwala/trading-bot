@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
@@ -325,7 +327,7 @@ def precompute_indicator_series(symbol: str, df: pd.DataFrame) -> dict[str, Any]
     st_upper, st_lower, st_dir = supertrend(df, period=10, multiplier=3.0)
     bb_bw = bollinger_bandwidth(close)
     vwap_line, vwap_u1, vwap_l1, _, _ = vwap_bands(df)
-    pivots = pivot_points(df)
+    pivot_series = (df["high"] + df["low"] + df["close"]) / 3
 
     st_values = pd.Series(
         [float(st_upper.iloc[i]) if st_dir.iloc[i] == -1 else float(st_lower.iloc[i])
@@ -352,7 +354,7 @@ def precompute_indicator_series(symbol: str, df: pd.DataFrame) -> dict[str, Any]
         "vwap": vwap_line,
         "vwap_upper_1": vwap_u1,
         "vwap_lower_1": vwap_l1,
-        "pivot": pd.Series(pivots["pivot"], index=df.index),
+        "pivot": pivot_series,
         "adx_14": adx_series,
         "supertrend": st_values,
         "supertrend_direction": st_dir,

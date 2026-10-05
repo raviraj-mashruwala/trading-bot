@@ -67,7 +67,7 @@ class Backtester:
                     vol_prof = {"poc": 0.0, "vah": 0.0, "val": 0.0}
                 last_sr_index = index
 
-            snapshot = self._snapshot_at(symbol, indicator_series, index,
+            snapshot = self._snapshot_at(symbol, indicator_series, index - 1,
                                          supports, resistances, vol_prof)
 
             signal = strategy.generate_signal(df.iloc[:index], snapshot)
