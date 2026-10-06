@@ -274,6 +274,14 @@ class AnalysisPipeline:
                 log.warning("Skipping %s — no indicator data, would waste LLM call", sym)
                 continue
 
+            if not bt_results:
+                log.info("Skipping %s — 0 backtest strategies passed, no quantitative edge", sym)
+                self._bus.emit_sync("strategy.deep_analysis", {
+                    "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
+                    "status": "skipped", "message": f"Skipped {sym} — no backtest edge",
+                })
+                continue
+
             # Tier 3 deep analysis
             self._bus.emit_sync("strategy.deep_analysis", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
