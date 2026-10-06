@@ -163,6 +163,97 @@ async def cancel_sync(request: Request):
     return {"status": "not_running"}
 
 
+@router.get("/gaps")
+async def gap_report(request: Request):
+    """Report interior gaps in cached intraday candle data."""
+    state = get_state(request)
+    candle_store = getattr(state, "candle_store", None)
+    if candle_store is None:
+        raise HTTPException(status_code=400, detail="CandleStore not initialized")
+    interval = request.query_params.get("interval", "15m")
+    symbol = request.query_params.get("symbol")
+    threshold = float(request.query_params.get("threshold", "0.5"))
+    if symbol:
+        gaps = candle_store.find_gaps(symbol, interval, threshold)
+        return {"symbol": symbol, "interval": interval, "gaps": [
+            {"date": g[0].isoformat(), "count": g[1], "expected": g[2]} for g in gaps
+        ]}
+    summary = candle_store.gap_summary(interval, threshold)
+    return {
+        "interval": interval,
+        "stocks_with_gaps": len(summary),
+        "gaps": {
+            sym: [{"date": g[0].isoformat(), "count": g[1], "expected": g[2]} for g in gaps]
+            for sym, gaps in summary.items()
+        },
+    }
+
+
+@router.post("/fill-gaps")
+async def fill_gaps(request: Request):
+    """Re-fetch only missing/incomplete candle data for cached stocks."""
+    state = get_state(request)
+    if state.sync_task and not state.sync_task.done():
+        raise HTTPException(status_code=409, detail="Sync already running")
+    candle_store = getattr(state, "candle_store", None)
+    if candle_store is None:
+        raise HTTPException(status_code=400, detail="CandleStore not initialized")
+
+    body = {}
+    raw = await request.body()
+    if raw:
+        body = await request.json()
+    symbols = body.get("symbols")
+    intervals = body.get("intervals")
+
+    state.sync_status = {"status": "filling_gaps"}
+    state.sync_task = asyncio.create_task(
+        _run_gap_fill(state, symbols=symbols, intervals=intervals)
+    )
+    return {"status": "started"}
+
+
+async def _run_gap_fill(
+    state: AppState,
+    symbols: list[str] | None = None,
+    intervals: list[str] | None = None,
+) -> None:
+    try:
+        from tradingbot.data.kite_data_sync import KiteDataSync
+        from tradingbot.data.kite_client import KiteClient
+
+        auth = None
+        if hasattr(state, "kite_auth") and state.kite_auth:
+            auth = state.kite_auth
+        if not auth or not auth.is_authenticated():
+            state.sync_status = {"status": "error", "error": "Kite not authenticated"}
+            return
+
+        kite_client = KiteClient(auth.kite, rate_limit_per_sec=3)
+        from tradingbot.data.instrument_cache import InstrumentCache
+        inst_cache = InstrumentCache(Path(state.data_dir) / "instruments.db")
+
+        sync = KiteDataSync(kite_client, state.candle_store, inst_cache)
+        start = _time.monotonic()
+
+        def _progress(msg: str) -> None:
+            state.sync_status = {"status": "filling_gaps", "message": msg}
+
+        results = await sync.fill_gaps(
+            symbols=symbols, intervals=intervals, progress_callback=_progress,
+        )
+        duration = _time.monotonic() - start
+        total = sum(results.values())
+        state.sync_status = {
+            "status": "complete",
+            "message": f"Gap fill done: {len(results)} stocks, {total:,} rows in {duration:.0f}s",
+        }
+        log.info("Gap fill complete: %d stocks, %d rows, %.0fs", len(results), total, duration)
+    except Exception as exc:
+        log.error("Gap fill failed: %s", exc, exc_info=True)
+        state.sync_status = {"status": "error", "error": str(exc)}
+
+
 @router.post("/purge-intraday")
 async def purge_intraday(request: Request):
     """Delete all cached 15m/5m/1m data. Daily data is preserved."""

@@ -303,6 +303,88 @@ class KiteDataSync:
             progress_callback(f"Intraday data: {len(symbols)} stocks, {total:,} rows")
         return results
 
+    async def fill_gaps(
+        self,
+        symbols: list[str] | None = None,
+        intervals: list[str] | None = None,
+        threshold: float = 0.5,
+        progress_callback: Callable | None = None,
+    ) -> dict[str, int]:
+        """Detect and fill interior gaps in cached candle data.
+
+        For each symbol/interval, finds trading days with too few candles
+        and re-fetches only those date ranges. INSERT OR IGNORE deduplicates.
+        Returns {symbol: rows_written}.
+        """
+        if intervals is None:
+            intervals = list(ON_DEMAND_DEPTHS.keys())
+        results: dict[str, int] = {}
+
+        for store_interval in intervals:
+            if self._cancelled:
+                break
+            kite_interval = INTERVAL_MAP.get(store_interval, store_interval)
+            max_days = KITE_LIMITS.get(kite_interval, 60)
+
+            syms = symbols or self._store.symbols_with_data(store_interval)
+            for sym in syms:
+                if self._cancelled:
+                    break
+                gaps = self._store.find_gaps(sym, store_interval, threshold)
+                if not gaps:
+                    continue
+
+                gap_ranges = self._merge_gap_dates([g[0] for g in gaps], max_days)
+                sym_written = 0
+                for from_d, to_d in gap_ranges:
+                    for attempt in range(MAX_RETRIES):
+                        try:
+                            token = self._resolve_token(sym)
+                            raw = await asyncio.to_thread(
+                                self._kite.fetch_historical, token, kite_interval, from_d, to_d,
+                            )
+                            df = _kite_rows_to_df(raw)
+                            written = await asyncio.to_thread(self._store.write, sym, store_interval, df)
+                            sym_written += written
+                            break
+                        except Exception as exc:
+                            if attempt < MAX_RETRIES - 1:
+                                await asyncio.sleep(RETRY_BACKOFF[attempt])
+                            else:
+                                log.warning("Gap fill failed %s/%s %s-%s: %s", sym, store_interval, from_d, to_d, exc)
+
+                if sym_written > 0:
+                    results[sym] = results.get(sym, 0) + sym_written
+                    log.info("Gap fill %s/%s: %d gaps, %d rows written", sym, store_interval, len(gaps), sym_written)
+                    if progress_callback:
+                        progress_callback(f"Gap fill {sym}/{store_interval}: {len(gaps)} gaps, {sym_written} rows")
+
+        total = sum(results.values())
+        log.info("Gap fill complete: %d stocks, %d rows", len(results), total)
+        if progress_callback:
+            progress_callback(f"Gap fill done: {len(results)} stocks, {total:,} rows")
+        return results
+
+    @staticmethod
+    def _merge_gap_dates(gap_dates: list[date], max_chunk_days: int) -> list[tuple[date, date]]:
+        """Merge consecutive/nearby gap dates into fetch ranges, respecting Kite limits."""
+        if not gap_dates:
+            return []
+        sorted_dates = sorted(gap_dates)
+        ranges: list[tuple[date, date]] = []
+        range_start = sorted_dates[0]
+        range_end = sorted_dates[0]
+
+        for d in sorted_dates[1:]:
+            if (d - range_start).days < max_chunk_days and (d - range_end).days <= 3:
+                range_end = d
+            else:
+                ranges.append((range_start, range_end))
+                range_start = d
+                range_end = d
+        ranges.append((range_start, range_end))
+        return ranges
+
     async def _sync_interval(
         self,
         symbols: list[str],

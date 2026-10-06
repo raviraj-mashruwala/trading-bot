@@ -155,6 +155,57 @@ class CandleStore:
         ).fetchall()
         return {r[0]: r[1] for r in rows}
 
+    # Expected candles per full trading day (NSE 9:15–15:30 = 6h15m)
+    _EXPECTED_PER_DAY = {"15m": 25, "5m": 75, "1m": 375, "day": 1}
+
+    def find_gaps(
+        self,
+        symbol: str,
+        interval: str,
+        threshold: float = 0.5,
+    ) -> list[tuple[date, int, int]]:
+        """Find trading days with fewer candles than expected.
+
+        Returns list of (date, actual_count, expected_count) for days below
+        threshold * expected. Only checks days between the first and last
+        candle for this symbol/interval.
+        """
+        expected = self._EXPECTED_PER_DAY.get(interval, 25)
+        min_count = int(expected * threshold)
+        rows = self._conn.execute(
+            """
+            SELECT CAST(timestamp AS DATE) AS day, COUNT(*) AS cnt
+            FROM candles
+            WHERE symbol = $1 AND interval = $2
+            GROUP BY day
+            HAVING cnt < $3
+            ORDER BY day
+            """,
+            [symbol, interval, min_count],
+        ).fetchall()
+        return [(r[0], r[1], expected) for r in rows]
+
+    def date_range(self, symbol: str, interval: str) -> tuple[date | None, date | None]:
+        """Return (first_date, last_date) for a symbol/interval."""
+        row = self._conn.execute(
+            "SELECT MIN(CAST(timestamp AS DATE)), MAX(CAST(timestamp AS DATE)) "
+            "FROM candles WHERE symbol = $1 AND interval = $2",
+            [symbol, interval],
+        ).fetchone()
+        if row and row[0] is not None:
+            return (row[0], row[1])
+        return (None, None)
+
+    def gap_summary(self, interval: str, threshold: float = 0.5) -> dict[str, list[tuple[date, int, int]]]:
+        """Find gaps across all symbols for a given interval."""
+        symbols = self.symbols_with_data(interval)
+        result = {}
+        for sym in symbols:
+            gaps = self.find_gaps(sym, interval, threshold)
+            if gaps:
+                result[sym] = gaps
+        return result
+
     def purge_intervals(self, intervals: list[str]) -> dict[str, int]:
         """Delete all rows for given intervals. Returns {interval: rows_deleted}."""
         result = {}
