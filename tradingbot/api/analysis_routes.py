@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time as _time
 from datetime import date
 from pathlib import Path
 
@@ -23,8 +24,52 @@ router = APIRouter(prefix="/api")
 # ---------------------------------------------------------------------------
 
 
+_PIPELINE_STEP_EVENTS = (
+    "scan.universe", "scan.filtered", "scan.context", "scan.shortlist",
+    "strategy.indicators", "strategy.backtest", "strategy.setups", "strategy.sized",
+)
+
+
+def _make_step_tracker(state: AppState):
+    """Return an EventBus callback that mirrors pipeline events to AppState."""
+    def _on_event(envelope: dict) -> None:
+        event_type = envelope.get("type", "")
+        data = envelope.get("data", {})
+        if event_type == "analysis.started":
+            state.pipeline_steps = {
+                k: {"status": "pending", "data": None, "timestamp": None}
+                for k in _PIPELINE_STEP_EVENTS
+            }
+            state.pipeline_started_at = _time.monotonic()
+            return
+        if event_type == "analysis.complete":
+            state.pipeline_started_at = None
+            return
+        if event_type == "analysis.failed":
+            state.pipeline_started_at = None
+            return
+        if event_type in _PIPELINE_STEP_EVENTS:
+            step_status = "active" if data.get("status") == "fetching" else "complete"
+            state.pipeline_steps[event_type] = {
+                "status": step_status,
+                "data": data,
+                "timestamp": envelope.get("timestamp"),
+            }
+            if step_status == "complete":
+                idx = _PIPELINE_STEP_EVENTS.index(event_type)
+                if idx + 1 < len(_PIPELINE_STEP_EVENTS):
+                    next_step = _PIPELINE_STEP_EVENTS[idx + 1]
+                    if state.pipeline_steps.get(next_step, {}).get("status") == "pending":
+                        state.pipeline_steps[next_step] = {
+                            **state.pipeline_steps[next_step],
+                            "status": "active",
+                        }
+    return _on_event
+
+
 async def _run_analysis(state: AppState, trade_date: date) -> None:
     """Run the 3-tier analysis pipeline."""
+    sub_id = state.event_bus.subscribe(_make_step_tracker(state))
     try:
         from tradingbot.analysis.pipeline import AnalysisPipeline
         from tradingbot.analysis.tier2_analyzer import Tier2Analyzer
@@ -120,14 +165,18 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
 
     except asyncio.CancelledError:
         state.analysis_status = "idle"
+        state.pipeline_started_at = None
         raise
     except Exception as exc:  # noqa: BLE001
         logger.error("analysis failed: %s", exc, exc_info=True)
         state.analysis_status = "failed"
         state.analysis_error = str(exc)
+        state.pipeline_started_at = None
         await state.event_bus.emit("analysis.failed", {
             "error": str(exc),
         })
+    finally:
+        state.event_bus.unsubscribe(sub_id)
 
 
 @router.post("/analyze")
@@ -173,10 +222,15 @@ async def start_analysis(request: Request):
 @router.get("/analyze/status")
 async def analysis_status(request: Request):
     state: AppState = request.app.state.app_state
+    elapsed = None
+    if state.pipeline_started_at is not None:
+        elapsed = round(_time.monotonic() - state.pipeline_started_at, 1)
     return {
         "status": state.analysis_status,
         "trade_date": state.analysis_trade_date,
         "error": state.analysis_error,
+        "steps": state.pipeline_steps,
+        "elapsed_s": elapsed,
     }
 
 

@@ -18,11 +18,17 @@ export default function AnalysisPage() {
   const pipelineError = usePipelineStore((s) => s.error);
   const reset = usePipelineStore((s) => s.reset);
 
+  const hydrateFromStatus = usePipelineStore((s) => s.hydrateFromStatus);
+
   const { data: analysisStatus } = useQuery({
     queryKey: ["analysis-status"],
     queryFn: api.getAnalysisStatus,
     refetchInterval: pipelineStatus === "running" ? 3_000 : 30_000,
   });
+
+  useEffect(() => {
+    if (analysisStatus) hydrateFromStatus(analysisStatus);
+  }, [analysisStatus, hydrateFromStatus]);
 
   const { data: latestPlan } = useQuery<TradePlan | null>({
     queryKey: ["latest-plan", analysisStatus?.trade_date],
@@ -46,6 +52,7 @@ export default function AnalysisPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["analysis-status"] }),
   });
 
+  const elapsed_s = usePipelineStore((s) => s.elapsed_s);
   const isRunning = pipelineStatus === "running" || analysisStatus?.status === "running";
   const isComplete = analysisStatus?.status === "complete";
 
@@ -64,7 +71,7 @@ export default function AnalysisPage() {
         <div className="flex items-center gap-2">
           <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-[#d4a015] animate-pulse" : isComplete ? "bg-[#2da44e]" : "bg-muted-foreground/30"}`} />
           <span className="text-xs text-muted-foreground uppercase tracking-wider">
-            {analysisStatus?.status ?? "idle"}{analysisStatus?.trade_date ? ` — ${analysisStatus.trade_date}` : ""}
+            {analysisStatus?.status ?? "idle"}{analysisStatus?.trade_date ? ` — ${analysisStatus.trade_date}` : ""}{isRunning && elapsed_s != null ? ` — ${Math.floor(elapsed_s / 60)}m ${Math.floor(elapsed_s % 60)}s` : ""}
           </span>
         </div>
       </div>

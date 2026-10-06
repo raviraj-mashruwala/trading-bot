@@ -32,6 +32,8 @@ class AppState:
     analysis_task: asyncio.Task | None = None
     analysis_error: str | None = None
     analysis_trade_date: str | None = None
+    pipeline_steps: dict = field(default_factory=dict)
+    pipeline_started_at: float | None = None
 
     executor_status: str = "idle"
     executor_ref: object | None = None
