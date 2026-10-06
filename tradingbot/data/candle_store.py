@@ -162,7 +162,7 @@ class CandleStore:
         self,
         symbol: str,
         interval: str,
-        threshold: float = 0.5,
+        threshold: float = 0.08,
     ) -> list[tuple[date, int, int]]:
         """Find trading days with fewer candles than expected.
 
@@ -196,7 +196,7 @@ class CandleStore:
             return (row[0], row[1])
         return (None, None)
 
-    def gap_summary(self, interval: str, threshold: float = 0.5) -> dict[str, list[tuple[date, int, int]]]:
+    def gap_summary(self, interval: str, threshold: float = 0.08) -> dict[str, list[tuple[date, int, int]]]:
         """Find gaps across all symbols for a given interval."""
         symbols = self.symbols_with_data(interval)
         result = {}

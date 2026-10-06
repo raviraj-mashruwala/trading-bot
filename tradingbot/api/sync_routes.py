@@ -172,7 +172,7 @@ async def gap_report(request: Request):
         raise HTTPException(status_code=400, detail="CandleStore not initialized")
     interval = request.query_params.get("interval", "15m")
     symbol = request.query_params.get("symbol")
-    threshold = float(request.query_params.get("threshold", "0.5"))
+    threshold = float(request.query_params.get("threshold", "0.08"))
     if symbol:
         gaps = candle_store.find_gaps(symbol, interval, threshold)
         return {"symbol": symbol, "interval": interval, "gaps": [
