@@ -53,6 +53,7 @@ export default function AnalysisPage() {
   });
 
   const elapsed_s = usePipelineStore((s) => s.elapsed_s);
+  const wsConnected = usePipelineStore((s) => s.wsConnected);
   const isRunning = pipelineStatus === "running" || analysisStatus?.status === "running";
   const isComplete = analysisStatus?.status === "complete";
 
@@ -73,6 +74,9 @@ export default function AnalysisPage() {
           <span className="text-xs text-muted-foreground uppercase tracking-wider">
             {analysisStatus?.status ?? "idle"}{analysisStatus?.trade_date ? ` — ${analysisStatus.trade_date}` : ""}{isRunning && elapsed_s != null ? ` — ${Math.floor(elapsed_s / 60)}m ${Math.floor(elapsed_s % 60)}s` : ""}
           </span>
+          {!wsConnected && isRunning && (
+            <span className="text-[10px] text-[#d4a015] bg-[#d4a015]/10 px-1.5 py-0.5 rounded-full">Reconnecting — polling</span>
+          )}
         </div>
       </div>
 

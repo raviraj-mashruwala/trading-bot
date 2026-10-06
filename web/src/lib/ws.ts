@@ -1,6 +1,12 @@
 import type { WsEvent } from "@/types";
 
-export function createWsManager(url: string, onEvent: (event: WsEvent) => void) {
+export type WsStatus = "connected" | "reconnecting" | "disconnected";
+
+export function createWsManager(
+  url: string,
+  onEvent: (event: WsEvent) => void,
+  onStatusChange?: (status: WsStatus) => void,
+) {
   let socket: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectDelay = 1000;
@@ -12,6 +18,7 @@ export function createWsManager(url: string, onEvent: (event: WsEvent) => void) 
 
     socket.onopen = () => {
       reconnectDelay = 1000;
+      onStatusChange?.("connected");
     };
 
     socket.onmessage = (e) => {
@@ -26,6 +33,7 @@ export function createWsManager(url: string, onEvent: (event: WsEvent) => void) 
 
     socket.onclose = () => {
       if (!intentionalClose) {
+        onStatusChange?.("reconnecting");
         reconnectTimer = setTimeout(() => {
           reconnectDelay = Math.min(reconnectDelay * 2, 30000);
           connect();
@@ -43,6 +51,7 @@ export function createWsManager(url: string, onEvent: (event: WsEvent) => void) 
     if (reconnectTimer) clearTimeout(reconnectTimer);
     socket?.close();
     socket = null;
+    onStatusChange?.("disconnected");
   }
 
   return {

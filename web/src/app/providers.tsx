@@ -20,15 +20,21 @@ export function Providers({ children }: { children: ReactNode }) {
   const handleEvent = usePipelineStore((s) => s.handleEvent);
   const handleExecEvent = useExecutionStore((s) => s.handleEvent);
 
+  const setWsConnected = usePipelineStore((s) => s.setWsConnected);
+
   useEffect(() => {
     const wsUrl = `ws://${window.location.hostname}:8000/ws`;
-    const ws = createWsManager(wsUrl, (event) => {
-      handleEvent(event);
-      handleExecEvent(event);
-    });
+    const ws = createWsManager(
+      wsUrl,
+      (event) => {
+        handleEvent(event);
+        handleExecEvent(event);
+      },
+      (status) => setWsConnected(status === "connected"),
+    );
     ws.connect();
     return () => ws.disconnect();
-  }, [handleEvent, handleExecEvent]);
+  }, [handleEvent, handleExecEvent, setWsConnected]);
 
   return (
     <QueryClientProvider client={getQueryClient()}>

@@ -12,7 +12,9 @@ interface PipelineStore {
   plan: TradePlan | null;
   error: string | null;
   elapsed_s: number | null;
+  wsConnected: boolean;
   handleEvent: (event: WsEvent) => void;
+  setWsConnected: (connected: boolean) => void;
   hydrateFromStatus: (resp: {
     status: string;
     steps?: Record<string, StepState>;
@@ -28,6 +30,7 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
   plan: null,
   error: null,
   elapsed_s: null,
+  wsConnected: false,
 
   handleEvent: (event: WsEvent) => {
     const { type, timestamp, data } = event;
@@ -66,9 +69,15 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
     }
   },
 
+  setWsConnected: (connected) => set({ wsConnected: connected }),
+
   hydrateFromStatus: (resp) => {
     const current = get();
-    if (current.status === "running" && Object.keys(current.steps).length > 0) {
+    if (resp.status === "idle" && current.status === "running") {
+      set({ status: "idle", steps: {}, elapsed_s: null, error: null });
+      return;
+    }
+    if (current.status === "running" && current.wsConnected && Object.keys(current.steps).length > 0) {
       if (resp.elapsed_s != null) set({ elapsed_s: resp.elapsed_s });
       return;
     }
@@ -86,5 +95,5 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
     }
   },
 
-  reset: () => set({ status: "idle", steps: {}, plan: null, error: null, elapsed_s: null }),
+  reset: () => set({ status: "idle", steps: {}, plan: null, error: null, elapsed_s: null, wsConnected: false }),
 }));
