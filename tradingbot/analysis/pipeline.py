@@ -187,10 +187,10 @@ class AnalysisPipeline:
             def _jev_progress(msg: str) -> None:
                 self._bus.emit_sync("scan.shortlist", {"status": "fetching", "message": msg})
 
-            scored_dicts = score_candidates(
+            scored_dicts = await _aio.to_thread(
+                score_candidates,
                 self._jev_tier2._jev, scored_dicts, regime_str,
-                progress_callback=_jev_progress,
-                cancelled=_is_cancelled,
+                0.0, _jev_progress, _is_cancelled,
             )
             log.info("Jev pre-scored %d candidates, top: %s", len(scored_dicts),
                      [(s["symbol"], s.get("jev_composite")) for s in scored_dicts[:5]])
