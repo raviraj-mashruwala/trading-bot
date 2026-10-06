@@ -108,8 +108,14 @@ class AnalysisPipeline:
 
         await self._bus.emit("analysis.started", {"run_id": run_id})
 
-        # --- Tier 1: Deterministic screen ---
+        # --- Cancellation support ---
         import asyncio as _aio
+        _current_task = _aio.current_task()
+
+        def _is_cancelled() -> bool:
+            return _current_task is not None and _current_task.cancelled()
+
+        # --- Tier 1: Deterministic screen ---
 
         market_ctx = await _aio.to_thread(self._fetch_market_context)
         self._bus.emit_sync("scan.context", {"regime": market_ctx.regime.value})
@@ -184,6 +190,7 @@ class AnalysisPipeline:
             scored_dicts = score_candidates(
                 self._jev_tier2._jev, scored_dicts, regime_str,
                 progress_callback=_jev_progress,
+                cancelled=_is_cancelled,
             )
             log.info("Jev pre-scored %d candidates, top: %s", len(scored_dicts),
                      [(s["symbol"], s.get("jev_composite")) for s in scored_dicts[:5]])
@@ -239,6 +246,9 @@ class AnalysisPipeline:
             self._bus.emit_sync("strategy.indicators", {"status": "skipped", "reason": "no shortlisted stocks"})
             self._bus.emit_sync("strategy.backtest", {"status": "skipped", "reason": "no shortlisted stocks"})
         for i, pick in enumerate(shortlist):
+            if _is_cancelled():
+                log.info("Pipeline cancelled during backtest/analysis at %d/%d", i, len(shortlist))
+                break
             sym = pick["symbol"]
             direction = pick.get("direction", "long")
 

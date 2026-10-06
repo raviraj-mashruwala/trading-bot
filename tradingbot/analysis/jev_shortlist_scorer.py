@@ -48,6 +48,7 @@ def score_candidates(
     regime: str,
     min_confidence: float = 0.0,
     progress_callback: Any = None,
+    cancelled: Any = None,
 ) -> list[dict[str, Any]]:
     """Score and rank candidates via Jev. Returns candidates with jev_composite added."""
     questions = _build_questions()
@@ -55,6 +56,9 @@ def score_candidates(
     total = len(candidates)
 
     for idx, stock in enumerate(candidates):
+        if cancelled and cancelled():
+            log.info("Jev scoring cancelled at %d/%d", idx, total)
+            break
         state = {
             "stock": {
                 "symbol": stock.get("symbol"),
