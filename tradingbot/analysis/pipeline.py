@@ -177,8 +177,13 @@ class AnalysisPipeline:
         if self._jev_tier2 is not None:
             from tradingbot.analysis.jev_shortlist_scorer import score_candidates
             regime_str = regime.get("regime", "range_bound") if isinstance(regime, dict) else "range_bound"
+
+            def _jev_progress(msg: str) -> None:
+                self._bus.emit_sync("scan.shortlist", {"status": "fetching", "message": msg})
+
             scored_dicts = score_candidates(
                 self._jev_tier2._jev, scored_dicts, regime_str,
+                progress_callback=_jev_progress,
             )
             log.info("Jev pre-scored %d candidates, top: %s", len(scored_dicts),
                      [(s["symbol"], s.get("jev_composite")) for s in scored_dicts[:5]])
@@ -258,6 +263,10 @@ class AnalysisPipeline:
                 continue
 
             # Tier 3 deep analysis
+            self._bus.emit_sync("strategy.deep_analysis", {
+                "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
+                "status": "fetching", "message": f"Analyzing {sym} ({i+1}/{len(shortlist)})",
+            })
             deep = await self._tier3.deep_analyze(
                 symbol=sym,
                 direction=direction,
@@ -271,6 +280,11 @@ class AnalysisPipeline:
             if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
                 total_cost += deep.pop("_usage").cost_usd()
             all_setups.append(deep)
+            n_setups = len(deep.get("setups", [])) if isinstance(deep, dict) else 0
+            self._bus.emit_sync("strategy.deep_analysis", {
+                "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
+                "setups_found": n_setups,
+            })
 
         self._bus.emit_sync("strategy.setups", {
             "total_setups": sum(len(s.get("setups", [])) for s in all_setups),

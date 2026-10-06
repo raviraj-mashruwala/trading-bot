@@ -10,6 +10,7 @@ const STEPS = [
   { key: "scan.shortlist", label: "LLM Shortlist" },
   { key: "strategy.indicators", label: "Technical Indicators" },
   { key: "strategy.backtest", label: "Backtest" },
+  { key: "strategy.deep_analysis", label: "Deep Analysis" },
   { key: "strategy.setups", label: "Strategy Setups" },
   { key: "strategy.sized", label: "Risk Sizing" },
 ];

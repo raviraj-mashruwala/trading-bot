@@ -47,12 +47,14 @@ def score_candidates(
     candidates: list[dict[str, Any]],
     regime: str,
     min_confidence: float = 0.0,
+    progress_callback: Any = None,
 ) -> list[dict[str, Any]]:
     """Score and rank candidates via Jev. Returns candidates with jev_composite added."""
     questions = _build_questions()
     scored = []
+    total = len(candidates)
 
-    for stock in candidates:
+    for idx, stock in enumerate(candidates):
         state = {
             "stock": {
                 "symbol": stock.get("symbol"),
@@ -64,8 +66,14 @@ def score_candidates(
             "market_regime": regime,
         }
 
+        sym = stock.get("symbol", "?")
+        log.info("Jev scoring %s (%d/%d)", sym, idx + 1, total)
+        if progress_callback:
+            progress_callback(f"Jev scoring {sym} ({idx + 1}/{total})")
+
         answers = jev_client.evaluate(state=state, questions=questions)
         if answers is None:
+            log.info("Jev returned None for %s", sym)
             scored.append({**stock, "jev_composite": 0.0, "jev_setup_confidence": 0.0})
             continue
 
@@ -83,6 +91,10 @@ def score_candidates(
                 + 0.15 * volume
             )
 
+            log.info(
+                "Jev scored %s: composite=%.4f confidence=%.4f (q=%.2f align=%.2f rr=%.2f vol=%.2f)",
+                sym, composite, quality_conf, quality, alignment, rr, volume,
+            )
             scored.append({
                 **stock,
                 "jev_composite": round(composite, 4),
