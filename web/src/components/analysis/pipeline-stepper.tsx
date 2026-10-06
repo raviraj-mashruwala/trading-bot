@@ -27,6 +27,7 @@ export function PipelineStepper() {
           stepNumber={i + 1}
           status={steps[step.key]?.status ?? "pending"}
           data={steps[step.key]?.data ?? null}
+          history={steps[step.key]?.history}
           isLast={i === STEPS.length - 1}
         />
       ))}

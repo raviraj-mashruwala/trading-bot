@@ -26,12 +26,13 @@ interface Props {
   stepNumber: number;
   status: StepStatus;
   data: Record<string, unknown> | null;
+  history?: Array<{ symbol: string; data: Record<string, unknown>; timestamp: string }>;
   isLast?: boolean;
 }
 
-export function PipelineStepCard({ label, stepNumber, status, data, isLast }: Props) {
+export function PipelineStepCard({ label, stepNumber, status, data, history, isLast }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const canExpand = status === "complete" && data !== null;
+  const canExpand = (status === "complete" || status === "active") && (data !== null || (history && history.length > 0));
   const cfg = STATUS_CONFIG[status];
   const progress = status === "active" ? parseProgress(data) : null;
   const symbol = status === "active" && data?.symbol ? String(data.symbol) : null;
@@ -82,7 +83,24 @@ export function PipelineStepCard({ label, stepNumber, status, data, isLast }: Pr
             />
           </div>
         )}
-        {expanded && data && (
+        {expanded && history && history.length > 0 && (
+          <div className="mt-2 max-h-48 overflow-auto space-y-1">
+            {history.map((h) => {
+              const passes = h.data.strategies_passed as number | undefined;
+              const setups = h.data.setups_found as number | undefined;
+              const skipped = h.data.status === "skipped";
+              return (
+                <div key={h.symbol} className="flex items-center justify-between rounded bg-black/20 px-2 py-1 text-[11px]">
+                  <span className="font-medium text-foreground/80">{h.symbol}</span>
+                  <span className="text-muted-foreground">
+                    {skipped ? "skipped" : passes !== undefined ? `${passes} strategies` : setups !== undefined ? `${setups} setups` : h.data.message ? String(h.data.message) : "done"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {expanded && !history?.length && data && (
           <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/30 p-2 text-[11px] text-muted-foreground">
             {JSON.stringify(data, null, 2)}
           </pre>

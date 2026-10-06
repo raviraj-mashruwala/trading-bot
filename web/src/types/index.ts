@@ -111,6 +111,7 @@ export interface StepState {
   status: StepStatus;
   data: Record<string, unknown> | null;
   timestamp: string | null;
+  history?: Array<{ symbol: string; data: Record<string, unknown>; timestamp: string }>;
 }
 
 export type PipelineStatus = "idle" | "running" | "complete" | "failed";

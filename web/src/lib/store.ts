@@ -58,7 +58,16 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
     if (PIPELINE_STEPS.includes(type as (typeof PIPELINE_STEPS)[number])) {
       const steps = { ...get().steps };
       const stepStatus = data?.status === "fetching" ? "active" : data?.status === "skipped" ? "complete" : "complete";
-      steps[type] = { status: stepStatus, data, timestamp };
+      const prev = steps[type];
+      const history = prev?.history ? [...prev.history] : [];
+      const sym = data?.symbol as string | undefined;
+      if (sym && data?.status !== "fetching") {
+        const existing = history.findIndex((h) => h.symbol === sym);
+        const entry = { symbol: sym, data: data as Record<string, unknown>, timestamp: timestamp as string };
+        if (existing >= 0) history[existing] = entry;
+        else history.push(entry);
+      }
+      steps[type] = { status: stepStatus, data, timestamp, history: history.length > 0 ? history : undefined };
       if (stepStatus === "complete") {
         const stepIndex = PIPELINE_STEPS.indexOf(type as (typeof PIPELINE_STEPS)[number]);
         const nextStep = PIPELINE_STEPS[stepIndex + 1];
