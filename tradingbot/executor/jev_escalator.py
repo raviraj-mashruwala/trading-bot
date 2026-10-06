@@ -14,7 +14,7 @@ from tradingbot.executor.momentum_scorer import SymbolState
 log = logging.getLogger(__name__)
 
 _ENTRY_FALLBACK = EscalationResult("WAIT", "all_escalators_unavailable", 0.0, True)
-_EXIT_FALLBACK = EscalationResult("HOLD", "all_escalators_unavailable", 0.0, True)
+_EXIT_FALLBACK = EscalationResult("EXIT", "all_escalators_unavailable — exiting for safety", 0.0, True)
 
 
 def _build_entry_questions() -> dict[str, Any]:

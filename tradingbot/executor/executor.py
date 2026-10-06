@@ -214,15 +214,34 @@ class Executor:
         intel = self._intelligence
         symbol_state = intel.scorer.get_state(state.leg.symbol)
         if symbol_state is None:
-            # No candle data yet (pre-market). Submit immediately.
-            self._submit_entry(state)
+            state.waiting = True
+            logger.warning(
+                "%s waiting: no candle data yet — will not enter without market data",
+                state.leg.symbol,
+            )
+            return
+
+        stale_seconds = (now - symbol_state.timestamp).total_seconds()
+        if stale_seconds > 120:
+            state.waiting = True
+            logger.warning(
+                "%s waiting: market data is %.0fs stale (>120s) — possible ticker disconnect",
+                state.leg.symbol, stale_seconds,
+            )
             return
 
         price = intel.aggregator.last_price(state.leg.symbol) or state.leg.entry_price
         verdict = intel.entry_guard.evaluate(state.leg, symbol_state, price, now)
 
         if verdict.action == "ENTER":
-            if verdict.confidence < 0.4 and not intel.is_degraded:
+            if intel.is_degraded:
+                state.waiting = True
+                logger.warning(
+                    "%s waiting: ticker degraded — blocking new entries until data recovers",
+                    state.leg.symbol,
+                )
+                return
+            if verdict.confidence < 0.4:
                 # Gray zone: attempt LLM escalation (best-effort, async-safe)
                 try:
                     import asyncio
@@ -254,7 +273,9 @@ class Executor:
                         state.waiting = True
                         return
                 except Exception:
-                    logger.debug("LLM escalation skipped", exc_info=True)
+                    logger.warning("LLM escalation failed — blocking entry for safety", exc_info=True)
+                    state.waiting = True
+                    return
             state.waiting = False
             self._submit_entry(state)
 
