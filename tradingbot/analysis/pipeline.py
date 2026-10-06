@@ -229,6 +229,7 @@ class AnalysisPipeline:
 
         # --- Backtest + Tier 3: per-stock deep analysis ---
         all_setups: list[dict[str, Any]] = []
+        all_bt_results: dict[str, list[dict]] = {}
         if not shortlist:
             self._bus.emit_sync("strategy.indicators", {"status": "skipped", "reason": "no shortlisted stocks"})
             self._bus.emit_sync("strategy.backtest", {"status": "skipped", "reason": "no shortlisted stocks"})
@@ -239,6 +240,7 @@ class AnalysisPipeline:
             # Run backtest for regime-eligible strategies only
             bt_results: list[Any] = []
             self._run_backtests(sym, bt_results, regime=regime)
+            all_bt_results[sym] = bt_results
             self._bus.emit_sync("strategy.backtest", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "strategies_passed": len(bt_results),
@@ -319,10 +321,15 @@ class AnalysisPipeline:
                     # Jev quality check — overfit/credibility gate
                     if self._jev_tier2 is not None:
                         from tradingbot.analysis.jev_quality_check import jev_quality_check
+                        sym_bt = all_bt_results.get(sym, [])
+                        bt_stats = sym_bt[0] if sym_bt else {}
                         qc = await jev_quality_check(
                             self._jev_tier2._jev, setup_data,
-                            {"win_rate": 0, "profit_factor": 0, "max_drawdown": 0,
-                             "n_trades": 0, "avg_r": 0},
+                            {"win_rate": bt_stats.get("win_rate", 0),
+                             "profit_factor": bt_stats.get("profit_factor", 0),
+                             "max_drawdown": bt_stats.get("max_drawdown_pct", 0),
+                             "n_trades": bt_stats.get("total_trades", 0),
+                             "avg_r": bt_stats.get("expectancy_r", 0)},
                         )
                         if not qc["pass"]:
                             log.info(
@@ -772,7 +779,7 @@ class AnalysisPipeline:
 
         df = None
         if getattr(self, '_duckdb', None) is not None:
-            df = self._duckdb.read(symbol, "15m", days=60)
+            df = self._duckdb.read(symbol, "15m", days=180)
         if (df is None or df.empty) and self._candles is not None:
             from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
             df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
