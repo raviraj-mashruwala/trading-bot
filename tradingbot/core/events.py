@@ -24,6 +24,7 @@ class EventBus:
         self._subscribers: dict[str, Callable] = {}
         self._queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self._shutdown = False
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def subscribe(self, callback: Callable) -> str:
         sub_id = str(uuid.uuid4())
@@ -38,10 +39,15 @@ class EventBus:
         self._dispatch(envelope)
 
     def emit_sync(self, event_type: str, data: dict[str, Any]) -> None:
+        """Queue an event from any thread. Thread-safe via call_soon_threadsafe."""
         envelope = self._wrap(event_type, data)
-        self._queue.put_nowait(envelope)
+        if self._loop is not None and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, envelope)
+        else:
+            self._queue.put_nowait(envelope)
 
     async def flush_loop(self) -> None:
+        self._loop = asyncio.get_running_loop()
         while not self._shutdown:
             try:
                 envelope = await asyncio.wait_for(self._queue.get(), timeout=0.05)

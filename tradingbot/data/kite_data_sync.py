@@ -249,9 +249,16 @@ class KiteDataSync:
                 from_date = date(max(2015, today.year - depth_years), 1, 1)
 
             chunks = _date_chunks(from_date, today, max_days)
-            for chunk_from, chunk_to in chunks:
+            total_chunks = len(chunks)
+            action = "gap fill" if last else "full fetch"
+            for ci, (chunk_from, chunk_to) in enumerate(chunks):
                 if self._cancelled:
                     return total_written
+                if progress_callback and total_chunks > 1:
+                    pct = int((ci / total_chunks) * 100)
+                    progress_callback(
+                        f"{symbol} {store_interval} {action}: chunk {ci+1}/{total_chunks} ({pct}%)"
+                    )
                 for attempt in range(MAX_RETRIES):
                     try:
                         token = self._resolve_token(symbol)
@@ -270,7 +277,7 @@ class KiteDataSync:
                                         symbol, store_interval, chunk_from, chunk_to, exc)
 
             if progress_callback:
-                progress_callback(f"{symbol} {store_interval}: {'gap fill' if last else 'full fetch'} done")
+                progress_callback(f"{symbol} {store_interval}: {action} done, {total_written:,} rows")
 
         return total_written
 
