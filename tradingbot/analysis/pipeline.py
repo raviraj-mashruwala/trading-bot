@@ -304,10 +304,23 @@ class AnalysisPipeline:
             if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
                 total_cost += deep.pop("_usage").cost_usd()
             all_setups.append(deep)
-            n_setups = len(deep.get("setups", [])) if isinstance(deep, dict) else 0
+            setups_list = deep.get("setups", []) if isinstance(deep, dict) else []
+            n_setups = len(setups_list)
+            setup_summaries = []
+            for s in setups_list[:3]:
+                setup_summaries.append({
+                    "strategy": s.get("strategy", "unknown"),
+                    "direction": s.get("direction", "long"),
+                    "entry": s.get("entry_price", 0),
+                    "stop": s.get("stop_loss", 0),
+                    "target_1": s.get("target_1", 0),
+                    "confidence": s.get("confidence", 0),
+                    "edge": s.get("edge_description", "")[:80],
+                })
             self._bus.emit_sync("strategy.deep_analysis", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "setups_found": n_setups,
+                "setups": setup_summaries,
                 "status": "fetching" if i + 1 < len(shortlist) else "done",
                 "message": f"{sym}: {n_setups} setups found ({i+1}/{len(shortlist)})",
             })

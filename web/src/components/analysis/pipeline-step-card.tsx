@@ -84,17 +84,30 @@ export function PipelineStepCard({ label, stepNumber, status, data, history, isL
           </div>
         )}
         {expanded && history && history.length > 0 && (
-          <div className="mt-2 max-h-48 overflow-auto space-y-1">
+          <div className="mt-2 max-h-64 overflow-auto space-y-1.5">
             {history.map((h) => {
               const passes = h.data.strategies_passed as number | undefined;
-              const setups = h.data.setups_found as number | undefined;
+              const setupsFound = h.data.setups_found as number | undefined;
+              const setups = h.data.setups as Array<Record<string, unknown>> | undefined;
               const skipped = h.data.status === "skipped";
               return (
-                <div key={h.symbol} className="flex items-center justify-between rounded bg-black/20 px-2 py-1 text-[11px]">
-                  <span className="font-medium text-foreground/80">{h.symbol}</span>
-                  <span className="text-muted-foreground">
-                    {skipped ? "skipped" : passes !== undefined ? `${passes} strategies` : setups !== undefined ? `${setups} setups` : h.data.message ? String(h.data.message) : "done"}
-                  </span>
+                <div key={h.symbol} className="rounded bg-black/20 px-2 py-1.5 text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-foreground/80">{h.symbol}</span>
+                    <span className="text-muted-foreground">
+                      {skipped ? "skipped" : passes !== undefined ? `${passes} strategies` : setupsFound !== undefined ? `${setupsFound} setups` : h.data.message ? String(h.data.message) : "done"}
+                    </span>
+                  </div>
+                  {setups && setups.length > 0 && setups.map((s, si) => (
+                    <div key={si} className="mt-1 flex items-center gap-3 text-[10px] text-muted-foreground">
+                      <span className="text-foreground/60">{String(s.strategy)}</span>
+                      <span>{String(s.direction)}</span>
+                      <span>E:₹{Number(s.entry).toFixed(1)}</span>
+                      <span className="text-[#f85149]">SL:₹{Number(s.stop).toFixed(1)}</span>
+                      <span className="text-[#2da44e]">T:₹{Number(s.target_1).toFixed(1)}</span>
+                      <span className="text-[#d4a015]">{(Number(s.confidence) * 100).toFixed(0)}%</span>
+                    </div>
+                  ))}
                 </div>
               );
             })}
