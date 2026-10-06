@@ -254,7 +254,7 @@ class AnalysisPipeline:
 
             # Run backtest for regime-eligible strategies only
             bt_results: list[Any] = []
-            self._run_backtests(sym, bt_results, regime=regime)
+            await _aio.to_thread(self._run_backtests, sym, bt_results, regime)
             all_bt_results[sym] = bt_results
             self._bus.emit_sync("strategy.backtest", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
@@ -262,7 +262,9 @@ class AnalysisPipeline:
             })
 
             # Fetch real indicators and price action for Claude's context
-            indicators, price_action = self._fetch_indicators_for_symbol(sym)
+            indicators, price_action = await _aio.to_thread(
+                self._fetch_indicators_for_symbol, sym,
+            )
             self._bus.emit_sync("strategy.indicators", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "has_data": bool(indicators),
