@@ -259,6 +259,8 @@ class AnalysisPipeline:
             self._bus.emit_sync("strategy.backtest", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "strategies_passed": len(bt_results),
+                "status": "fetching" if i + 1 < len(shortlist) else "done",
+                "message": f"Backtest {sym} ({i+1}/{len(shortlist)}): {len(bt_results)} strategies passed",
             })
 
             # Fetch real indicators and price action for Claude's context
@@ -268,6 +270,8 @@ class AnalysisPipeline:
             self._bus.emit_sync("strategy.indicators", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "has_data": bool(indicators),
+                "status": "fetching" if i + 1 < len(shortlist) else "done",
+                "message": f"Indicators {sym} ({i+1}/{len(shortlist)})",
             })
 
             if not indicators:
@@ -304,6 +308,8 @@ class AnalysisPipeline:
             self._bus.emit_sync("strategy.deep_analysis", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "setups_found": n_setups,
+                "status": "fetching" if i + 1 < len(shortlist) else "done",
+                "message": f"{sym}: {n_setups} setups found ({i+1}/{len(shortlist)})",
             })
 
         self._bus.emit_sync("strategy.setups", {
