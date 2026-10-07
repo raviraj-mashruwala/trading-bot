@@ -114,8 +114,12 @@ class RiskManager:
                 continue
 
             notional = quantity * setup.entry_price
-            if deployed + notional > exposure_ceiling:
-                logger.info("dropping %s: would exceed the exposure ceiling", setup.symbol)
+            remaining = exposure_ceiling - deployed
+            if notional > remaining:
+                quantity = math.floor(remaining / setup.entry_price) if setup.entry_price > 0 else 0
+                notional = quantity * setup.entry_price
+            if quantity <= 0:
+                logger.info("dropping %s: no room in exposure ceiling", setup.symbol)
                 continue
 
             legs.append(
