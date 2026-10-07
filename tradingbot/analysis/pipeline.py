@@ -547,7 +547,7 @@ class AnalysisPipeline:
             if len(close) >= 6:
                 stock_5d_return = (float(close.iloc[-1]) / float(close.iloc[-6]) - 1) * 100
             rs_excess = stock_5d_return - nifty_5d_change
-            relative_strength_score = min(100.0, max(0.0, 50.0 + rs_excess * 5.0))
+            relative_strength_score = min(100.0, max(0.0, 50.0 + abs(rs_excess) * 5.0))
 
             # ATR expansion (2% ATR = 100 score)
             atr_expansion_score = min(100.0, max(0.0, atr_pct * 50.0))
@@ -555,7 +555,7 @@ class AnalysisPipeline:
             # Price structure: close vs SMA20
             sma20 = float(close.tail(20).mean()) if len(close) >= 20 else last_price
             pct_above = ((last_price - sma20) / sma20 * 100) if sma20 > 0 else 0
-            price_structure_score = min(100.0, max(0.0, 50.0 + pct_above * 5.0))
+            price_structure_score = min(100.0, max(0.0, 50.0 + abs(pct_above) * 5.0))
 
             sector = inst.get("sector", "unknown")
             sector_returns.setdefault(sector, []).append(stock_5d_return)
@@ -593,7 +593,7 @@ class AnalysisPipeline:
         }
         for m in metrics:
             med = sector_median.get(m["sector"], 0.0)
-            m["factor_scores"]["sector_momentum"] = min(100.0, max(0.0, 50.0 + med * 5.0))
+            m["factor_scores"]["sector_momentum"] = min(100.0, max(0.0, 50.0 + abs(med) * 5.0))
             del m["_stock_5d_return"]
 
         log.info("FUNNEL: %d skipped (< 5 rows), %d metrics built", skipped_short, len(metrics))
