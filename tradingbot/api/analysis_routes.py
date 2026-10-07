@@ -406,7 +406,13 @@ async def kite_callback(request: Request, request_token: str | None = None):
 async def kite_status(request: Request):
     state: AppState = request.app.state.app_state
     auth = _ensure_kite_auth(state)
-    return {"authenticated": auth.is_authenticated()}
+    if not auth.is_authenticated():
+        return {"authenticated": False}
+    try:
+        auth.kite.profile()
+        return {"authenticated": True}
+    except Exception:
+        return {"authenticated": False, "error": "token expired"}
 
 
 @router.get("/auth/kite/test")
