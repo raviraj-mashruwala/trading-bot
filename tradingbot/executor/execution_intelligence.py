@@ -99,11 +99,19 @@ class ExecutionIntelligence:
                 logger.warning("No instrument token for %s, using symbol string", symbol)
         return symbol
 
-    def _on_ticks(self, ws: Any, ticks: list[dict]) -> None:
+    def _on_ticks(self, token_or_ws: Any, ltp_or_ticks: Any) -> None:
         now = datetime.now()
         self.health.last_tick_at = now
         if self.health.status == "reconnecting":
             self.health.status = "healthy"
+
+        if isinstance(ltp_or_ticks, (int, float)):
+            ticks = [{"instrument_token": token_or_ws, "last_price": ltp_or_ticks, "volume_traded": 0, "exchange_timestamp": now}]
+        elif isinstance(ltp_or_ticks, list):
+            ticks = ltp_or_ticks
+        else:
+            return
+
         for tick in ticks:
             raw_token = tick.get("instrument_token", "")
             price = tick.get("last_price", 0.0)
