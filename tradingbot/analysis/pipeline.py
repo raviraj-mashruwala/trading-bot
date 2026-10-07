@@ -45,6 +45,14 @@ _STRATEGY_MAP: dict[str, StrategyName] = {
     "pullback_entry": StrategyName.MEAN_REVERSION,
     "gap and go": StrategyName.GAP_AND_GO,
     "bollinger squeeze": StrategyName.BOLLINGER_SQUEEZE,
+    "mean-reversion": StrategyName.MEAN_REVERSION,
+    "overbought_fade": StrategyName.MEAN_REVERSION,
+    "breakdown": StrategyName.BREAKOUT,
+    "vwap_breakdown": StrategyName.VWAP_BOUNCE,
+    "pivot_failure": StrategyName.PIVOT_POINT,
+    "bb_upper": StrategyName.BOLLINGER_SQUEEZE,
+    "bb_lower": StrategyName.BOLLINGER_SQUEEZE,
+    "fade": StrategyName.MEAN_REVERSION,
 }
 
 
