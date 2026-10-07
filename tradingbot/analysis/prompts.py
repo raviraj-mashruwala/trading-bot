@@ -126,9 +126,11 @@ SHORTLIST_SYSTEM = (
     "stocks can have strong setups regardless of the broader market regime.\n\n"
 
     "## Scoring Rubric (evaluate each candidate on these criteria)\n"
-    "1. **Regime Alignment (25%)** — Does the stock's setup match the current "
-    "market regime and sector momentum? A long in a trending_up regime with "
-    "strong sector_momentum scores higher.\n"
+    "1. **Regime Alignment (25%)** — Consider the regime as context, not a "
+    "direction filter. In trending_down, a stock up 15% with RSI>70 may be "
+    "a high-conviction SHORT (mean-reversion/pullback) rather than a long. "
+    "In trending_up, a beaten-down stock at support may be a long. Evaluate "
+    "where the NEXT move is, not where the stock has been.\n"
     "2. **Volume & Delivery Conviction (25%)** — High volume_surge + high "
     "delivery_pct = institutional participation. Low volume = avoid.\n"
     "3. **Technical Setup Quality (25%)** — Combine price_structure, "
@@ -175,6 +177,23 @@ SHORTLIST_SYSTEM = (
     "Decision: LONG, conviction=high. Primary strategy: breakout_momentum.\n"
     "Counter-argument: RSI at 68 approaching overbought; a failed breakout "
     "above resistance traps longs with a fast reversal.\n"
+    "</example>\n\n"
+    "<example>\n"
+    "Given: TATAMOTORS with composite_score=82, vol_surge=78, RS=88, "
+    "RSI=81, candlestick_pattern=75, price_structure=72, delivery_pct=45, "
+    "sector_momentum=60, regime=trending_down\n\n"
+    "Analysis:\n"
+    "- Regime: trending_down — stock up 12% against the trend, overbought. "
+    "This is a reversal/short candidate, not a continuation long. (Score: high)\n"
+    "- Volume: vol_surge=78 but delivery_pct=45 — speculative, not institutional. "
+    "Suggestive of retail chase. (Score: medium)\n"
+    "- Technical: RSI=81 overbought, extended above VWAP, potential "
+    "double-top forming at resistance. (Score: high for short)\n"
+    "- Risk:Reward: Short entry near resistance with stop above high, "
+    "target VWAP = 2.5:1 R:R. (Score: high)\n\n"
+    "Decision: SHORT, conviction=high. Primary strategy: mean_reversion.\n"
+    "Counter-argument: Strong ADX could mean trend continuation; if stock "
+    "breaks above resistance with volume, the short is invalidated.\n"
     "</example>"
 )
 
@@ -503,13 +522,16 @@ def build_deep_analysis_user_prompt(
         f"  {k}: {v}" for k, v in indicators.items() if not k.startswith("_")
     )
     return (
-        f"Stock: {symbol} | Direction bias: {direction}\n"
+        f"Stock: {symbol} | Shortlist direction: {direction} (advisory — override if indicators disagree)\n"
         f"Market regime: {regime.get('regime', 'unknown')}\n\n"
         f"Technical Indicators (multi-timeframe):\n{ind_text}\n\n"
         f"Backtest Results:\n{bt_text}\n\n"
         f"Recent Price Action:\n{price_action_summary}\n\n"
         f"Design 1-3 precise trade setups with exact entry, stop loss, and target levels. "
-        f"Only propose if you find 3+ confluence signals and 1.5:1 minimum R:R."
+        f"Only propose if you find 3+ confluence signals and 1.5:1 minimum R:R. "
+        f"The shortlist direction is advisory. If indicators strongly favor the opposite "
+        f"direction (e.g., overbought RSI + MACD bearish cross + extreme VWAP extension "
+        f"= short, even if shortlist said long), propose the direction the data supports."
         + (f"\n\n<performance_context>\n{performance_context}\n</performance_context>"
            if performance_context else "")
     )
