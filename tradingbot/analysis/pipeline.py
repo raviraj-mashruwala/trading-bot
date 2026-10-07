@@ -356,7 +356,8 @@ class AnalysisPipeline:
                 if source and idx < len(source.get("setups", [])):
                     setup_data = source["setups"][idx]
 
-                    # Jev quality check — overfit/credibility gate
+                    # Jev quality score (informational, does not reject)
+                    jev_quality = {}
                     if self._jev_tier2 is not None:
                         from tradingbot.analysis.jev_quality_check import jev_quality_check
                         sym_bt = all_bt_results.get(sym, [])
@@ -369,14 +370,19 @@ class AnalysisPipeline:
                              "n_trades": bt_stats.get("total_trades", 0),
                              "avg_r": bt_stats.get("expectancy_r", 0)},
                         )
-                        if not qc["pass"]:
-                            log.info(
-                                "JEV QUALITY REJECTED %s: score=%.2f, overfit=%.2f, credible=%.2f",
-                                sym, qc["quality_score"],
-                                qc["details"].get("overfit_risk", 0),
-                                qc["details"].get("backtest_credible", 0),
-                            )
-                            continue
+                        jev_quality = {
+                            "jev_quality_score": qc["quality_score"],
+                            "jev_overfit_risk": qc["details"].get("overfit_risk", 0),
+                            "jev_credibility": qc["details"].get("backtest_credible", 0),
+                            "jev_pass": qc["pass"],
+                        }
+                        log.info(
+                            "JEV QUALITY %s %s: score=%.2f, overfit=%.2f, credible=%.2f",
+                            sym, "PASS" if qc["pass"] else "WARN",
+                            qc["quality_score"],
+                            qc["details"].get("overfit_risk", 0),
+                            qc["details"].get("backtest_credible", 0),
+                        )
 
                     row_id = self._setups.save({
                         "run_id": run_id,
@@ -390,6 +396,7 @@ class AnalysisPipeline:
                         "target_2": setup_data.get("target_2", 0),
                         "confidence": setup_data["confidence"],
                         "status": "approved",
+                        **jev_quality,
                         "reasoning": setup_data.get("edge_description", ""),
                         "thesis": setup_data.get("edge_description", ""),
                         "invalidation_condition": setup_data.get("invalidation", ""),
