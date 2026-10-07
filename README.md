@@ -115,6 +115,62 @@ then change `mode = "live"` in `config.toml`.
 - Every position is squared off at 15:10, no exceptions
 - Restarting mid-session adopts open positions instead of double-entering
 
+## Copying data to another machine
+
+These files are gitignored (they contain your market data, trades, and secrets).
+Copy them via USB drive to get the same state on a new machine.
+
+**Required:**
+
+| File | Size* | What it is |
+|------|-------|------------|
+| `.env` | 4 KB | API keys — **do not skip** |
+| `config.toml` | 4 KB | Your capital, risk limits, and strategy settings |
+
+**Data files (place in repo root):**
+
+| File | Size* | What it is |
+|------|-------|------------|
+| `candles.duckdb` | ~2.4 GB | Historical OHLCV candle data (biggest file) |
+| `candles.duckdb.wal` | varies | DuckDB write-ahead log — copy alongside the .duckdb |
+| `instruments.db` | ~700 KB | NSE instrument cache (symbols, lot sizes, etc.) |
+| `instruments.db-wal` | varies | SQLite WAL — copy alongside the .db |
+| `instruments.db-shm` | varies | SQLite shared memory — copy alongside the .db |
+| `analysis.db` | ~32 KB | Pipeline analysis results and setups |
+| `analysis.db-wal` / `-shm` | varies | SQLite WAL + SHM files |
+| `tradingbot.db` | ~32 KB | Trade history and execution records |
+| `tradingbot.db-wal` / `-shm` | varies | SQLite WAL + SHM files |
+
+**Optional:**
+
+| Path | Size* | What it is |
+|------|-------|------------|
+| `trade_plans/` | ~12 KB | Daily trade plan JSONs (`YYYY-MM-DD.json`) |
+| `logs/llm/` | ~664 KB | LLM request/response logs per day |
+
+*\*Sizes as of October 2026 — candles.duckdb grows as more market data is fetched.*
+
+**Quick copy (macOS/Linux → USB):**
+```bash
+# from repo root
+cp .env config.toml /Volumes/USB/trading-bot/
+cp *.db *.db-wal *.db-shm *.duckdb *.duckdb.wal /Volumes/USB/trading-bot/
+cp -r trade_plans/ logs/ /Volumes/USB/trading-bot/
+```
+
+**Quick copy (USB → Windows):**
+```powershell
+# from USB drive, into the cloned repo
+Copy-Item E:\trading-bot\.env, E:\trading-bot\config.toml -Destination .\
+Copy-Item E:\trading-bot\*.db, E:\trading-bot\*.db-wal, E:\trading-bot\*.db-shm -Destination .\
+Copy-Item E:\trading-bot\*.duckdb, E:\trading-bot\*.duckdb.wal -Destination .\
+Copy-Item E:\trading-bot\trade_plans, E:\trading-bot\logs -Destination .\ -Recurse
+```
+
+> **Note:** If you skip the data files, the bot still works — it will rebuild
+> `instruments.db` on first run and fetch fresh candle data. You only lose
+> historical analysis results and past trade records.
+
 ## Testing
 
 ```bash
