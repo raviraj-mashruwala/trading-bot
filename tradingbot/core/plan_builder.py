@@ -89,9 +89,11 @@ class PlanBuilder:
     @staticmethod
     def _row_to_setup(row: dict[str, Any]) -> TradeSetup:
         """Convert a SetupStore dict row into a TradeSetup with setup_id."""
+        from tradingbot.analysis.pipeline import _match_strategy
+        strategy = _match_strategy(row["strategy"]) or StrategyName.MEAN_REVERSION
         return TradeSetup(
             symbol=row["symbol"],
-            strategy=StrategyName(row["strategy"]),
+            strategy=strategy,
             direction=Direction(row["direction"]),
             entry_price=float(row["entry_price"]),
             entry_type=EntryType.LIMIT,
