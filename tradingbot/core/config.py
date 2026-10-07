@@ -64,20 +64,20 @@ _RISK_TIERS: list[tuple[float, RiskConfig]] = [
     (200_000.0, RiskConfig(
         max_risk_per_trade_pct=0.01,
         max_daily_loss_pct=0.02,
-        max_capital_deployed_pct=0.50,
-        max_concurrent_positions=2,
+        max_capital_deployed_pct=0.80,
+        max_concurrent_positions=5,
     )),
     (50_000.0, RiskConfig(
         max_risk_per_trade_pct=0.01,
         max_daily_loss_pct=0.025,
-        max_capital_deployed_pct=0.60,
-        max_concurrent_positions=2,
+        max_capital_deployed_pct=0.80,
+        max_concurrent_positions=5,
     )),
     (0.0, RiskConfig(
         max_risk_per_trade_pct=0.015,
         max_daily_loss_pct=0.03,
-        max_capital_deployed_pct=0.70,
-        max_concurrent_positions=1,
+        max_capital_deployed_pct=0.80,
+        max_concurrent_positions=3,
     )),
 ]
 
