@@ -158,11 +158,6 @@ class IntelligentScreener:
             factor_scores = stock.get("factor_scores", {})
             composite = scorer.compute_composite(factor_scores)
 
-            # Jev bonus: unusual activity detection
-            jev_bonus = 0.0
-            if self._jev and stock.get("_jev_unusual_activity"):
-                jev_bonus = stock["_jev_unusual_activity"] * 5.0
-
             scored.append(
                 ScoredStock(
                     symbol=stock["symbol"],
@@ -172,7 +167,7 @@ class IntelligentScreener:
                     market_cap_cr=stock["market_cap_cr"],
                     atr_pct=stock.get("atr_pct", 0),
                     sector=stock.get("sector", "unknown"),
-                    composite_score=composite + jev_bonus,
+                    composite_score=composite,
                     factor_scores=factor_scores,
                     instrument_token=stock.get("token", 0),
                 )
