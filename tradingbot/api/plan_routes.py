@@ -44,13 +44,17 @@ async def list_plans(request: Request):
 async def get_plan_today(request: Request):
     state: AppState = request.app.state.app_state
     _ensure_stores(state)
-    from tradingbot.scanner.calendar import next_trading_day
-    try:
-        today = next_trading_day(_date.today())
-    except Exception:
-        today = _date.today()
+    from tradingbot.scanner.calendar import is_trading_day
+    from tradingbot.core.models import now_ist
+    now = now_ist()
+    today = now.date()
+    if is_trading_day(today) and now.hour < 16:
+        target = today
+    else:
+        from tradingbot.scanner.calendar import next_trading_day
+        target = next_trading_day(today)
     plan = None
-    for d in [today, _date.today()]:
+    for d in [target, today]:
         try:
             plan = state.plan_store.load(str(d))
             break
@@ -102,14 +106,18 @@ async def get_plan_runs(request: Request):
     if state.run_store is None:
         raise HTTPException(status_code=404, detail="no plan for runs")
     try:
-        from tradingbot.scanner.calendar import next_trading_day
-        try:
-            today = next_trading_day(_date.today())
-        except Exception:
-            today = _date.today()
-        runs = state.run_store.list_for_date(today)
+        from tradingbot.scanner.calendar import is_trading_day
+        from tradingbot.core.models import now_ist
+        now = now_ist()
+        today = now.date()
+        if is_trading_day(today) and now.hour < 16:
+            target = today
+        else:
+            from tradingbot.scanner.calendar import next_trading_day
+            target = next_trading_day(today)
+        runs = state.run_store.list_for_date(target)
         if not runs:
-            runs = state.run_store.list_for_date(_date.today())
+            runs = state.run_store.list_for_date(today)
         if not runs:
             raise HTTPException(status_code=404, detail="no runs found")
         return runs
@@ -126,14 +134,18 @@ async def get_plan_setups(request: Request):
     if state.setup_store is None:
         raise HTTPException(status_code=404, detail="no plan for setups")
     try:
-        from tradingbot.scanner.calendar import next_trading_day
-        try:
-            today = next_trading_day(_date.today())
-        except Exception:
-            today = _date.today()
-        rows = state.setup_store.get_active(today)
+        from tradingbot.scanner.calendar import is_trading_day
+        from tradingbot.core.models import now_ist
+        now = now_ist()
+        today = now.date()
+        if is_trading_day(today) and now.hour < 16:
+            target = today
+        else:
+            from tradingbot.scanner.calendar import next_trading_day
+            target = next_trading_day(today)
+        rows = state.setup_store.get_active(target)
         if not rows:
-            rows = state.setup_store.get_active(_date.today())
+            rows = state.setup_store.get_active(today)
         if not rows:
             raise HTTPException(status_code=404, detail="no plan for setups")
         return rows

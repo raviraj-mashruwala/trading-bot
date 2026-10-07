@@ -325,7 +325,12 @@ async def generate_plan(request: Request, trade_date: str | None = None):
     if trade_date:
         td = date.fromisoformat(trade_date)
     else:
-        td = next_trading_day(now_ist().date())
+        now = now_ist()
+        today = now.date()
+        if is_trading_day(today) and now.hour < 16:
+            td = today
+        else:
+            td = next_trading_day(today)
 
     builder = _build_plan_builder(state)
     plan = builder.build(td, regime=MarketRegime.RANGE_BOUND)
