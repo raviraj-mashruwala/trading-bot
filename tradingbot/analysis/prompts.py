@@ -139,9 +139,6 @@ SHORTLIST_SYSTEM = (
     "4. **Risk:Reward (25%)** — Based on price_structure and gap_analysis, "
     "is there a clear 2:1+ R:R? Tight stops with room to run.\n\n"
 
-    "When Jev AI scores are present (jev_composite, jev_setup_confidence), "
-    "use them as a confirming signal. jev_composite > 0.6 = strong AI conviction. "
-    "Disagreement between your analysis and Jev should be noted in reasoning.\n\n"
 
     "## Process\n"
     "1. Read <regime> to understand the market environment.\n"
