@@ -43,23 +43,56 @@ async def list_plans(request: Request):
 @router.get("/plans/today")
 async def get_plan_today(request: Request):
     state: AppState = request.app.state.app_state
+    _ensure_stores(state)
     from tradingbot.scanner.calendar import next_trading_day
     try:
         today = next_trading_day(_date.today())
     except Exception:
         today = _date.today()
-    try:
-        plan = state.plan_store.load(str(today))
-        return plan.to_dict()
-    except (PlanNotFoundError, PlanCorruptError):
-        pass
-    try:
-        plan = state.plan_store.load(str(_date.today()))
-        return plan.to_dict()
-    except PlanNotFoundError:
+    plan = None
+    for d in [today, _date.today()]:
+        try:
+            plan = state.plan_store.load(str(d))
+            break
+        except (PlanNotFoundError, PlanCorruptError):
+            continue
+    if plan is None:
         raise HTTPException(status_code=404, detail="no plan for today")
-    except PlanCorruptError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+
+    setups = []
+    if state.setup_store is not None:
+        rows = state.setup_store.get_active(today)
+        if not rows:
+            rows = state.setup_store.get_active(_date.today())
+        setups = rows or []
+
+    ranked = []
+    for i, s in enumerate(setups):
+        ranked.append({
+            "rank": i + 1,
+            "symbol": s.get("symbol", ""),
+            "direction": s.get("direction", "long"),
+            "confidence": s.get("confidence", 0),
+            "consistency": 1.0,
+            "run_count": 1,
+            "recommendation": "execute" if s.get("status") == "approved" else "watch",
+            "best_setup": s,
+        })
+
+    runs = []
+    if state.run_store is not None:
+        for d in [today, _date.today()]:
+            runs = state.run_store.list_for_date(d)
+            if runs:
+                break
+
+    return {
+        "date": str(plan.trade_date),
+        "runs": runs,
+        "total_runs": len(runs),
+        "active_setups": setups,
+        "ranked_suggestions": ranked,
+    }
 
 
 @router.get("/plans/runs")
