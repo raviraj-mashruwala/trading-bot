@@ -3,7 +3,7 @@ import type { PipelineStatus, StepState, TradePlan, WsEvent } from "@/types";
 
 const PIPELINE_STEPS = [
   "scan.context", "scan.universe", "scan.filtered", "scan.shortlist",
-  "strategy.indicators", "strategy.backtest", "strategy.deep_analysis",
+  "strategy.indicators", "strategy.deep_analysis", "strategy.backtest",
   "strategy.setups", "strategy.sized",
 ] as const;
 

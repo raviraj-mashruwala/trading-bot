@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api")
 
 _PIPELINE_STEP_EVENTS = (
     "scan.context", "scan.universe", "scan.filtered", "scan.shortlist",
-    "strategy.indicators", "strategy.backtest", "strategy.deep_analysis",
+    "strategy.indicators", "strategy.deep_analysis", "strategy.backtest",
     "strategy.setups", "strategy.sized",
 )
 

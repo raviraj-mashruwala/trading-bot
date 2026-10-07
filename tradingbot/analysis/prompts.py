@@ -515,6 +515,8 @@ def build_deep_analysis_user_prompt(
         f"expectancy_r={b['expectancy_r']:.2f}"
         for b in backtest_results
     )
+    if not bt_text:
+        bt_text = "  No prior backtest data — propose setups based on indicator confluence."
     ind_text = "\n".join(
         f"  {k}: {v}" for k, v in indicators.items() if not k.startswith("_")
     )

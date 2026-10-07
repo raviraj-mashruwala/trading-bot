@@ -18,13 +18,54 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from tradingbot.core.llm.provider import LLMUsage
-from tradingbot.core.models import AnalysisRun, MarketRegime
+from tradingbot.core.models import AnalysisRun, MarketRegime, StrategyName
 from tradingbot.persistence.review_store import TradeReviewStore
 from tradingbot.screening.candlestick import score_patterns as _score_candlestick
 from tradingbot.screening.volume_profile_score import score_volume_profile as _score_volume_profile
 
 IST = ZoneInfo("Asia/Kolkata")
 log = logging.getLogger(__name__)
+
+_STRATEGY_MAP: dict[str, StrategyName] = {
+    "breakout": StrategyName.BREAKOUT,
+    "momentum": StrategyName.MOMENTUM,
+    "mean_reversion": StrategyName.MEAN_REVERSION,
+    "vwap_bounce": StrategyName.VWAP_BOUNCE,
+    "orb": StrategyName.ORB,
+    "gap_and_go": StrategyName.GAP_AND_GO,
+    "pivot_point": StrategyName.PIVOT_POINT,
+    "relative_strength": StrategyName.RELATIVE_STRENGTH,
+    "bollinger_squeeze": StrategyName.BOLLINGER_SQUEEZE,
+    "supply_demand": StrategyName.SUPPLY_DEMAND,
+    "vwap_mean_reversion": StrategyName.MEAN_REVERSION,
+    "rsi_divergence": StrategyName.MEAN_REVERSION,
+    "support_bounce": StrategyName.SUPPLY_DEMAND,
+    "resistance_rejection": StrategyName.SUPPLY_DEMAND,
+    "trend_continuation": StrategyName.MOMENTUM,
+    "pullback_entry": StrategyName.MEAN_REVERSION,
+    "gap and go": StrategyName.GAP_AND_GO,
+    "bollinger squeeze": StrategyName.BOLLINGER_SQUEEZE,
+}
+
+
+def _match_strategy(name: str) -> StrategyName | None:
+    """Map Claude's strategy name to the closest generic strategy."""
+    if not name or not name.strip():
+        return None
+    normalized = name.lower().strip().replace(" ", "_")
+    if normalized in _STRATEGY_MAP:
+        return _STRATEGY_MAP[normalized]
+    spaced = normalized.replace("_", " ")
+    if spaced in _STRATEGY_MAP:
+        return _STRATEGY_MAP[spaced]
+    try:
+        return StrategyName(normalized)
+    except ValueError:
+        pass
+    for key, val in _STRATEGY_MAP.items():
+        if key in normalized or normalized in key:
+            return val
+    return None
 
 
 class AnalysisPipeline:
@@ -224,31 +265,18 @@ class AnalysisPipeline:
         # --- Performance context for LLM ---
         perf_ctx = self._build_performance_context()
 
-        # --- Backtest + Tier 3: per-stock deep analysis ---
+        # --- Phase 1: Claude Deep Analysis (ALL shortlisted stocks) ---
         all_setups: list[dict[str, Any]] = []
-        all_bt_results: dict[str, list[dict]] = {}
         if not shortlist:
             self._bus.emit_sync("strategy.indicators", {"status": "skipped", "reason": "no shortlisted stocks"})
-            self._bus.emit_sync("strategy.backtest", {"status": "skipped", "reason": "no shortlisted stocks"})
+            self._bus.emit_sync("strategy.deep_analysis", {"status": "skipped", "reason": "no shortlisted stocks"})
         for i, pick in enumerate(shortlist):
             if _is_cancelled():
-                log.info("Pipeline cancelled during backtest/analysis at %d/%d", i, len(shortlist))
+                log.info("Pipeline cancelled during deep analysis at %d/%d", i, len(shortlist))
                 break
             sym = pick["symbol"]
             direction = pick.get("direction", "long")
 
-            # Run backtest for regime-eligible strategies only
-            bt_results: list[Any] = []
-            await _aio.to_thread(self._run_backtests, sym, bt_results, regime)
-            all_bt_results[sym] = bt_results
-            self._bus.emit_sync("strategy.backtest", {
-                "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
-                "strategies_passed": len(bt_results),
-                "status": "fetching" if i + 1 < len(shortlist) else "done",
-                "message": f"Backtest {sym} ({i+1}/{len(shortlist)}): {len(bt_results)} strategies passed",
-            })
-
-            # Fetch real indicators and price action for Claude's context
             indicators, price_action = await _aio.to_thread(
                 self._fetch_indicators_for_symbol, sym,
             )
@@ -260,18 +288,9 @@ class AnalysisPipeline:
             })
 
             if not indicators:
-                log.warning("Skipping %s — no indicator data, would waste LLM call", sym)
+                log.warning("Skipping %s — no indicator data", sym)
                 continue
 
-            if not bt_results:
-                log.info("Skipping %s — 0 backtest strategies passed, no quantitative edge", sym)
-                self._bus.emit_sync("strategy.deep_analysis", {
-                    "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
-                    "status": "skipped", "message": f"Skipped {sym} — no backtest edge",
-                })
-                continue
-
-            # Tier 3 deep analysis
             self._bus.emit_sync("strategy.deep_analysis", {
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "status": "fetching", "message": f"Analyzing {sym} ({i+1}/{len(shortlist)})",
@@ -281,7 +300,7 @@ class AnalysisPipeline:
                 direction=direction,
                 regime=regime,
                 indicators=indicators,
-                backtest_results=bt_results,
+                backtest_results=[],
                 price_action=price_action,
                 performance_context=perf_ctx,
             )
@@ -314,6 +333,50 @@ class AnalysisPipeline:
             "total_setups": sum(len(s.get("setups", [])) for s in all_setups),
             "symbols_analyzed": len(shortlist),
         })
+
+        # --- Phase 2: Backtest Validation (only stocks with proposed setups) ---
+        all_bt_results: dict[str, list[dict]] = {}
+        setups_with_proposed = [s for s in all_setups if s.get("setups")]
+        bt_symbols = [s["symbol"] for s in setups_with_proposed]
+
+        if not bt_symbols:
+            self._bus.emit_sync("strategy.backtest", {"status": "skipped", "reason": "no setups proposed"})
+        for i, setup_result in enumerate(setups_with_proposed):
+            if _is_cancelled():
+                log.info("Pipeline cancelled during backtest validation at %d/%d", i, len(bt_symbols))
+                break
+            sym = setup_result["symbol"]
+            proposed_setups = setup_result.get("setups", [])
+
+            bt_results: list[Any] = []
+            for setup in proposed_setups:
+                strategy_name = setup.get("strategy", "unknown")
+                matched = _match_strategy(strategy_name)
+                if matched is not None:
+                    await _aio.to_thread(
+                        self._run_single_backtest, sym, matched, bt_results,
+                    )
+                    if bt_results:
+                        last_bt = bt_results[-1]
+                        setup["backtest_status"] = "validated"
+                        setup["backtest_win_rate"] = last_bt.get("win_rate", 0)
+                        setup["backtest_profit_factor"] = last_bt.get("profit_factor", 0)
+                        setup["backtest_expectancy_r"] = last_bt.get("expectancy_r", 0)
+                        setup["backtest_total_trades"] = last_bt.get("total_trades", 0)
+                    else:
+                        setup["backtest_status"] = "failed"
+                else:
+                    setup["backtest_status"] = "unvalidated"
+                    log.info("No matching strategy for %s/%s — marking unvalidated", sym, strategy_name)
+
+            all_bt_results[sym] = bt_results
+            self._bus.emit_sync("strategy.backtest", {
+                "symbol": sym, "progress": f"{i+1}/{len(bt_symbols)}",
+                "strategies_tested": len(proposed_setups),
+                "strategies_validated": len(bt_results),
+                "status": "fetching" if i + 1 < len(bt_symbols) else "done",
+                "message": f"Backtest {sym} ({i+1}/{len(bt_symbols)}): {len(bt_results)} validated",
+            })
 
         # --- Adversarial validation ---
         no_setup_symbols = [s["symbol"] for s in all_setups if not s.get("setups")]
@@ -853,3 +916,26 @@ class AnalysisPipeline:
                         symbol, strategy_name.value,
                         ", ".join(gate.failures) if gate.failures else "unknown",
                     )
+
+    def _run_single_backtest(self, symbol: str, strategy_name: StrategyName, results: list) -> None:
+        """Run ONE specific strategy backtest for validation. No quality gate."""
+        from tradingbot.strategy.strategies import STRATEGY_REGISTRY
+
+        strategy = STRATEGY_REGISTRY.get(strategy_name)
+        if strategy is None:
+            return
+
+        df = None
+        if getattr(self, '_duckdb', None) is not None:
+            df = self._duckdb.read(symbol, "15m", days=180)
+        if (df is None or df.empty) and self._candles is not None:
+            from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
+            df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
+        if df is None or len(df) == 0:
+            return
+
+        log.info("Validating %s/%s (%d candles)", symbol, strategy_name.value, len(df))
+        report = self._backtest.run(symbol, df, strategy)
+        if report.total_trades >= 3:
+            from dataclasses import asdict
+            results.append(asdict(report))
