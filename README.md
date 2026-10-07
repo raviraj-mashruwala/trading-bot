@@ -14,17 +14,88 @@ setups before the open; a deterministic executor follows the plan during the ses
 Analysis and execution are fully decoupled — run the analysis the night before or
 the morning of, it makes no difference to the executor.
 
+## Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| Python | >= 3.12 | [python.org](https://www.python.org/downloads/) — check "Add to PATH" on Windows |
+| Node.js | >= 20 LTS | [nodejs.org](https://nodejs.org/) |
+| Git | any recent | [git-scm.com](https://git-scm.com/downloads) |
+
 ## Setup
 
+### 1. Clone and enter the repo
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-cp .env.example .env    # then fill in your keys
+git clone https://github.com/raviraj-mashruwala/trading-bot.git
+cd trading-bot
 ```
+
+### 2. Python backend
+
+**macOS / Linux:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+**Windows (PowerShell):**
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+```
+
+**Windows (Command Prompt):**
+```cmd
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -e ".[dev]"
+```
+
+### 3. Environment variables
+
+```bash
+cp .env.example .env   # Windows: copy .env.example .env
+```
+
+Edit `.env` and fill in your keys:
+- `ANTHROPIC_API_KEY` — required, get from [console.anthropic.com](https://console.anthropic.com/)
+- `KITE_API_KEY` / `KITE_API_SECRET` — required for live/paper trading, get from [Kite Connect](https://developers.kite.trade/)
+- `TYPESAFE_API_KEY` — optional, enables Jev quality scoring
+
+### 4. Frontend dashboard
+
+```bash
+cd web
+npm install
+cd ..
+```
+
+### 5. Configuration
 
 Edit `config.toml` to set your capital and risk limits. It starts in paper mode.
 
-## Usage
+## Running
+
+### Start the API server + frontend together
+
+**Terminal 1 — API server:**
+```bash
+# activate venv first (see step 2)
+uvicorn tradingbot.api.app:create_app --factory --reload --port 8000
+```
+
+**Terminal 2 — Frontend:**
+```bash
+cd web
+npm run dev
+```
+
+Dashboard available at `http://localhost:3000`.
+
+### CLI commands
 
 ```bash
 tradingbot analyze                 # write tomorrow's plan
@@ -47,5 +118,6 @@ then change `mode = "live"` in `config.toml`.
 ## Testing
 
 ```bash
-pytest tests/ -v
+pytest tests/ -v         # backend
+cd web && npm test       # frontend
 ```
