@@ -213,6 +213,15 @@ export interface Setup {
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
+  backtest_status?: "validated" | "failed" | "unvalidated";
+  backtest_win_rate?: number;
+  backtest_profit_factor?: number;
+  backtest_expectancy_r?: number;
+  backtest_total_trades?: number;
+  jev_quality_score?: number;
+  jev_overfit_risk?: number;
+  jev_credibility?: number;
+  jev_pass?: boolean;
 }
 
 export interface RankedSuggestion {

@@ -98,6 +98,40 @@ export function SetupCard({ suggestion }: { suggestion: RankedSuggestion }) {
         {setup.reasoning && <span className="ml-2">— {setup.reasoning}</span>}
       </div>
 
+      {/* Validation scores */}
+      {(setup.backtest_status || setup.jev_quality_score != null) && (
+        <div className="flex items-center gap-4 mb-3 text-[10px]">
+          {setup.backtest_status && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[#5a6a7f]">Backtest:</span>
+              <span className={
+                setup.backtest_status === "validated" ? "text-[#2da44e]" :
+                setup.backtest_status === "failed" ? "text-[#f85149]" :
+                "text-[#d4a015]"
+              }>
+                {setup.backtest_status}
+              </span>
+              {setup.backtest_win_rate != null && (
+                <span className="text-[#5a6a7f]">
+                  WR:{(setup.backtest_win_rate * 100).toFixed(0)}% PF:{setup.backtest_profit_factor?.toFixed(1)} E:{setup.backtest_expectancy_r?.toFixed(2)}R ({setup.backtest_total_trades}t)
+                </span>
+              )}
+            </div>
+          )}
+          {setup.jev_quality_score != null && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[#5a6a7f]">Jev:</span>
+              <span className={setup.jev_pass ? "text-[#2da44e]" : "text-[#d4a015]"}>
+                Q:{(setup.jev_quality_score * 100).toFixed(0)}%
+              </span>
+              <span className="text-[#5a6a7f]">
+                overfit:{(setup.jev_overfit_risk ?? 0).toFixed(0)}% cred:{((setup.jev_credibility ?? 0) * 100).toFixed(0)}%
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       {(setup.status === "approved" || setup.status === "proposed") && (
         <div className="flex items-center gap-2">
