@@ -221,7 +221,12 @@ class Executor:
             )
             return
 
-        stale_seconds = (now - symbol_state.timestamp).total_seconds()
+        state_ts = symbol_state.timestamp
+        if now.tzinfo is not None and state_ts.tzinfo is None:
+            state_ts = state_ts.replace(tzinfo=now.tzinfo)
+        elif now.tzinfo is None and state_ts.tzinfo is not None:
+            state_ts = state_ts.replace(tzinfo=None)
+        stale_seconds = (now - state_ts).total_seconds()
         if stale_seconds > 120:
             state.waiting = True
             logger.warning(

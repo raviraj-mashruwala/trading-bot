@@ -477,11 +477,6 @@ def build_shortlist_user_prompt(
             f"    candlestick_pattern={fs.get('candlestick_pattern', 'N/A')}, "
             f"volume_profile={fs.get('volume_profile', 'N/A')}",
         ]
-        if "jev_composite" in s:
-            parts.append(
-                f"    jev_composite={s['jev_composite']:.4f}, "
-                f"jev_setup_confidence={s.get('jev_setup_confidence', 0):.4f}"
-            )
         parts.append("  </stock>")
         stock_lines.append("\n".join(parts))
 
