@@ -136,8 +136,12 @@ SHORTLIST_SYSTEM = (
     "3. **Technical Setup Quality (25%)** — Combine price_structure, "
     "candlestick_pattern, and atr_expansion. Strong patterns at key levels "
     "with expanding ATR = actionable.\n"
-    "4. **Risk:Reward (25%)** — Based on price_structure and gap_analysis, "
-    "is there a clear 2:1+ R:R? Tight stops with room to run.\n\n"
+    "4. **Setup Potential (25%)** — Based on price_structure, gap_analysis, "
+    "and volume_profile, does this stock look like it has room to move? "
+    "Stocks at extremes (far from VWAP/SMA, overbought/oversold) or at "
+    "key levels (breakout/breakdown) have higher potential. Exact R:R "
+    "is assessed later with intraday data — at this stage, focus on "
+    "whether a meaningful move is plausible.\n\n"
 
 
     "## Process\n"
@@ -462,7 +466,7 @@ def build_shortlist_user_prompt(
             sector_block = f"\n\n<sectors>\n{sector_lines}\n</sectors>"
 
     stock_lines = []
-    for s in scored_stocks[:30]:
+    for s in scored_stocks[:50]:
         fs = s.get("factor_scores", {})
         parts = [
             f"  <stock symbol=\"{s['symbol']}\" composite_score=\"{s['composite_score']:.0f}\" "
@@ -485,8 +489,9 @@ def build_shortlist_user_prompt(
     task_block = (
         "<task>\n"
         "  Select 10-15 high-conviction intraday candidates with direction and reasoning.\n"
-        "  Use all factor scores and Jev AI scores (when present) to inform your selection.\n"
-        "  Higher composite_score, volume_surge, and candlestick_pattern scores suggest stronger setups.\n"
+        "  Higher factor scores mean stronger signal magnitude in EITHER direction — a stock\n"
+        "  with high scores may be a strong long OR a strong short candidate. Evaluate the\n"
+        "  indicators to determine which direction makes sense, not just the score value.\n"
         "  Note: factor scores of exactly 50.0 may indicate unavailable data — treat as neutral, not as signal.\n"
         "</task>"
     )

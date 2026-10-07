@@ -71,7 +71,7 @@ def score_patterns(df: pd.DataFrame) -> float:
     elif _is_evening_star(c0, c1, c2):
         signed += _SCORE["evening_star"]
 
-    return float(max(0.0, min(100.0, 50.0 + signed)))
+    return float(max(0.0, min(100.0, 50.0 + abs(signed))))
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

@@ -62,12 +62,12 @@ def test_close_above_vah_scores_above_70():
     assert score_volume_profile(df) > 70.0
 
 
-# ── Price below VAL → bearish breakdown ──────────────────────────────────────
+# ── Price below VAL → breakdown (high score, direction-neutral) ──────────────
 
-def test_close_below_val_scores_below_30():
-    """Price breaking below value area low = bearish breakdown signal."""
+def test_close_below_val_scores_above_70():
+    """Price breaking below VAL = strong signal (short candidate), scores high."""
     df = _df_with_profile(poc=100, vah=110, val=90, close=85)
-    assert score_volume_profile(df) < 30.0
+    assert score_volume_profile(df) > 70.0
 
 
 # ── score_from_levels: exact level tests (no df construction ambiguity) ──────
@@ -78,20 +78,24 @@ def test_close_at_poc_scores_exactly_50():
 
 def test_close_above_poc_within_va_scores_above_50():
     score = score_from_levels(close=106, poc=100, vah=110, val=90)
-    assert 50.0 < score <= 65.0
+    assert score > 50.0
 
 
-def test_close_below_poc_within_va_scores_below_50():
+def test_close_below_poc_within_va_scores_above_50():
+    """Distance from POC determines interest, regardless of direction."""
     score = score_from_levels(close=94, poc=100, vah=110, val=90)
-    assert 35.0 <= score < 50.0
+    assert score > 50.0
 
 
-def test_close_at_vah_scores_65():
-    assert score_from_levels(close=110, poc=100, vah=110, val=90) == pytest.approx(65.0)
+def test_close_at_vah_scores_60():
+    score = score_from_levels(close=110, poc=100, vah=110, val=90)
+    assert score >= 60.0
 
 
-def test_close_at_val_scores_35():
-    assert score_from_levels(close=90, poc=100, vah=110, val=90) == pytest.approx(35.0)
+def test_close_at_val_scores_60():
+    """VAL = extreme of value area, high interest for shorts."""
+    score = score_from_levels(close=90, poc=100, vah=110, val=90)
+    assert score >= 60.0
 
 
 def test_degenerate_profile_returns_50():

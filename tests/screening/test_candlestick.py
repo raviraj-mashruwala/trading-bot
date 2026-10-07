@@ -78,35 +78,34 @@ def test_morning_star_scores_above_65():
     assert score_patterns(df) > 65.0
 
 
-# ── Bearish patterns → score < 50 ────────────────────────────────────────────
+# ── Bearish patterns → score > 50 (strong signal, direction-neutral) ─────────
 
-def test_bearish_marubozu_scores_below_30():
-    """Full bearish body, no wicks → very strong bearish signal."""
+def test_bearish_marubozu_scores_above_70():
+    """Full bearish body = strong signal magnitude, scores high."""
     marubozu = _candle(115, 115, 100, 100)  # open=high, close=low
     df = _df(*[_candle(112, 116, 109, 113)] * 9, marubozu)
-    assert score_patterns(df) < 30.0
+    assert score_patterns(df) > 70.0
 
 
-def test_shooting_star_scores_below_40():
-    """Small body at bottom, long upper wick ≥ 2× body → bearish reversal."""
-    # body = 2, upper wick = 8, lower wick = 0.5
+def test_shooting_star_scores_above_60():
+    """Shooting star = strong bearish signal, scores high."""
     star = _candle(110, 120, 109.5, 108)
     df = _df(*[_candle(106, 109, 104, 108)] * 9, star)
-    assert score_patterns(df) < 40.0
+    assert score_patterns(df) > 60.0
 
 
-def test_bearish_engulfing_scores_below_35():
-    """Curr bearish body engulfs prev bullish body."""
+def test_bearish_engulfing_scores_above_65():
+    """Bearish engulfing = strong signal magnitude, scores high."""
     prev_bullish = _candle(100, 107, 99, 106)
-    curr_bearish = _candle(107, 108, 97, 98)  # opens higher, closes lower than prev open
+    curr_bearish = _candle(107, 108, 97, 98)
     df = _df(*[_candle(100, 104, 98, 102)] * 8, prev_bullish, curr_bearish)
-    assert score_patterns(df) < 35.0
+    assert score_patterns(df) > 65.0
 
 
-def test_evening_star_scores_below_35():
-    """Large bullish → small body (star) → large bearish = evening star."""
+def test_evening_star_scores_above_65():
+    """Evening star = strong bearish signal, scores high."""
     large_bull = _candle(100, 115, 99, 114)
     small_star = _candle(114, 117, 113, 115)
     large_bear = _candle(115, 116, 101, 102)
     df = _df(*[_candle(99, 102, 97, 101)] * 7, large_bull, small_star, large_bear)
-    assert score_patterns(df) < 35.0
+    assert score_patterns(df) > 65.0

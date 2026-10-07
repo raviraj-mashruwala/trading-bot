@@ -19,8 +19,10 @@ _MIN_CANDLES = 5
 
 
 def score_from_levels(close: float, poc: float, vah: float, val: float) -> float:
-    """Score 0-100 given exact volume profile levels and current close.
+    """Score 0-100 based on distance from value area (direction-neutral).
 
+    Stocks far from the value area (above VAH or below VAL) score high
+    regardless of direction — both breakouts and breakdowns are interesting.
     Exposed for direct testing. score_volume_profile calls this internally.
     """
     if vah <= val or (vah == poc == val):
@@ -34,15 +36,11 @@ def score_from_levels(close: float, poc: float, vah: float, val: float) -> float
 
     if close < val:
         deficit = (val - close) / va_range
-        return max(0.0, 30.0 - deficit * 30.0)
+        return min(100.0, 70.0 + deficit * 30.0)
 
-    # Inside value area: val→35, poc→50, vah→65
-    if close >= poc:
-        t = (close - poc) / (vah - poc) if vah > poc else 0.5
-        return 50.0 + t * 15.0
-    else:
-        t = (close - val) / (poc - val) if poc > val else 0.5
-        return 35.0 + t * 15.0
+    # Inside value area: distance from POC determines interest
+    dist_from_poc = abs(close - poc) / va_range
+    return 50.0 + dist_from_poc * 20.0
 
 
 def score_volume_profile(df: pd.DataFrame) -> float:
