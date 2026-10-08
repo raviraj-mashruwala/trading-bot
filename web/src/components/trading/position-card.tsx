@@ -1,79 +1,64 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MomentumBadge } from "@/components/trading/momentum-badge";
 import type { ExecutionPosition } from "@/types";
 
 function fmt(n: number): string {
-  const abs = Math.abs(n);
-  const formatted = abs.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  return n < 0 ? `-₹${formatted}` : `₹${formatted}`;
+  return n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
+
+function progressPct(entry: number, target: number, current: number): number {
+  const range = Math.abs(target - entry);
+  if (range === 0) return 0;
+  const distance = Math.abs(current - entry);
+  return Math.min(100, Math.max(0, (distance / range) * 100));
 }
 
 export function PositionCard({ position: p }: { position: ExecutionPosition }) {
-  const trailed = p.original_stop != null && p.original_stop !== p.current_stop;
+  const isLong = p.direction === "long";
+  const isProfit = p.unrealised_pnl >= 0;
+  const pct = progressPct(p.entry_price, p.entry_price + (p.entry_price - p.current_stop) * 2, p.last_price);
 
   return (
-    <Card className="border-border/50 bg-card/80">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-sm font-semibold">{p.symbol}</CardTitle>
+    <div className="py-3 border-b border-[rgba(255,255,255,0.04)] last:border-0">
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-[#e6edf3]">{p.symbol}</span>
+          <span className={`text-[11px] font-medium ${isLong ? "text-[#2da44e]" : "text-[#f85149]"}`}>
+            {p.direction.toUpperCase()} x{p.quantity}
+          </span>
           <MomentumBadge momentum={p.momentum} />
-        </div>
-        <div className="flex items-center gap-1.5">
-          {p.phase === "vetoed" && (
-            <span className="rounded bg-[#f85149]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#f85149]">
-              Vetoed
-            </span>
-          )}
           {p.phase === "waiting" && (
-            <span className="rounded bg-[#d4a015]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#d4a015]">
-              Waiting
-            </span>
+            <span className="text-[10px] text-[#d4a015]">waiting</span>
           )}
-          <span className={`rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${p.direction === "long" ? "bg-[#2da44e]/15 text-[#2da44e]" : "bg-[#f85149]/15 text-[#f85149]"}`}>
-            {p.direction} x{p.quantity}
-          </span>
         </div>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1.5 px-4 pb-4 pt-0 text-[13px]">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Entry</span>
-          <span className="font-mono-nums">{fmt(p.entry_price)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">LTP</span>
-          <span className="font-mono-nums font-medium">{fmt(p.last_price)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Stop</span>
-          <span className="font-mono-nums">
-            {trailed && (
-              <span className="text-muted-foreground/50 line-through mr-1">{fmt(p.original_stop!)}</span>
-            )}
-            <span className="text-[#f85149]/80">{fmt(p.current_stop)}</span>
-            {trailed && (
-              <span className="ml-1 text-[10px] text-blue-500">trailed</span>
-            )}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">T1</span>
-          <span className="text-xs">{p.target_1_booked ? "Booked" : "Pending"}</span>
-        </div>
-        {p.last_decision?.reason && (p.phase === "vetoed" || p.phase === "waiting") && (
-          <div className="col-span-2 text-[11px] text-muted-foreground/70 italic truncate">
-            {p.last_decision.reason}
-          </div>
-        )}
-        <div className="col-span-2 mt-1 flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5">
-          <span className="text-[11px] text-muted-foreground">Unrealised</span>
-          <span
-            data-testid="unrealised-pnl"
-            className={`font-mono-nums text-base font-bold ${p.unrealised_pnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}
-          >
-            {fmt(p.unrealised_pnl)}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+        <span
+          className={`font-mono-nums text-base font-semibold ${isProfit ? "text-[#2da44e]" : "text-[#f85149]"}`}
+        >
+          {isProfit ? "+" : "-"}₹{fmt(Math.abs(p.unrealised_pnl))}
+        </span>
+      </div>
+
+      {/* Progress bar: SL ─── entry ─── current ─── T1 */}
+      <div className="relative h-1.5 w-full rounded-full bg-[rgba(255,255,255,0.04)] mb-2">
+        <div
+          className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${isProfit ? "bg-[#2da44e]" : "bg-[#f85149]"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Price markers */}
+      <div className="flex items-center justify-between text-[11px] font-mono-nums">
+        <span className="text-[#f85149]/60">SL {fmt(p.current_stop)}</span>
+        <span className="text-muted-foreground">@ {fmt(p.entry_price)}</span>
+        <span className="text-[#e6edf3]">{fmt(p.last_price)}</span>
+        <span className={`${p.target_1_booked ? "text-[#2da44e]" : "text-muted-foreground"}`}>
+          T1 {p.target_1_booked ? "booked" : "pending"}
+        </span>
+      </div>
+
+      {p.last_decision?.reason && (p.phase === "vetoed" || p.phase === "waiting") && (
+        <p className="mt-1.5 text-[10px] text-muted-foreground/60 truncate">{p.last_decision.reason}</p>
+      )}
+    </div>
   );
 }

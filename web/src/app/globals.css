@@ -3,26 +3,26 @@
 :root {
   color-scheme: dark;
   --background: #070a0f;
-  --foreground: #c9d1d9;
-  --card: #0f1419;
-  --card-foreground: #c9d1d9;
+  --foreground: #b8c0c8;
+  --card: #0c1018;
+  --card-foreground: #b8c0c8;
   --primary: #d4a015;
   --primary-foreground: #070a0f;
   --secondary: #1c2736;
-  --secondary-foreground: #c9d1d9;
-  --muted: #161d26;
+  --secondary-foreground: #b8c0c8;
+  --muted: #131a24;
   --muted-foreground: #5a6a7f;
-  --accent: #161d26;
-  --accent-foreground: #c9d1d9;
+  --accent: #131a24;
+  --accent-foreground: #b8c0c8;
   --destructive: #f85149;
   --destructive-foreground: #ffffff;
-  --border: #1c2736;
-  --input: #1c2736;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.06);
   --ring: #d4a015;
   --profit: #2da44e;
   --loss: #f85149;
   --text-heading: #e6edf3;
-  --surface-elevated: #161d26;
+  --surface-elevated: #131a24;
 }
 
 @theme inline {
@@ -77,6 +77,13 @@ h1, h2, h3 {
   font-variant-numeric: tabular-nums;
 }
 
+.hero-number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -87,7 +94,7 @@ h1, h2, h3 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
 }
 

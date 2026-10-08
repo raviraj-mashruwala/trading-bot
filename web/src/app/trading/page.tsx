@@ -37,30 +37,53 @@ export default function TradingPage() {
   const positions = statusData?.positions ?? [];
   const totalUnrealisedPnl = positions.reduce((sum, p) => sum + (p.unrealised_pnl ?? 0), 0);
   const hasPositions = positions.length > 0;
+  const isRunning = execStatus === "running";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold">Live Trading</h1>
-          {hasPositions && (
-            <span className={`text-lg font-mono font-semibold ${totalUnrealisedPnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}>
-              {totalUnrealisedPnl >= 0 ? "+" : ""}₹{totalUnrealisedPnl.toFixed(0)}
-            </span>
+    <div className="space-y-5">
+      {/* Hero bar — status + P&L + countdown */}
+      <div className="flex items-end justify-between">
+        <div>
+          {hasPositions ? (
+            <>
+              <p className="text-xs text-muted-foreground mb-1">Unrealised P&L</p>
+              <p className={`hero-number text-4xl ${totalUnrealisedPnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}>
+                {totalUnrealisedPnl >= 0 ? "+" : "-"}₹{Math.abs(totalUnrealisedPnl).toFixed(0)}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground mb-1">
+                {isRunning ? "Waiting for entry" : "Ready to trade"}
+              </p>
+              <p className="hero-number text-4xl text-[#e6edf3]">
+                {positions.length} positions
+              </p>
+            </>
           )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
           <SquareOffCountdown />
           <TickerHealthIndicator health={statusData?.ticker_health} />
+          <div className="flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-[#2da44e] animate-pulse" : "bg-muted-foreground/30"}`} />
+            <span className="text-xs text-muted-foreground">{execStatus}</span>
+          </div>
         </div>
       </div>
 
       <ExecutionControls />
 
-      <div>
-        <h2 className="mb-3 text-lg font-semibold">Positions</h2>
-        <PositionsGrid positions={positions} />
-      </div>
+      {/* Positions — inline, no card wrapper */}
+      {hasPositions && (
+        <div className="space-y-2">
+          <PositionsGrid positions={positions} />
+        </div>
+      )}
+
+      {!hasPositions && isRunning && (
+        <p className="text-sm text-muted-foreground py-8 text-center">Evaluating entry conditions...</p>
+      )}
 
       <DecisionTimeline decisions={decisions} />
 

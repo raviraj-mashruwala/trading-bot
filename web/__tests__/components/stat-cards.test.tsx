@@ -17,9 +17,9 @@ describe("StatCards", () => {
   it("renders all 4 stat cards with data", () => {
     render(<StatCards stats={mockStats} />);
     expect(screen.getByText("Total P&L")).toBeInTheDocument();
-    expect(screen.getByText("Win Rate")).toBeInTheDocument();
+    expect(screen.getByText("Win rate")).toBeInTheDocument();
     expect(screen.getByText("Trades")).toBeInTheDocument();
-    expect(screen.getByText("Max Drawdown")).toBeInTheDocument();
+    expect(screen.getByText("Max drawdown")).toBeInTheDocument();
     expect(screen.getByText(/5,20[01]/)).toBeInTheDocument();
     expect(screen.getByText("60%")).toBeInTheDocument();
     expect(screen.getByText("15")).toBeInTheDocument();
