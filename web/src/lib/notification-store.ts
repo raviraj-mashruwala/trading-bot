@@ -73,3 +73,19 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       notifications: s.notifications.filter((n) => n.id !== id),
     })),
 }));
+
+export function toast(type: Notification["type"], title: string, message: string) {
+  const { notifications, dismiss } = useNotificationStore.getState();
+  const id = nextId++;
+  useNotificationStore.setState({
+    notifications: [
+      { id, type, title, message, timestamp: Date.now() },
+      ...notifications,
+    ].slice(0, 10),
+  });
+  setTimeout(() => {
+    useNotificationStore.setState((s) => ({
+      notifications: s.notifications.filter((n) => n.id !== id),
+    }));
+  }, 8000);
+}

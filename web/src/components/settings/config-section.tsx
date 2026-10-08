@@ -54,7 +54,7 @@ export function ConfigSection({ name, fields, onSave }: Props) {
   return (
     <div className="rounded-lg border border-border/50 bg-card/80 p-4">
       <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#d4a015]/80">{name}</div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {Object.entries(values).map(([key, val]) => (
           <div key={key}>
             <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground/60">{key}</label>

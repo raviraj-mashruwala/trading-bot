@@ -44,7 +44,7 @@ function Table({ title, data }: { title: string; data: Record<string, StrategySt
 
 export function StrategyBreakdown({ stats }: { stats: PerformanceStatsData }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       <Table title="By Strategy" data={stats.by_strategy} />
       <Table title="By Regime" data={stats.by_regime} />
     </div>

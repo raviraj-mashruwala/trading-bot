@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Trade } from "@/types";
 
 function fmt(n: number): string {
@@ -23,8 +24,12 @@ export function TradeTable({ trades }: { trades: Trade[] }) {
       </thead>
       <tbody>
         {trades.map((t, i) => (
-          <tr key={i} className="border-b border-border/20 last:border-0 transition-colors hover:bg-muted/20">
-            <td className="py-2 font-medium text-foreground/90">{t.symbol}</td>
+          <tr key={i} className="border-b border-border/20 last:border-0 transition-colors hover:bg-muted/20 cursor-pointer">
+            <td className="py-2 font-medium text-foreground/90">
+              <Link href={`/history/trade?symbol=${t.symbol}&date=${t.trade_date}`} className="hover:text-[#d4a015]">
+                {t.symbol}
+              </Link>
+            </td>
             <td className="text-muted-foreground">{t.strategy}</td>
             <td>
               <span className={`text-[11px] font-medium uppercase ${t.direction === "long" ? "text-[#2da44e]" : "text-[#f85149]"}`}>

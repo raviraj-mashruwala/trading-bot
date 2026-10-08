@@ -7,6 +7,8 @@ import { usePipelineStore } from "@/lib/store";
 import { useExecutionStore } from "@/lib/execution-store";
 import { useNotificationStore } from "@/lib/notification-store";
 import { NotificationToasts } from "@/components/ui/notification-toast";
+import { KeyboardShortcutsHelp } from "@/components/ui/keyboard-shortcuts-help";
+import { useKeyboardShortcuts } from "@/lib/use-keyboard-shortcuts";
 
 let browserQueryClient: QueryClient | undefined;
 
@@ -19,6 +21,7 @@ function getQueryClient() {
 }
 
 export function Providers({ children }: { children: ReactNode }) {
+  useKeyboardShortcuts();
   const handleEvent = usePipelineStore((s) => s.handleEvent);
   const handleExecEvent = useExecutionStore((s) => s.handleEvent);
   const handleNotification = useNotificationStore((s) => s.handleEvent);
@@ -44,6 +47,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={getQueryClient()}>
       {children}
       <NotificationToasts />
+      <KeyboardShortcutsHelp />
     </QueryClientProvider>
   );
 }

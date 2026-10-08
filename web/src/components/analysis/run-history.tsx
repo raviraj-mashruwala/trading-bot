@@ -45,7 +45,7 @@ export function RunHistory() {
               {run.market_regime.replace(/_/g, " ")}
             </span>
           </div>
-          <div className="grid grid-cols-4 gap-2 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
             <div>
               <span className="text-[#5a6a7f] block">Scanned</span>
               <p className="font-mono text-[#c9d1d9]">{run.total_scanned}</p>

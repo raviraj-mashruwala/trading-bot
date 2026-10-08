@@ -16,7 +16,7 @@ export function StatCards({ stats }: { stats: TradeStats }) {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {cards.map((c) => (
         <Card key={c.title} className="border-border/50 bg-card/80">
           <CardContent className="p-4">

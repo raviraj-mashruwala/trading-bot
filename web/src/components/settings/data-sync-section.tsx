@@ -147,7 +147,7 @@ export function DataSyncSection() {
       {freshness && Object.keys(freshness).length > 0 && (
         <div className="mb-3 space-y-1">
           <div className="text-xs font-medium text-muted-foreground">Cache freshness:</div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs">
             {Object.entries(freshness).map(([interval, date]) => (
               <div key={interval} className="flex justify-between">
                 <span className="text-muted-foreground">{interval}</span>

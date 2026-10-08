@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { PerformanceCards } from "@/components/review/performance-cards";
 import { StrategyBreakdown } from "@/components/review/strategy-breakdown";
 import { ConfluenceChart } from "@/components/review/confluence-chart";
 import { ScorecardTable } from "@/components/review/scorecard-table";
 import { NightlyReviewCard } from "@/components/review/nightly-review-card";
+import { NightlyReviewHistory } from "@/components/review/nightly-review-history";
 
 const PERIODS = [
   { label: "7d", days: 7 },
@@ -20,8 +21,12 @@ function todayStr() {
 }
 
 export default function ReviewPage() {
-  const [days, setDays] = useState(30);
-  const [scorecardDate, setScorecardDate] = useState(todayStr);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const days = Number(searchParams.get("days") ?? 30);
+  const scorecardDate = searchParams.get("date") ?? todayStr();
+  const setDays = (d: number) => router.replace(`/review?days=${d}&date=${scorecardDate}`);
+  const setScorecardDate = (d: string) => router.replace(`/review?days=${days}&date=${d}`);
 
   const { data: stats } = useQuery({
     queryKey: ["performance-stats", days],
@@ -71,6 +76,7 @@ export default function ReviewPage() {
       )}
 
       <NightlyReviewCard review={nightlyReview} date={scorecardDate} />
+      <NightlyReviewHistory />
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">

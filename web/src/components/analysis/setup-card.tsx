@@ -50,7 +50,7 @@ export function SetupCard({ suggestion }: { suggestion: RankedSuggestion }) {
       </div>
 
       {/* Price levels */}
-      <div className="grid grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <div>
           <span className="text-xs text-[#5a6a7f] block">Entry</span>
           <span className="font-mono text-sm text-[#c9d1d9]">₹{setup.entry_price.toFixed(1)}</span>

@@ -18,8 +18,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trading Bot Dashboard",
-  description: "Trading bot analysis, execution, and monitoring dashboard",
+  title: "TradingBot",
+  description: "Automated intraday equity trading dashboard",
+  icons: { icon: "/icon.svg" },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -35,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Sidebar />
             <div className="flex flex-1 flex-col overflow-hidden">
               <TopBar />
-              <main className="flex-1 overflow-auto p-6">{children}</main>
+              <main className="flex-1 overflow-auto p-3 md:p-6">{children}</main>
             </div>
           </div>
         </Providers>

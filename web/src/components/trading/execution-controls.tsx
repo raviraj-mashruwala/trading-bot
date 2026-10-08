@@ -5,10 +5,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useExecutionStore } from "@/lib/execution-store";
 import { Button } from "@/components/ui/button";
+import { AlertDialog } from "@/components/ui/dialog";
 
 export function ExecutionControls() {
   const [selectedMode, setSelectedMode] = useState<string>("");
   const [selectedPlan, setSelectedPlan] = useState<string>("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
   const execStatus = useExecutionStore((s) => s.status);
   const reset = useExecutionStore((s) => s.reset);
@@ -34,6 +37,28 @@ export function ExecutionControls() {
 
   const isRunning = execStatus === "running";
   const hasPlans = plans && plans.length > 0;
+
+  const handleStart = () => {
+    if (mode === "live") {
+      setConfirmOpen(true);
+    } else {
+      startMutation.mutate();
+    }
+  };
+
+  const handleConfirmStart = () => {
+    startMutation.mutate();
+    setConfirmOpen(false);
+  };
+
+  const handleStop = () => {
+    setStopConfirmOpen(true);
+  };
+
+  const handleConfirmStop = () => {
+    stopMutation.mutate();
+    setStopConfirmOpen(false);
+  };
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
@@ -62,7 +87,7 @@ export function ExecutionControls() {
           </select>
 
           <Button
-            onClick={() => startMutation.mutate()}
+            onClick={handleStart}
             disabled={startMutation.isPending || !hasPlans}
             className="bg-[#d4a015] text-black font-semibold hover:bg-[#d4a015]"
           >
@@ -77,11 +102,11 @@ export function ExecutionControls() {
         <Button
           variant="destructive"
           size="lg"
-          className="font-bold shadow-lg shadow-red-500/20"
-          onClick={() => stopMutation.mutate()}
+          className="font-bold"
+          onClick={handleStop}
           disabled={stopMutation.isPending}
         >
-          ⛔ Emergency Stop
+          Emergency Stop
         </Button>
       )}
 
@@ -93,6 +118,28 @@ export function ExecutionControls() {
         <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-[#2da44e] animate-pulse" : execStatus === "done" ? "bg-[#d4a015]" : "bg-muted-foreground/30"}`} />
         <span className="text-xs text-muted-foreground uppercase tracking-wider">{execStatus}</span>
       </div>
+
+      <AlertDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmStart}
+        title="Start Live Execution?"
+        description="This will place real orders on NSE through Kite. Mode: LIVE."
+        confirmLabel="Start Live Trading"
+        variant="destructive"
+        loading={startMutation.isPending}
+      />
+
+      <AlertDialog
+        open={stopConfirmOpen}
+        onClose={() => setStopConfirmOpen(false)}
+        onConfirm={handleConfirmStop}
+        title="Emergency Stop?"
+        description="This will cancel all pending orders and close all open positions at market price."
+        confirmLabel="Stop Everything"
+        variant="destructive"
+        loading={stopMutation.isPending}
+      />
     </div>
   );
 }
