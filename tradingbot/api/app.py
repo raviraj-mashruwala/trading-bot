@@ -60,12 +60,12 @@ def create_app(
 
         IST = ZoneInfo("Asia/Kolkata")
 
-        async def _nightly_review(state_ref):
+        async def _nightly_review(state_ref, review_date=None):
             try:
                 import logging
                 _log = logging.getLogger(__name__)
-                _log.info("Nightly review starting")
-                await state_ref.event_bus.emit("review.started", {})
+                _log.info("Nightly review starting for %s", review_date or "today")
+                await state_ref.event_bus.emit("review.started", {"trade_date": review_date or ""})
                 from tradingbot.core.llm.anthropic_provider import build_provider
                 from tradingbot.analysis.nightly_reviewer import run_nightly_review
                 llm = build_provider(state_ref.config.llm, state_ref.config.secrets)
@@ -74,6 +74,7 @@ def create_app(
                 try:
                     result = await run_nightly_review(
                         db, llm,
+                        trade_date=review_date,
                         setup_store=getattr(state_ref, "setup_store", None),
                         candle_store=getattr(state_ref, "candle_store", None),
                     )
@@ -121,11 +122,41 @@ def create_app(
                 import logging
                 logging.getLogger(__name__).warning("Auto-start execution failed", exc_info=True)
 
+        async def _auto_run_analysis(state_ref):
+            try:
+                import logging
+                _log = logging.getLogger(__name__)
+                from tradingbot.scanner.calendar import next_trading_day
+                from tradingbot.core.models import now_ist
+                now = now_ist()
+                target = next_trading_day(now.date())
+
+                # Check if plan already exists for target date
+                try:
+                    existing_plan = state_ref.plan_store.load(str(target))
+                    if existing_plan and existing_plan.legs:
+                        _log.info("Plan for %s already exists (%d legs) — skipping analysis", target, len(existing_plan.legs))
+                        return
+                except Exception:
+                    pass
+
+                _log.info("Auto-running analysis for %s", target)
+                await state_ref.event_bus.emit("analysis.auto_start", {"trade_date": str(target)})
+                from tradingbot.api.analysis_routes import _run_analysis
+                await _run_analysis(state_ref, target)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).warning("Auto-analysis failed", exc_info=True)
+
         async def _daily_scheduler():
-            from tradingbot.scheduler import should_start_execution, should_sync, should_review
+            from tradingbot.scheduler import (
+                should_start_execution, should_sync, should_run_analysis,
+                should_review, previous_day,
+            )
             from tradingbot.scanner.calendar import is_trading_day
             last_exec_date = None
             last_sync_date = None
+            last_analysis_date = None
             last_review_date = None
             while True:
                 await asyncio.sleep(30)
@@ -157,17 +188,25 @@ def create_app(
                             state.sync_task = asyncio.create_task(_sync_with_events(state))
                         last_sync_date = today
 
-                    if should_review(now_time, today, last_review_date, trading):
+                    if should_run_analysis(now_time, today, last_analysis_date, trading):
                         state = app.state.app_state
+                        asyncio.create_task(_auto_run_analysis(state))
+                        last_analysis_date = today
+
+                    prev = previous_day(today)
+                    prev_trading = is_trading_day(prev)
+                    if should_review(now_time, today, last_review_date, prev_trading):
+                        state = app.state.app_state
+                        review_date = str(prev)
                         existing = Database(Path(state.data_dir) / "tradingbot.db")
                         existing.initialise()
-                        already_done = existing.get_nightly_review(str(today)) is not None
+                        already_done = existing.get_nightly_review(review_date) is not None
                         existing.close()
                         if not already_done:
-                            asyncio.create_task(_nightly_review(state))
+                            asyncio.create_task(_nightly_review(state, review_date))
                         else:
                             import logging
-                            logging.getLogger(__name__).info("Nightly review already exists for %s", today)
+                            logging.getLogger(__name__).info("Nightly review already exists for %s", review_date)
                         last_review_date = today
                 except Exception:
                     pass
