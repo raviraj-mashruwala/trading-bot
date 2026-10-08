@@ -26,7 +26,7 @@ export function RunHistory() {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-xs font-medium text-[#5a6a7f] uppercase tracking-wider">
+      <h3 className="text-xs font-medium text-[#5a6a7f]">
         Today&apos;s Runs
       </h3>
       {runs.map((run: AnalysisRun) => (

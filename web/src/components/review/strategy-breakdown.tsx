@@ -23,10 +23,10 @@ function Table({ title, data }: { title: string; data: Record<string, StrategySt
 
   return (
     <div className="rounded-lg border border-border/50 bg-card/80 p-4">
-      <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</h3>
+      <h3 className="mb-3 text-xs font-medium text-muted-foreground">{title}</h3>
       <table className="w-full">
         <thead>
-          <tr className="border-b border-border/50 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+          <tr className="border-b border-border/50 text-[11px] font-medium text-muted-foreground/60">
             <th className="pb-2 text-left">Name</th>
             <th className="pb-2 text-right">Trades</th>
             <th className="pb-2 text-right">Win %</th>

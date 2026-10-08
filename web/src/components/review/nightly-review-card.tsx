@@ -93,7 +93,7 @@ export function NightlyReviewCard({
 
           {lessons.length > 0 && (
             <div>
-              <h4 className="text-[10px] text-[#d4a015] font-semibold uppercase tracking-wider mb-1">
+              <h4 className="text-[10px] text-[#d4a015] font-semibold mb-1">
                 Lessons
               </h4>
               <ul className="space-y-1">
@@ -108,7 +108,7 @@ export function NightlyReviewCard({
 
           {improvements.length > 0 && (
             <div>
-              <h4 className="text-[10px] text-[#2da44e] font-semibold uppercase tracking-wider mb-1">
+              <h4 className="text-[10px] text-[#2da44e] font-semibold mb-1">
                 Improvements
               </h4>
               <ul className="space-y-1">

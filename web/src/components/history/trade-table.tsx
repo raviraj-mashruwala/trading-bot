@@ -11,7 +11,7 @@ export function TradeTable({ trades }: { trades: Trade[] }) {
   return (
     <table className="w-full text-[13px]">
       <thead>
-        <tr className="border-b border-border/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground/60">
+        <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground/60">
           <th className="py-2 font-medium">Symbol</th>
           <th className="font-medium">Strategy</th>
           <th className="font-medium">Dir</th>

@@ -116,7 +116,7 @@ export function KeepAwake() {
   return (
     <button
       onClick={active ? stop : start}
-      className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] uppercase tracking-wider transition-colors cursor-pointer ${
+      className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] transition-colors cursor-pointer ${
         active
           ? "bg-[#2da44e]/10 text-[#2da44e] border border-[#2da44e]/30"
           : "text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-[#161d26] border border-transparent"

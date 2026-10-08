@@ -34,7 +34,7 @@ export function RankedSetups() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-medium text-[#5a6a7f] uppercase tracking-wider">
+        <h3 className="text-xs font-medium text-[#5a6a7f]">
           Ranked Setups
         </h3>
         <div className="flex items-center gap-3 text-xs">

@@ -24,7 +24,7 @@ export function EquityCurve({ trades }: { trades: Trade[] }) {
     return (
       <Card className="border-border/50 bg-card/80">
         <CardContent className="p-4">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Equity Curve</div>
+          <div className="text-[11px] font-medium text-muted-foreground">Equity Curve</div>
           <div className="mt-8 text-center text-sm text-muted-foreground/50">No trades yet</div>
         </CardContent>
       </Card>
@@ -34,7 +34,7 @@ export function EquityCurve({ trades }: { trades: Trade[] }) {
   return (
     <Card className="border-border/50 bg-card/80">
       <CardContent className="p-4">
-        <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Equity Curve</div>
+        <div className="mb-3 text-[11px] font-medium text-muted-foreground">Equity Curve</div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />

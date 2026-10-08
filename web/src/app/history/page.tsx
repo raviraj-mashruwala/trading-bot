@@ -53,7 +53,7 @@ export default function HistoryPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Trade History</h1>
+        <h1 className="text-xl font-semibold">History</h1>
         <div className="flex items-center gap-2">
         {(trades?.length ?? 0) > 0 && (
           <button
@@ -63,7 +63,7 @@ export default function HistoryPage() {
             Export CSV
           </button>
         )}
-        <div className="flex gap-0.5 rounded-lg border border-border/50 bg-card/80 p-0.5">
+        <div className="flex gap-0.5 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#0c1018] p-0.5">
           {PERIODS.map((p) => (
             <button
               key={p.label}

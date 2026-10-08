@@ -26,7 +26,7 @@ export function ScorecardTable({ scorecards }: { scorecards: TradeScorecard[] })
     <div className="rounded-lg border border-border/50 bg-card/80 overflow-hidden">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-border/50 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+          <tr className="border-b border-border/50 text-[11px] font-medium text-muted-foreground/60">
             <th className="px-4 py-3 text-left">Symbol</th>
             <th className="px-3 py-3 text-left">Strategy</th>
             <th className="px-3 py-3 text-right">Pred Entry</th>

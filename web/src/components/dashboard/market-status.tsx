@@ -88,7 +88,7 @@ export function MarketStatus() {
             {/* Next session */}
             {data.status !== "open" && (
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Next</span>
+                <span className="text-[10px] text-muted-foreground/60">Next</span>
                 <span className="font-mono-nums text-xs text-foreground/80">
                   {formatSessionTime(data.next_session)}
                 </span>
@@ -99,7 +99,7 @@ export function MarketStatus() {
             {data.holidays.length > 0 && (
               <button
                 onClick={() => setShowHolidays(!showHolidays)}
-                className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors cursor-pointer"
+                className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors cursor-pointer"
               >
                 <span className={`transition-transform ${showHolidays ? "rotate-90" : ""}`}>▸</span>
                 {data.holidays.length} upcoming
@@ -110,7 +110,7 @@ export function MarketStatus() {
           <div className="flex items-center gap-2">
             {/* Stale data warning */}
             {!data.current_year_covered && (
-              <span className="text-[10px] uppercase tracking-wider text-[#f85149]">
+              <span className="text-[10px] text-[#f85149]">
                 Calendar data outdated
               </span>
             )}
@@ -119,7 +119,7 @@ export function MarketStatus() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="rounded-md px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-[#161d26] transition-colors cursor-pointer disabled:opacity-50"
+              className="rounded-md px-2 py-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-[#161d26] transition-colors cursor-pointer disabled:opacity-50"
             >
               {refreshing ? "…" : "↻ Refresh"}
             </button>

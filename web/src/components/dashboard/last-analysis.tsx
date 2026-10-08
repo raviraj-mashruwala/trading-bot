@@ -17,7 +17,7 @@ export function LastAnalysis() {
   return (
     <Card className="border-border/50 bg-card/80">
       <CardContent className="p-4">
-        <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Last Analysis</div>
+        <div className="mb-3 text-[11px] font-medium text-muted-foreground">Last Analysis</div>
         <div className="flex items-center gap-2">
           <span className={`inline-flex h-1.5 w-1.5 rounded-full ${status?.status === "running" ? "bg-[#d4a015] animate-pulse" : status?.status === "complete" ? "bg-[#2da44e]" : "bg-muted-foreground/40"}`} />
           <span className="text-sm text-foreground/80">{status?.status ?? "unknown"}</span>

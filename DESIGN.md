@@ -5,9 +5,10 @@ description: Industrial precision meets luxury restraint — a Swiss watch contr
 colors:
   primary: "#d4a015"
   on-primary: "#070a0f"
-  surface: "#0f1419"
-  surface-elevated: "#161d26"
-  text: "#c9d1d9"
+  surface: "#0c1018"
+  surface-elevated: "#131a24"
+  sidebar: "#0a0e14"
+  text: "#b8c0c8"
   text-heading: "#e6edf3"
   text-muted: "#5a6a7f"
   accent: "#d4a015"
@@ -16,13 +17,19 @@ colors:
   warning: "#d4a015"
   error: "#f85149"
   background: "#070a0f"
-  border: "#1c2736"
+  border: "rgba(255, 255, 255, 0.06)"
 typography:
   display:
     fontFamily: Satoshi
     fontWeight: 700
     fontSize: clamp(1.25rem, 2vw, 1.5rem)
-    letterSpacing: -0.01em
+    letterSpacing: -0.02em
+  hero:
+    fontFamily: Satoshi
+    fontWeight: 700
+    fontSize: 48px (dashboard) / 40px (trading) / 32px (review)
+    letterSpacing: -0.02em
+    use: ".hero-number utility class — the dominant number on each page"
   body:
     fontFamily: Instrument Sans
     fontSize: 0.8125rem
@@ -30,7 +37,7 @@ typography:
   label:
     fontFamily: Instrument Sans
     fontSize: 0.6875rem
-    letterSpacing: 0.06em
+    textTransform: "sentence case (never uppercase tracking-wider)"
   mono:
     fontFamily: JetBrains Mono
     fontFeature: tnum
@@ -155,24 +162,34 @@ Pipeline step indicators: full circles (28px) with numbered content. Nav active 
 
 **Pipeline stepper:** Vertical layout with numbered circles connected by a 1px line. Complete = green tint + checkmark. Active = gold tint + number + pulse. Pending = muted + number + 50% opacity. Cards expand on click when complete.
 
-**Position cards:** Symbol + direction badge header. Label-value pairs in 2-column grid. Highlighted unrealised P&L in a tinted footer bar. Entry/LTP/Stop in monospace.
+**Position rows:** Symbol + direction inline. Progress bar from entry to target with current price marker. SL/entry/current/T1 as price markers below the bar. P&L right-aligned. No card wrapper — border-bottom separator only.
 
-**Trade table:** Uppercase tracked column headers (10px). Hover rows. Direction column color-coded (green long, red short). P&L column in monospace, color-coded. No zebra stripes — hover is enough.
+**Trade table:** Sentence-case column headers (10px). Hover rows. Direction column color-coded (green long, red short). P&L column in monospace, color-coded. No zebra stripes — hover is enough.
 
-**Inputs:** Muted background, subtle border. Focus ring in gold at 50% opacity. Labels above in uppercase tracked micro-text.
+**Inputs:** Muted background, subtle border. Focus ring in gold at 50% opacity. Labels above in sentence case.
+
+## Design Principles
+
+1. **Numbers are the design.** The biggest, best-set typography on every page is a number (P&L, grade, trade count). Not a heading, not a label.
+2. **One hero per page.** Dashboard = 30d P&L. Trading = unrealised P&L. Analysis = pipeline. Review = grade.
+3. **Borders earn their existence.** No card borders by default. Use spacing and surface color to group. Borders only on interactive elements (inputs, buttons, period pills).
+4. **Sentence case everywhere.** No uppercase tracked labels — they are the SaaS template default.
+5. **Left-aligned, not centered.** Financial data reads left to right.
 
 ## Do's and Don'ts
 
 - Do: Use monospace tabular-nums for every number a trader compares
 - Do: Reserve green/red strictly for profit/loss states
-- Do: Keep labels uppercase, tracked, and muted — they recede behind the data
+- Do: Use .hero-number for the dominant number on each page (Satoshi 700, 32-48px)
 - Do: Use gold accent sparingly — nav indicator, primary actions, chart highlights
 - Do: Show "No trades yet" for empty states, not blank space
 - Don't: Add decorative elements, gradients, or blur effects
 - Don't: Use color for decoration — color means state
-- Don't: Put shadows on cards — use surface color hierarchy
+- Don't: Put shadows on anything — use surface color hierarchy
 - Don't: Animate continuously — brief 200ms flash for value changes only
-- Don't: Use Satoshi for body text — it's display only at 20px+
+- Don't: Use Satoshi for body text — it's display and hero numbers only
+- Don't: Use uppercase tracking-wider on labels — sentence case always
+- Don't: Wrap everything in Card components — use spacing and borders instead
 
 ## Motion
 

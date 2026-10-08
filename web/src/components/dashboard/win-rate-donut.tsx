@@ -8,7 +8,7 @@ export function WinRateDonut({ winRate, tradeCount }: { winRate: number; tradeCo
     return (
       <Card className="border-border/50 bg-card/80">
         <CardContent className="p-4">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Win Rate</div>
+          <div className="text-[11px] font-medium text-muted-foreground">Win Rate</div>
           <div className="mt-8 text-center text-sm text-muted-foreground/50">No trades yet</div>
         </CardContent>
       </Card>
@@ -25,7 +25,7 @@ export function WinRateDonut({ winRate, tradeCount }: { winRate: number; tradeCo
   return (
     <Card className="border-border/50 bg-card/80">
       <CardContent className="p-4">
-        <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Win Rate</div>
+        <div className="mb-3 text-[11px] font-medium text-muted-foreground">Win Rate</div>
         <div className="flex items-center justify-center">
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>

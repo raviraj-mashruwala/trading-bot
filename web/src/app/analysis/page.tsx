@@ -71,7 +71,7 @@ export default function AnalysisPage() {
         <h1 className="text-xl font-semibold">Analysis Pipeline</h1>
         <div className="flex items-center gap-2">
           <span className={`h-1.5 w-1.5 rounded-full ${isRunning ? "bg-[#d4a015] animate-pulse" : isComplete ? "bg-[#2da44e]" : "bg-muted-foreground/30"}`} />
-          <span className="text-xs text-muted-foreground uppercase tracking-wider">
+          <span className="text-xs text-muted-foreground">
             {analysisStatus?.status ?? "idle"}{analysisStatus?.trade_date ? ` — ${analysisStatus.trade_date}` : ""}{isRunning && elapsed_s != null ? ` — ${Math.floor(elapsed_s / 60)}m ${Math.floor(elapsed_s % 60)}s` : ""}
           </span>
           {!wsConnected && isRunning && (
