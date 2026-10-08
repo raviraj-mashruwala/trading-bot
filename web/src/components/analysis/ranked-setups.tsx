@@ -43,7 +43,7 @@ export function RankedSetups() {
           <span className="text-[#5a6a7f]">{plan.ranked_suggestions.length} total</span>
         </div>
       </div>
-      {executeCount > 0 && <GeneratePlanButton />}
+      <GeneratePlanButton />
       {plan.ranked_suggestions.map((suggestion) => (
         <SetupCard
           key={`${suggestion.symbol}-${suggestion.rank}`}

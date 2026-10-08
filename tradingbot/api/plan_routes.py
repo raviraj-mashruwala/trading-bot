@@ -79,7 +79,7 @@ async def get_plan_today(request: Request):
             "confidence": s.get("confidence", 0),
             "consistency": 1.0,
             "run_count": 1,
-            "recommendation": "execute" if s.get("status") == "approved" else "watch",
+            "recommendation": "execute" if s.get("status") in ("approved", "active") else "watch",
             "best_setup": s,
         })
 
