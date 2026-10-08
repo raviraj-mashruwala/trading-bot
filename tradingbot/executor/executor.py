@@ -214,6 +214,14 @@ class Executor:
         intel = self._intelligence
         symbol_state = intel.scorer.get_state(state.leg.symbol)
         if symbol_state is None:
+            current_1m = intel.aggregator.get_current(state.leg.symbol, "1min")
+            if current_1m is not None:
+                symbol_state = intel.scorer.update(
+                    state.leg.symbol,
+                    [current_1m],
+                    intel.aggregator.get_candles(state.leg.symbol, "5min") or [],
+                )
+        if symbol_state is None:
             state.waiting = True
             logger.warning(
                 "%s waiting: no candle data yet — will not enter without market data",
