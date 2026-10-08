@@ -423,27 +423,32 @@ async def kite_callback(request: Request, request_token: str | None = None):
 async def kite_status(request: Request):
     state: AppState = request.app.state.app_state
     auth = _ensure_kite_auth(state)
-    if not auth.is_authenticated():
-        return {"authenticated": False}
-    try:
-        auth.kite.margins("equity")
+
+    def _try_token(kite_obj):
+        try:
+            kite_obj.profile()
+            return True
+        except Exception:
+            return False
+
+    if auth.is_authenticated() and _try_token(auth.kite):
         return {"authenticated": True}
-    except Exception:
-        from tradingbot.execution.kite_auth import KiteAuth
-        saved_token = KiteAuth.load_saved_token()
-        if saved_token and saved_token != auth._access_token:
-            try:
-                from kiteconnect import KiteConnect
-                kite = KiteConnect(api_key=state.config.secrets.kite_api_key)
-                kite.set_access_token(saved_token)
-                kite.margins("equity")
+
+    from tradingbot.execution.kite_auth import KiteAuth
+    saved_token = KiteAuth.load_saved_token()
+    if saved_token:
+        try:
+            from kiteconnect import KiteConnect
+            kite = KiteConnect(api_key=state.config.secrets.kite_api_key)
+            kite.set_access_token(saved_token)
+            if _try_token(kite):
                 auth._access_token = saved_token
                 auth._kite = kite
                 logger.info("Refreshed Kite token from file")
                 return {"authenticated": True}
-            except Exception:
-                pass
-        return {"authenticated": False, "error": "token expired"}
+        except Exception:
+            pass
+    return {"authenticated": False}
 
 
 @router.get("/auth/kite/test")
