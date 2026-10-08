@@ -43,6 +43,15 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
   handleEvent: (event: WsEvent) => {
     const { type, data } = event;
 
+    if (type === "exec.auto_start") {
+      const mode = (data.mode as string) ?? "paper";
+      const legs = data.legs ?? 0;
+      push(set, "info", "Auto Execution", `Starting ${mode} execution (${legs} legs)`);
+    }
+    if (type === "analysis.auto_start") {
+      const td = (data.trade_date as string) ?? "";
+      push(set, "info", "Auto Analysis", `Running analysis for ${td}`);
+    }
     if (type === "sync.started") {
       push(set, "info", "Data Sync", "Daily sync started");
     }
@@ -52,15 +61,17 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       push(set, "success", "Data Sync Complete", `${stocks} stocks, ${rows} rows synced`);
     }
     if (type === "review.started") {
-      push(set, "info", "Nightly Review", "Running AI review of today's trades...");
+      const td = (data.trade_date as string) || "";
+      push(set, "info", "Nightly Review", td ? `Reviewing ${td}...` : "Running review...");
     }
     if (type === "review.complete") {
       const grade = (data.grade as string) || "?";
+      const td = (data.trade_date as string) || "";
       const skipped = data.skipped as boolean;
       if (skipped) {
-        push(set, "info", "Nightly Review", "Skipped — no trading activity today");
+        push(set, "info", "Nightly Review", `Skipped ${td} — no trading activity`);
       } else {
-        push(set, "success", "Nightly Review Complete", `Grade: ${grade}`);
+        push(set, "success", "Nightly Review Complete", `${td} — Grade: ${grade}`);
       }
     }
     if (type === "review.failed") {
