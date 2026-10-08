@@ -21,12 +21,12 @@ export default function DashboardPage() {
 
       {stats && <StatCards stats={stats} />}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <EquityCurve trades={trades ?? []} />
         <DailyPnlChart trades={trades ?? []} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <WinRateDonut winRate={stats?.win_rate ?? 0} tradeCount={stats?.trade_count ?? 0} />
         <LastAnalysis />
       </div>

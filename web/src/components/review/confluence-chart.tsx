@@ -22,7 +22,7 @@ export function ConfluenceChart({ stats }: { stats: PerformanceStatsData }) {
   const cal = stats.confidence_calibration;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       <div className="rounded-lg border border-border/50 bg-card/80 p-4">
         <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Win Rate by Confluence

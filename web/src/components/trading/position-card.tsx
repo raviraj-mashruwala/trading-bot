@@ -34,7 +34,7 @@ export function PositionCard({ position: p }: { position: ExecutionPosition }) {
           </span>
         </div>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-4 pb-4 pt-0 text-[13px]">
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1.5 px-4 pb-4 pt-0 text-[13px]">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Entry</span>
           <span className="font-mono-nums">{fmt(p.entry_price)}</span>

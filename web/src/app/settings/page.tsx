@@ -109,7 +109,7 @@ export default function SettingsPage() {
       {config.secrets && (
         <div className="rounded-lg border border-border/30 bg-card/40 p-4">
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">Secrets (read-only)</div>
-          <div className="grid grid-cols-2 gap-2 text-[13px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[13px]">
             {Object.entries(config.secrets).map(([key, val]) => (
               <div key={key} className="flex justify-between">
                 <span className="text-muted-foreground/60">{key}</span>

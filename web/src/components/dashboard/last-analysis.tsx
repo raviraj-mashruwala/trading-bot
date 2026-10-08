@@ -23,7 +23,7 @@ export function LastAnalysis() {
           <span className="text-sm text-foreground/80">{status?.status ?? "unknown"}</span>
         </div>
         {latest ? (
-          <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div>
               <div className="text-[10px] text-muted-foreground/60">Date</div>
               <div className="font-mono-nums text-foreground/80">{latest.trade_date}</div>

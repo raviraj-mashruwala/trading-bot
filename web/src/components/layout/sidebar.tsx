@@ -23,11 +23,11 @@ const ICONS: Record<string, React.ReactNode> = {
   clock: <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><line x1="8" y1="4" x2="8" y2="8"/><line x1="8" y1="8" x2="11" y2="8"/></svg>,
 };
 
-export function Sidebar() {
+export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-52 flex-col border-r border-border/50 bg-[#0d1017] px-3 py-5">
+    <>
       <div className="mb-8 flex items-center gap-2 px-3">
         <div className="h-2 w-2 rounded-full bg-[#d4a015]" />
         <span className="text-sm font-semibold tracking-wide text-foreground/90">TRADINGBOT</span>
@@ -39,6 +39,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-150",
                 active
@@ -58,6 +59,14 @@ export function Sidebar() {
       <div className="mt-auto px-3 pb-2">
         <div className="text-[11px] text-muted-foreground/50">v0.1.0</div>
       </div>
+    </>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden md:flex h-screen w-52 flex-col border-r border-border/50 bg-[#0d1017] px-3 py-5">
+      <SidebarNav />
     </aside>
   );
 }

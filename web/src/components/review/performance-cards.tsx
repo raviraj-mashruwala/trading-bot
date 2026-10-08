@@ -19,7 +19,7 @@ export function PerformanceCards({ stats }: { stats: PerformanceStatsData }) {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {cards.map((c) => (
         <div key={c.label} className="rounded-lg border border-border/50 bg-card/80 p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{c.label}</p>

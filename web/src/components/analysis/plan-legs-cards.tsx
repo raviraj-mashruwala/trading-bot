@@ -20,7 +20,7 @@ function LegCard({ leg }: { leg: TradeLeg }) {
         </div>
       </CardHeader>
       {expanded && (
-        <CardContent className="grid grid-cols-2 gap-2 pt-0 text-sm">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-0 text-sm">
           <div>Entry: ₹{leg.entry_price.toFixed(2)}</div>
           <div>Stop Loss: ₹{leg.stop_loss.toFixed(2)}</div>
           <div>Target 1: ₹{leg.target_1.toFixed(2)}</div>
