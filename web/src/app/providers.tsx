@@ -5,6 +5,8 @@ import { useEffect, type ReactNode } from "react";
 import { createWsManager } from "@/lib/ws";
 import { usePipelineStore } from "@/lib/store";
 import { useExecutionStore } from "@/lib/execution-store";
+import { useNotificationStore } from "@/lib/notification-store";
+import { NotificationToasts } from "@/components/ui/notification-toast";
 
 let browserQueryClient: QueryClient | undefined;
 
@@ -19,6 +21,7 @@ function getQueryClient() {
 export function Providers({ children }: { children: ReactNode }) {
   const handleEvent = usePipelineStore((s) => s.handleEvent);
   const handleExecEvent = useExecutionStore((s) => s.handleEvent);
+  const handleNotification = useNotificationStore((s) => s.handleEvent);
 
   const setWsConnected = usePipelineStore((s) => s.setWsConnected);
 
@@ -29,16 +32,18 @@ export function Providers({ children }: { children: ReactNode }) {
       (event) => {
         handleEvent(event);
         handleExecEvent(event);
+        handleNotification(event);
       },
       (status) => setWsConnected(status === "connected"),
     );
     ws.connect();
     return () => ws.disconnect();
-  }, [handleEvent, handleExecEvent, setWsConnected]);
+  }, [handleEvent, handleExecEvent, handleNotification, setWsConnected]);
 
   return (
     <QueryClientProvider client={getQueryClient()}>
       {children}
+      <NotificationToasts />
     </QueryClientProvider>
   );
 }

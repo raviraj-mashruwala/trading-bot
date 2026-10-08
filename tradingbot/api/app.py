@@ -53,7 +53,7 @@ def create_app(
             candle_store=candle_store,
         )
 
-        # Scheduled daily sync at 8 PM IST
+        # Scheduled jobs: sync at 4 PM, review at 8:30 PM (trading days only)
         from tradingbot.api.sync_routes import _run_sync
         from zoneinfo import ZoneInfo
         from datetime import datetime as _dt
@@ -65,22 +65,29 @@ def create_app(
                 import logging
                 _log = logging.getLogger(__name__)
                 _log.info("Nightly review starting")
+                await state_ref.event_bus.emit("review.started", {})
                 from tradingbot.core.llm.anthropic_provider import build_provider
                 from tradingbot.analysis.nightly_reviewer import run_nightly_review
                 llm = build_provider(state_ref.config.llm, state_ref.config.secrets)
                 db = Database(Path(state_ref.data_dir) / "tradingbot.db")
                 db.initialise()
                 try:
-                    await run_nightly_review(
+                    result = await run_nightly_review(
                         db, llm,
                         setup_store=getattr(state_ref, "setup_store", None),
                         candle_store=getattr(state_ref, "candle_store", None),
                     )
                 finally:
                     db.close()
+                await state_ref.event_bus.emit("review.complete", {
+                    "trade_date": result.get("trade_date", ""),
+                    "grade": result.get("grade", ""),
+                    "skipped": result.get("skipped", False),
+                })
             except Exception:
                 import logging
                 logging.getLogger(__name__).warning("Nightly review failed", exc_info=True)
+                await state_ref.event_bus.emit("review.failed", {"error": "Review failed"})
 
         async def _daily_sync_scheduler():
             last_sync_date = None
@@ -98,7 +105,16 @@ def create_app(
                             logging.getLogger(__name__).info("Scheduled daily sync at 4 PM IST")
                             state = app.state.app_state
                             if state.sync_task is None or state.sync_task.done():
-                                state.sync_task = asyncio.create_task(_run_sync(state))
+                                async def _sync_with_events(s):
+                                    await s.event_bus.emit("sync.started", {})
+                                    await _run_sync(s)
+                                    status = s.sync_status or {}
+                                    await s.event_bus.emit("sync.complete", {
+                                        "stocks_synced": status.get("stocks_synced", 0),
+                                        "rows_written": status.get("rows_written", 0),
+                                        "status": status.get("status", "unknown"),
+                                    })
+                                state.sync_task = asyncio.create_task(_sync_with_events(state))
                                 last_sync_date = today
                         else:
                             import logging

@@ -78,7 +78,7 @@ export function DataSyncSection() {
         <div className="mb-3 rounded bg-[#d4a015]/10 px-3 py-2 text-sm text-[#d4a015]">
           Daily sync pending — {daysBehind} trading day{daysBehind !== 1 ? "s" : ""} behind
           {status.last_trading_day ? ` (last session: ${String(status.last_trading_day)})` : ""}.
-          Auto-sync runs at 8 PM IST.
+          Auto-sync runs at 4 PM IST.
         </div>
       )}
 
