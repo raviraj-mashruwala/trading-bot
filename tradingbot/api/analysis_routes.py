@@ -459,20 +459,25 @@ async def kite_test(request: Request):
         return {"ok": False, "error": "Not authenticated. Connect Kite first."}
     try:
         profile = auth.kite.profile()
-        margins = auth.kite.margins("equity")
-        available = margins.get("available", {})
-        return {
+        result = {
             "ok": True,
             "user_name": profile.get("user_name", ""),
             "user_id": profile.get("user_id", ""),
             "email": profile.get("email", ""),
             "broker": profile.get("broker", ""),
-            "available_cash": available.get("live_balance", 0),
-            "available_margin": available.get("intraday_payin", 0),
         }
+        try:
+            margins = auth.kite.margins("equity")
+            available = margins.get("available", {})
+            result["available_cash"] = available.get("live_balance", 0)
+            result["available_margin"] = available.get("intraday_payin", 0)
+        except Exception:
+            result["available_cash"] = None
+            result["margin_note"] = "Kite OMS/RMS unavailable (maintenance)"
+        return result
     except Exception:
         logger.exception("Kite connection test failed")
-        return {"ok": False, "error": "Connection test failed. Check server logs."}
+        return {"ok": False, "error": "Token invalid or expired. Re-connect Kite."}
 
 
 # ---------------------------------------------------------------------------
