@@ -8,6 +8,7 @@ import { DailyPnlChart } from "@/components/dashboard/daily-pnl-chart";
 import { WinRateDonut } from "@/components/dashboard/win-rate-donut";
 import { LastAnalysis } from "@/components/dashboard/last-analysis";
 import { MarketStatus } from "@/components/dashboard/market-status";
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 
 export default function DashboardPage() {
   const { data: stats } = useQuery({ queryKey: ["trade-stats"], queryFn: () => api.getTradeStats(30) });
@@ -16,6 +17,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Dashboard</h1>
+
+      <OnboardingChecklist />
 
       <MarketStatus />
 
