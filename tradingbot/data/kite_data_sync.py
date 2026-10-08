@@ -200,17 +200,26 @@ class KiteDataSync:
                 if last and last >= today:
                     continue
                 from_date = last + timedelta(days=1) if last else today - timedelta(days=5)
-                try:
-                    token = self._resolve_token(symbol)
-                    raw = await asyncio.to_thread(
-                        self._kite.fetch_historical, token, kite_interval, from_date, today
-                    )
-                    df = _kite_rows_to_df(raw)
-                    written = self._store.write(symbol, store_interval, df)
-                    report.rows_written += written
-                    report.stocks_synced += 1
-                except Exception as exc:
-                    report.errors.append(f"{symbol}/{store_interval}: {exc}")
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        token = self._resolve_token(symbol)
+                        raw = await asyncio.to_thread(
+                            self._kite.fetch_historical, token, kite_interval, from_date, today
+                        )
+                        df = _kite_rows_to_df(raw)
+                        written = self._store.write(symbol, store_interval, df)
+                        report.rows_written += written
+                        report.stocks_synced += 1
+                        break
+                    except KeyError as exc:
+                        log.debug("Skipping delisted symbol %s: %s", symbol, exc)
+                        report.errors.append(f"{symbol}/{store_interval}: {exc}")
+                        break
+                    except Exception as exc:
+                        if attempt < MAX_RETRIES - 1:
+                            await asyncio.sleep(RETRY_BACKOFF[attempt])
+                        else:
+                            report.errors.append(f"{symbol}/{store_interval}: {exc}")
                 if progress_callback and (i + 1) % 10 == 0:
                     progress_callback(f"Daily sync {store_interval}: {i + 1}/{len(symbols)} stocks")
 
