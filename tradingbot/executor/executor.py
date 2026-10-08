@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, time
 from typing import TYPE_CHECKING
 
 from tradingbot.core.broker import BrokerInterface, OrderStatus
@@ -153,12 +153,25 @@ class Executor:
                     continue
                 self._submit_entry(state)
 
+    _MARKET_START = time(9, 0)
+    _MARKET_END = time(15, 30)
+
     def tick(self) -> None:
         """One pass of the event loop. Safe to call as often as you like."""
         if self.blocked:
             return
 
         now = self.clock()
+        now_t = now.timetz().replace(tzinfo=None) if isinstance(now, datetime) else now
+        if now_t > self._MARKET_END:
+            for state in self.states:
+                if not state.is_finished and state.filled_quantity == 0:
+                    state.skipped_reason = "Market closed"
+                    state.cancelled = True
+                    self._emit_decision(state.leg.symbol, "ENTRY_VETO", "Market closed — session over")
+            return
+        if now_t < self._MARKET_START:
+            return
 
         if not self.kill_switch_tripped:
             # _close() writes every exit to the database as it happens, so the
