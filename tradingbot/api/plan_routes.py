@@ -65,10 +65,11 @@ async def get_plan_today(request: Request):
 
     setups = []
     if state.setup_store is not None:
-        rows = state.setup_store.get_active(today)
-        if not rows:
-            rows = state.setup_store.get_active(_date.today())
-        setups = rows or []
+        for d in [target, today]:
+            rows = state.setup_store.get_active(d)
+            if rows:
+                setups = rows
+                break
 
     ranked = []
     for i, s in enumerate(setups):
@@ -85,7 +86,7 @@ async def get_plan_today(request: Request):
 
     runs = []
     if state.run_store is not None:
-        for d in [today, _date.today()]:
+        for d in [target, today]:
             runs = state.run_store.list_for_date(d)
             if runs:
                 break

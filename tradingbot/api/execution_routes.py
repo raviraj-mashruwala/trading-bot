@@ -20,7 +20,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
-TICK_SECONDS = 5
+TICK_SECONDS_NORMAL = 5
+TICK_SECONDS_FAST = 1
+FAST_TICK_START = (9, 10)
+FAST_TICK_END = (9, 25)
+
+
+def _tick_interval() -> int:
+    from tradingbot.core.models import now_ist
+    now = now_ist()
+    h, m = now.hour, now.minute
+    if (h, m) >= FAST_TICK_START and (h, m) < FAST_TICK_END:
+        return TICK_SECONDS_FAST
+    return TICK_SECONDS_NORMAL
 
 
 async def _run_execution(state: AppState, mode: Mode, plan) -> None:
@@ -143,7 +155,7 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
                 except Exception:
                     pass
 
-            await asyncio.sleep(TICK_SECONDS)
+            await asyncio.sleep(_tick_interval())
 
         state.executor_status = "done"
         await state.event_bus.emit("exec.session_done", {

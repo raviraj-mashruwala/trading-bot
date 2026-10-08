@@ -261,6 +261,14 @@ class Executor:
 
     # ----- Entry handling ---------------------------------------------------------
 
+    @staticmethod
+    def _proximity_threshold(now: datetime) -> float:
+        t = now.time() if isinstance(now, datetime) else now
+        from datetime import time
+        if t < time(9, 25):
+            return 2.0
+        return 1.0
+
     def _evaluate_entry(self, state: LegState, now: datetime) -> None:
         """Consult EntryGuard before placing an order. ENTER / WAIT / VETO."""
         intel = self._intelligence
@@ -276,22 +284,24 @@ class Executor:
         if symbol_state is None:
             live_price = intel.aggregator.last_price(state.leg.symbol)
             if live_price and live_price > 0:
+                prox = self._proximity_threshold(now)
                 drift_pct = abs(live_price - state.leg.entry_price) / state.leg.entry_price * 100
-                if drift_pct <= 1.0:
+                if drift_pct <= prox:
                     logger.info(
-                        "%s: price %.1f within 1%% of entry %.1f — entering on price proximity",
-                        state.leg.symbol, live_price, state.leg.entry_price,
+                        "%s: price %.1f within %.0f%% of entry %.1f — entering on price proximity",
+                        state.leg.symbol, live_price, prox, state.leg.entry_price,
                     )
-                    self._emit_decision(state.leg.symbol, "ENTRY_ENTER", "Price proximity entry (within 1%, no candle data)")
+                    self._emit_decision(state.leg.symbol, "ENTRY_ENTER", f"Price proximity entry (within {prox:.0f}%, no candle data)")
                     state.waiting = False
                     self._submit_entry(state)
                     return
+            if not state.waiting:
+                self._emit_decision(state.leg.symbol, "ENTRY_WAIT", "No candle data yet")
+                logger.warning(
+                    "%s waiting: no candle data yet — will not enter without market data",
+                    state.leg.symbol,
+                )
             state.waiting = True
-            self._emit_decision(state.leg.symbol, "ENTRY_WAIT", "No candle data yet")
-            logger.warning(
-                "%s waiting: no candle data yet — will not enter without market data",
-                state.leg.symbol,
-            )
             return
 
         state_ts = symbol_state.timestamp
