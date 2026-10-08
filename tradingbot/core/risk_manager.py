@@ -166,10 +166,21 @@ class RiskManager:
                 f"plan is stale: generated {age:.1f}h ago, limit is {self.plan_max_age_hours:.0f}h"
             )
 
-        required = sum(leg.notional for leg in plan.legs)
-        if required > available_capital:
+        required_margin = 0.0
+        for leg in plan.legs:
+            setup = TradeSetup(
+                symbol=leg.symbol, strategy=leg.strategy,
+                direction=leg.direction, entry_price=leg.entry_price,
+                entry_type=leg.entry_type, stop_loss=leg.stop_loss,
+                target_1=leg.target_1, target_2=leg.target_2,
+                entry_window_start=leg.entry_window_start,
+                entry_window_end=leg.entry_window_end,
+                confidence=leg.confidence, reasoning="",
+            )
+            required_margin += self._get_margin_per_share(setup) * leg.quantity
+        if required_margin > available_capital:
             blockers.append(
-                f"insufficient capital: plan needs {required:,.0f} but {available_capital:,.0f} is available"
+                f"insufficient capital: margin needs {required_margin:,.0f} but {available_capital:,.0f} is available"
             )
 
         if len(plan.legs) > self.risk.max_concurrent_positions:
