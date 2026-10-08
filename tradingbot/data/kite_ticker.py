@@ -86,10 +86,7 @@ class LiveTickManager:
         self._ticker.on_connect = self._on_connect
         self._ticker.on_close = self._on_close
 
-        self._thread = threading.Thread(
-            target=self._ticker.connect, daemon=True,
-        )
-        self._thread.start()
+        self._ticker.connect(threaded=True)
         log.info("KiteTicker started")
 
     def stop(self) -> None:
