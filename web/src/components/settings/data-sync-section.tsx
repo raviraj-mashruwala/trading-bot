@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 
 export function DataSyncSection() {
   const [status, setStatus] = useState<Record<string, unknown>>({ status: "loading" });
   const [polling, setPolling] = useState(false);
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       const s = await api.getSyncStatus();
       setStatus(s);
@@ -16,22 +16,26 @@ export function DataSyncSection() {
       setStatus({ status: "error", error: "Failed to fetch sync status" });
       return { status: "error" };
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
+    fetchStatus().then((s) => {
+      if (s.status === "running" || s.status === "starting" || s.status === "filling_gaps") {
+        setPolling(true);
+      }
+    });
+  }, [fetchStatus]);
 
   useEffect(() => {
     if (!polling) return;
     const interval = setInterval(async () => {
       const s = await fetchStatus();
-      if (s.status !== "running" && s.status !== "starting") {
+      if (s.status !== "running" && s.status !== "starting" && s.status !== "filling_gaps") {
         setPolling(false);
       }
-    }, 3000);
+    }, 2000);
     return () => clearInterval(interval);
-  }, [polling]);
+  }, [polling, fetchStatus]);
 
   const handleStart = async (forceFull = false) => {
     try {
@@ -56,10 +60,20 @@ export function DataSyncSection() {
   const freshness = status.freshness as Record<string, string> | undefined;
   const rowCounts = status.row_counts as Record<string, number> | undefined;
   const isEmpty = !freshness || Object.keys(freshness).length === 0;
-  const isRunning = st === "running" || st === "starting";
+  const isRunning = st === "running" || st === "starting" || st === "filling_gaps";
   const isComplete = st === "complete";
   const dailyStale = Boolean(status.daily_stale);
   const daysBehind = Number(status.days_behind ?? 0);
+  const msg = String(status.message ?? "");
+  const elapsed = status.elapsed_sec != null ? Number(status.elapsed_sec) : null;
+  const rowsWritten = status.rows_written;
+
+  // Parse progress from message like "Daily sync 15m: 45/200 stocks"
+  const progressMatch = msg.match(/(\d+)\/(\d+)\s+stocks/);
+  const progressCurrent = progressMatch ? parseInt(progressMatch[1]) : null;
+  const progressTotal = progressMatch ? parseInt(progressMatch[2]) : null;
+  const progressPct = progressCurrent != null && progressTotal != null && progressTotal > 0
+    ? Math.round((progressCurrent / progressTotal) * 100) : null;
 
   return (
     <div className="rounded-lg border border-border/50 bg-card/80 p-4">
@@ -86,15 +100,33 @@ export function DataSyncSection() {
         <div className="mb-3 space-y-2">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-[#d4a015]" />
-            <span className="text-sm font-medium text-[#d4a015]">Syncing...</span>
-            {status.elapsed_sec != null && (
+            <span className="text-sm font-medium text-[#d4a015]">Syncing</span>
+            {elapsed != null && (
               <span className="text-xs text-muted-foreground">
-                {Math.floor(Number(status.elapsed_sec) / 60)}m {Number(status.elapsed_sec) % 60}s
+                {Math.floor(elapsed / 60)}m {elapsed % 60}s
               </span>
             )}
+            {progressPct != null && (
+              <span className="text-xs font-mono text-[#d4a015]">{progressPct}%</span>
+            )}
           </div>
-          {status.message && (
-            <p className="text-xs text-muted-foreground">{String(status.message)}</p>
+          {msg && (
+            <p className="text-xs text-muted-foreground">{msg}</p>
+          )}
+          {progressPct != null && (
+            <div className="h-1.5 w-full rounded-full bg-[rgba(28,39,54,0.5)] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[#d4a015] transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          )}
+          {rowsWritten != null && (
+            <p className="text-[10px] text-muted-foreground font-mono">
+              {typeof rowsWritten === "object"
+                ? `${Object.values(rowsWritten as Record<string, number>).reduce((a: number, b: number) => a + b, 0).toLocaleString()} rows total`
+                : `${Number(rowsWritten).toLocaleString()} rows written`}
+            </p>
           )}
         </div>
       )}

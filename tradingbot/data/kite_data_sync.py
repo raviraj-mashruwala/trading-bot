@@ -193,7 +193,7 @@ class KiteDataSync:
             if progress_callback:
                 progress_callback(f"Daily sync {store_interval}: {len(symbols)} stocks")
 
-            for symbol in symbols:
+            for i, symbol in enumerate(symbols):
                 if self._cancelled:
                     break
                 last = self._store.last_date(symbol, store_interval)
@@ -211,6 +211,8 @@ class KiteDataSync:
                     report.stocks_synced += 1
                 except Exception as exc:
                     report.errors.append(f"{symbol}/{store_interval}: {exc}")
+                if progress_callback and (i + 1) % 10 == 0:
+                    progress_callback(f"Daily sync {store_interval}: {i + 1}/{len(symbols)} stocks")
 
         report.duration_sec = _time.monotonic() - start
         log.info("Daily sync: %d stocks, %d rows, %.0fs",
