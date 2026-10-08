@@ -14,7 +14,7 @@ def _make_pipeline(**overrides):
     defaults = dict(
         data_sync=MagicMock(), candle_store=MagicMock(), screener=MagicMock(),
         tier2=MagicMock(), tier3=MagicMock(), backtest_engine=MagicMock(),
-        monte_carlo=MagicMock(), quality_gates=MagicMock(), run_store=MagicMock(),
+        monte_carlo=MagicMock(), run_store=MagicMock(),
         setup_store=MagicMock(), event_bus=MagicMock(), capital=100_000,
         db_path="/tmp/test.db",
     )

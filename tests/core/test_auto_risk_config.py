@@ -15,8 +15,8 @@ class TestAutoRiskConfigTiers:
         assert rc == RiskConfig(
             max_risk_per_trade_pct=0.015,
             max_daily_loss_pct=0.03,
-            max_capital_deployed_pct=0.70,
-            max_concurrent_positions=1,
+            max_capital_deployed_pct=0.80,
+            max_concurrent_positions=3,
         )
 
     def test_small_account_50k_to_200k(self):
@@ -24,8 +24,8 @@ class TestAutoRiskConfigTiers:
         assert rc == RiskConfig(
             max_risk_per_trade_pct=0.01,
             max_daily_loss_pct=0.025,
-            max_capital_deployed_pct=0.60,
-            max_concurrent_positions=2,
+            max_capital_deployed_pct=0.80,
+            max_concurrent_positions=5,
         )
 
     def test_medium_account_200k_to_1m(self):
@@ -33,8 +33,8 @@ class TestAutoRiskConfigTiers:
         assert rc == RiskConfig(
             max_risk_per_trade_pct=0.01,
             max_daily_loss_pct=0.02,
-            max_capital_deployed_pct=0.50,
-            max_concurrent_positions=2,
+            max_capital_deployed_pct=0.80,
+            max_concurrent_positions=5,
         )
 
     def test_large_account_above_1m(self):
@@ -53,11 +53,11 @@ class TestAutoRiskConfigBoundaries:
     def test_exactly_50k_is_small_tier(self):
         rc = auto_risk_config(50_000.0)
         assert rc.max_risk_per_trade_pct == 0.01
-        assert rc.max_concurrent_positions == 2
+        assert rc.max_concurrent_positions == 5
 
     def test_exactly_200k_is_medium_tier(self):
         rc = auto_risk_config(200_000.0)
-        assert rc.max_capital_deployed_pct == 0.50
+        assert rc.max_capital_deployed_pct == 0.80
 
     def test_exactly_1m_is_large_tier(self):
         rc = auto_risk_config(1_000_000.0)

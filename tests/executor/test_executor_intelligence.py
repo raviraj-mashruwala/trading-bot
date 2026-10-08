@@ -192,11 +192,12 @@ def test_intelligence_start_called_with_symbols(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_entry_guard_enter_submits_order(tmp_path):
-    """Guard returns ENTER -> order placed."""
+    """Guard returns ENTER -> order placed after tick evaluates entry."""
     intel = MockIntelligence()
     intel.entry_guard.evaluate.return_value = EntryVerdict("ENTER", "Clean", 0.8, 0)
     executor, broker, _, _, _ = build(tmp_path, [make_leg()], intel=intel)
     executor.start()
+    executor.tick()
 
     state = executor.states[0]
     assert state.entry_order_id is not None
@@ -214,6 +215,7 @@ def test_entry_guard_veto_skips_leg(tmp_path):
     intel.entry_guard.evaluate.return_value = EntryVerdict("VETO", "Strong selling", 0.9, 0)
     executor, broker, _, _, _ = build(tmp_path, [make_leg()], intel=intel)
     executor.start()
+    executor.tick()
 
     state = executor.states[0]
     assert state.skipped_reason == "Strong selling"
@@ -241,7 +243,7 @@ def test_entry_guard_wait_queues_leg(tmp_path):
 def test_wait_leg_re_evaluated_on_tick(tmp_path):
     """A WAIT leg gets re-evaluated each tick. When guard flips to ENTER, order placed."""
     intel = MockIntelligence()
-    # First call: WAIT. Second call: ENTER.
+    # First call (tick 1): WAIT. Second call (tick 2): ENTER.
     intel.entry_guard.evaluate.side_effect = [
         EntryVerdict("WAIT", "Low volume", 0.7, 60),
         EntryVerdict("ENTER", "Volume recovered", 0.8, 0),
@@ -253,8 +255,10 @@ def test_wait_leg_re_evaluated_on_tick(tmp_path):
     assert state.waiting is True
     assert state.entry_order_id is None
 
-    # Tick should re-evaluate and submit
-    executor.tick()
+    executor.tick()  # evaluates → WAIT
+    assert state.waiting is True
+
+    executor.tick()  # evaluates → ENTER
     assert state.waiting is False
     assert state.entry_order_id is not None
 
@@ -430,15 +434,18 @@ def test_no_symbol_state_falls_back_to_classic(tmp_path):
     """When scorer has no state, _manage_open_leg_smart falls back to classic."""
     intel = MockIntelligence()
     intel.entry_guard.evaluate.return_value = EntryVerdict("ENTER", "Clean", 0.8, 0)
-    intel.scorer.get_state.return_value = None
-    intel.aggregator.last_price.return_value = 93.0
+    # Return state for entry evaluation, then None for exit (triggers classic fallback)
+    intel.scorer.get_state.side_effect = [_state(), None, None]
+    intel.aggregator.last_price.return_value = 100.0
 
     executor, broker, prices, _, _ = build(tmp_path, [make_leg()], intel=intel)
     executor.start()
+    executor.tick()  # evaluates entry → ENTER → submits order
     broker.advance()
     executor.tick()  # fills entry
 
     # Price triggers stop in classic mode
+    intel.aggregator.last_price.return_value = 93.0
     prices["RELIANCE"] = 93.0
     executor.tick()
 

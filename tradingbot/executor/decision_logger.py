@@ -40,6 +40,12 @@ class DecisionLogger:
         except Exception:
             logger.warning("Failed to log decision", exc_info=True)
 
+    def update_outcome(self, trade_date: str, symbol: str, outcome: str) -> None:
+        try:
+            self._db.update_decision_outcome(trade_date, symbol, outcome)
+        except Exception:
+            logger.warning("Failed to update decision outcome", exc_info=True)
+
     def recent(self, limit: int = 20) -> list[dict]:
         try:
             return self._db.get_recent_execution_decisions(limit=limit)

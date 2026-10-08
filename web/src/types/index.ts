@@ -321,3 +321,20 @@ export interface MarketCalendarResponse {
   current_year_covered: boolean;
   data_year: number;
 }
+
+export interface NightlyReview {
+  id: number;
+  trade_date: string;
+  reviewed_at: string;
+  total_pnl: number;
+  trades_count: number;
+  wins: number;
+  losses: number;
+  summary: string;
+  lessons: string;
+  improvements: string;
+  grade: string;
+  llm_cost_usd: number;
+  skipped?: boolean;
+  reason?: string;
+}

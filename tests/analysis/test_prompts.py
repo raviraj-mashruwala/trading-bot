@@ -222,10 +222,13 @@ def test_build_shortlist_user_prompt_includes_all_factor_scores():
 
 
 def test_build_shortlist_user_prompt_includes_jev_scores():
+    """Jev scores are no longer embedded in the shortlist prompt (they're used
+    in the intelligent screener instead). Verify the prompt still renders the
+    stock correctly even when jev fields are present on the input dict."""
     stocks = [_make_stock(jev_composite=0.78, jev_setup_confidence=0.85)]
     prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, stocks)
-    assert "jev_composite" in prompt or "0.78" in prompt
-    assert "jev_setup_confidence" in prompt or "0.85" in prompt
+    assert "RELIANCE" in prompt
+    assert "<candidates>" in prompt
 
 
 def test_build_shortlist_user_prompt_handles_missing_jev():
@@ -234,12 +237,12 @@ def test_build_shortlist_user_prompt_handles_missing_jev():
     assert "RELIANCE" in prompt
 
 
-def test_build_shortlist_user_prompt_caps_at_30():
-    stocks = [_make_stock(symbol=f"STOCK{i}", composite=100 - i) for i in range(50)]
+def test_build_shortlist_user_prompt_caps_at_50():
+    stocks = [_make_stock(symbol=f"STOCK{i}", composite=100 - i) for i in range(60)]
     prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, stocks)
     assert "STOCK0" in prompt
-    assert "STOCK29" in prompt
-    assert "STOCK30" not in prompt
+    assert "STOCK49" in prompt
+    assert "STOCK50" not in prompt
 
 
 def test_build_shortlist_user_prompt_empty_stocks():

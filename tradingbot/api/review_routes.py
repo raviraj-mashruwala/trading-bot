@@ -90,3 +90,59 @@ async def get_stats(request: Request, days: int = 30):
         return asdict(stats)
     finally:
         rs.close()
+
+
+@router.post("/nightly")
+async def run_nightly_review(request: Request, date: str | None = None):
+    import logging
+    state: AppState = request.app.state.app_state
+
+    from tradingbot.core.llm.anthropic_provider import build_provider
+    llm = build_provider(state.config.llm, state.config.secrets)
+
+    from tradingbot.analysis.nightly_reviewer import run_nightly_review as _run
+    from tradingbot.core.database import Database
+
+    db = Database(Path(state.data_dir) / "tradingbot.db")
+    db.initialise()
+    try:
+        review = await _run(db, llm, trade_date=date)
+        return review
+    except Exception as exc:
+        logging.getLogger(__name__).error("Nightly review failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Nightly review failed")
+    finally:
+        db.close()
+
+
+@router.get("/nightly")
+async def get_nightly_review(request: Request, date: str | None = None):
+    state: AppState = request.app.state.app_state
+    from tradingbot.core.database import Database
+
+    db = Database(Path(state.data_dir) / "tradingbot.db")
+    db.initialise()
+    try:
+        if date:
+            review = db.get_nightly_review(date)
+        else:
+            reviews = db.get_recent_reviews(limit=1)
+            review = reviews[0] if reviews else None
+        if review is None:
+            raise HTTPException(status_code=404, detail="No review found")
+        return review
+    finally:
+        db.close()
+
+
+@router.get("/nightly/history")
+async def get_nightly_history(request: Request, limit: int = 10):
+    state: AppState = request.app.state.app_state
+    from tradingbot.core.database import Database
+
+    db = Database(Path(state.data_dir) / "tradingbot.db")
+    db.initialise()
+    try:
+        return db.get_recent_reviews(limit=limit)
+    finally:
+        db.close()

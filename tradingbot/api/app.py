@@ -60,8 +60,27 @@ def create_app(
 
         IST = ZoneInfo("Asia/Kolkata")
 
+        async def _nightly_review(state_ref):
+            try:
+                import logging
+                _log = logging.getLogger(__name__)
+                _log.info("Nightly review starting")
+                from tradingbot.core.llm.anthropic_provider import build_provider
+                from tradingbot.analysis.nightly_reviewer import run_nightly_review
+                llm = build_provider(state_ref.config.llm, state_ref.config.secrets)
+                db = Database(Path(state_ref.data_dir) / "tradingbot.db")
+                db.initialise()
+                try:
+                    await run_nightly_review(db, llm)
+                finally:
+                    db.close()
+            except Exception:
+                import logging
+                logging.getLogger(__name__).warning("Nightly review failed", exc_info=True)
+
         async def _daily_sync_scheduler():
             last_sync_date = None
+            last_review_date = None
             while True:
                 await asyncio.sleep(60)
                 try:
@@ -74,6 +93,10 @@ def create_app(
                         if state.sync_task is None or state.sync_task.done():
                             state.sync_task = asyncio.create_task(_run_sync(state))
                             last_sync_date = today
+                    if now.hour == 20 and now.minute == 30 and last_review_date != today:
+                        state = app.state.app_state
+                        asyncio.create_task(_nightly_review(state))
+                        last_review_date = today
                 except Exception:
                     pass
 

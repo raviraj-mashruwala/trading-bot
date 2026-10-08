@@ -7,6 +7,7 @@ import { PerformanceCards } from "@/components/review/performance-cards";
 import { StrategyBreakdown } from "@/components/review/strategy-breakdown";
 import { ConfluenceChart } from "@/components/review/confluence-chart";
 import { ScorecardTable } from "@/components/review/scorecard-table";
+import { NightlyReviewCard } from "@/components/review/nightly-review-card";
 
 const PERIODS = [
   { label: "7d", days: 7 },
@@ -32,6 +33,12 @@ export default function ReviewPage() {
     queryKey: ["scorecards", scorecardDate],
     queryFn: () => api.getScorecards(scorecardDate),
     refetchInterval: 30_000,
+  });
+
+  const { data: nightlyReview } = useQuery({
+    queryKey: ["nightly-review", scorecardDate],
+    queryFn: () => api.getNightlyReview(scorecardDate).catch(() => null),
+    refetchInterval: 60_000,
   });
 
   return (
@@ -62,6 +69,8 @@ export default function ReviewPage() {
           <ConfluenceChart stats={stats} />
         </>
       )}
+
+      <NightlyReviewCard review={nightlyReview} date={scorecardDate} />
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">

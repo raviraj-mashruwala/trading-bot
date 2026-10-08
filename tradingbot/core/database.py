@@ -61,6 +61,22 @@ CREATE TABLE IF NOT EXISTS execution_decisions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_execution_decisions_date ON execution_decisions (trade_date);
+
+CREATE TABLE IF NOT EXISTS nightly_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_date TEXT NOT NULL UNIQUE,
+    reviewed_at TEXT NOT NULL,
+    total_pnl REAL NOT NULL,
+    trades_count INTEGER NOT NULL,
+    wins INTEGER NOT NULL,
+    losses INTEGER NOT NULL,
+    summary TEXT NOT NULL,
+    lessons TEXT NOT NULL,
+    improvements TEXT NOT NULL,
+    grade TEXT NOT NULL,
+    raw_response TEXT,
+    llm_cost_usd REAL DEFAULT 0
+);
 """
 
 
@@ -170,6 +186,51 @@ class Database:
             ),
         )
         self.connection.commit()
+
+    def update_decision_outcome(self, trade_date: str, symbol: str, outcome: str) -> None:
+        self.connection.execute(
+            """UPDATE execution_decisions SET outcome = ?
+               WHERE trade_date = ? AND symbol = ? AND decision_type = 'ENTRY_ENTER'
+               AND outcome IS NULL""",
+            (outcome, trade_date, symbol),
+        )
+        self.connection.commit()
+
+    def get_decisions_for_date(self, trade_date: str) -> list[dict]:
+        rows = self.connection.execute(
+            "SELECT * FROM execution_decisions WHERE trade_date = ? ORDER BY timestamp",
+            (trade_date,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def save_nightly_review(self, review: dict) -> None:
+        self.connection.execute(
+            """INSERT OR REPLACE INTO nightly_reviews
+               (trade_date, reviewed_at, total_pnl, trades_count, wins, losses,
+                summary, lessons, improvements, grade, raw_response, llm_cost_usd)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                review["trade_date"], review["reviewed_at"],
+                review["total_pnl"], review["trades_count"],
+                review["wins"], review["losses"],
+                review["summary"], review["lessons"],
+                review["improvements"], review["grade"],
+                review.get("raw_response"), review.get("llm_cost_usd", 0),
+            ),
+        )
+        self.connection.commit()
+
+    def get_nightly_review(self, trade_date: str) -> dict | None:
+        row = self.connection.execute(
+            "SELECT * FROM nightly_reviews WHERE trade_date = ?", (trade_date,),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def get_recent_reviews(self, limit: int = 10) -> list[dict]:
+        rows = self.connection.execute(
+            "SELECT * FROM nightly_reviews ORDER BY trade_date DESC LIMIT ?", (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     def get_recent_execution_decisions(self, limit: int = 20) -> list[dict]:
         rows = self.connection.execute(

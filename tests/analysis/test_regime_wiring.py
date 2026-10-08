@@ -42,7 +42,6 @@ def _make_pipeline(context_fetcher=None, tmp_path=None):
         tier3=AsyncMock(),
         backtest_engine=MagicMock(),
         monte_carlo=MagicMock(),
-        quality_gates=MagicMock(),
         run_store=RunStore(db),
         setup_store=SetupStore(db),
         event_bus=MagicMock(emit=AsyncMock()),

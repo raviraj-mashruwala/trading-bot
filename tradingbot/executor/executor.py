@@ -21,6 +21,7 @@ from tradingbot.core.models import (
 )
 from tradingbot.core.risk_manager import RiskManager
 from tradingbot.executor.adaptive_exit_manager import ExitDecision
+from tradingbot.executor.decision_logger import DecisionLogger
 from tradingbot.executor.exit_manager import ExitManager
 from tradingbot.executor.order_manager import OrderManager
 from tradingbot.executor.position_monitor import PositionMonitor
@@ -99,6 +100,7 @@ class Executor:
         self.orders = OrderManager(broker)
         self.monitor = PositionMonitor(broker)
         self.exits = ExitManager(execution_config.square_off_time)
+        self._decision_logger = DecisionLogger(database)
 
         self.states: list[LegState] = []
         self.blocked = False
@@ -165,6 +167,7 @@ class Executor:
             realised = self.database.realised_pnl_for_date(self.plan.trade_date)
             if self.risk_manager.daily_loss_breached(realised):
                 logger.error("daily loss limit breached at %.2f; halting", realised)
+                self._emit_decision("ALL", "KILL_SWITCH", f"Daily loss limit breached at {realised:.2f}")
                 self.kill_switch_tripped = True
                 self._halt_everything(now)
                 return
@@ -186,6 +189,7 @@ class Executor:
                     if now_time >= state.leg.max_entry_wait or now_time >= state.leg.entry_window_end:
                         state.skipped_reason = "Wait timeout — conditions never cleared"
                         state.cancelled = True
+                        self._emit_decision(state.leg.symbol, "ENTRY_VETO", "Wait timeout — conditions never cleared")
                         logger.info(
                             "%s wait timed out at %s", state.leg.symbol, now_time,
                         )
@@ -205,6 +209,55 @@ class Executor:
         if self.blocked:
             return True
         return all(state.is_finished for state in self.states)
+
+    # ----- Decision emission ------------------------------------------------------
+
+    _decision_counter: int = 0
+
+    def _emit_decision(
+        self,
+        symbol: str,
+        decision_type: str,
+        reason: str,
+        momentum_snapshot: dict | None = None,
+        escalated: bool = False,
+        llm_response: dict | None = None,
+    ) -> None:
+        self._decision_logger.log_decision(
+            trade_date=self.plan.trade_date,
+            symbol=symbol,
+            decision_type=decision_type,
+            reason=reason,
+            momentum_snapshot=momentum_snapshot,
+            escalated=escalated,
+            llm_response=llm_response,
+        )
+        if self.event_bus:
+            Executor._decision_counter += 1
+            self.event_bus.emit_sync("decision", {
+                "id": Executor._decision_counter,
+                "trade_date": self.plan.trade_date,
+                "timestamp": now_ist().isoformat(),
+                "symbol": symbol,
+                "decision_type": decision_type,
+                "reason": reason,
+                "momentum_snapshot": momentum_snapshot,
+                "escalated": 1 if escalated else 0,
+                "llm_response": None,
+                "outcome": None,
+            })
+
+    @staticmethod
+    def _momentum_snapshot(symbol_state) -> dict | None:
+        if symbol_state is None:
+            return None
+        return {
+            "momentum_1m": symbol_state.momentum_1m,
+            "momentum_5m": symbol_state.momentum_5m,
+            "volume_ratio": symbol_state.volume_ratio,
+            "vwap_position": symbol_state.vwap_position,
+            "trend_alignment": symbol_state.trend_alignment,
+        }
 
     # ----- Entry handling ---------------------------------------------------------
 
@@ -229,10 +282,12 @@ class Executor:
                         "%s: price %.1f within 1%% of entry %.1f — entering on price proximity",
                         state.leg.symbol, live_price, state.leg.entry_price,
                     )
+                    self._emit_decision(state.leg.symbol, "ENTRY_ENTER", "Price proximity entry (within 1%, no candle data)")
                     state.waiting = False
                     self._submit_entry(state)
                     return
             state.waiting = True
+            self._emit_decision(state.leg.symbol, "ENTRY_WAIT", "No candle data yet")
             logger.warning(
                 "%s waiting: no candle data yet — will not enter without market data",
                 state.leg.symbol,
@@ -247,6 +302,7 @@ class Executor:
         stale_seconds = (now - state_ts).total_seconds()
         if stale_seconds > 120:
             state.waiting = True
+            self._emit_decision(state.leg.symbol, "ENTRY_WAIT", f"Stale data ({stale_seconds:.0f}s)")
             logger.warning(
                 "%s waiting: market data is %.0fs stale (>120s) — possible ticker disconnect",
                 state.leg.symbol, stale_seconds,
@@ -257,12 +313,19 @@ class Executor:
         drift_pct = abs(price - state.leg.entry_price) / state.leg.entry_price * 100
         if drift_pct > 5.0:
             state.waiting = True
+            self._emit_decision(
+                state.leg.symbol, "ENTRY_WAIT", f"Price drift {drift_pct:.1f}% (>5%)",
+                momentum_snapshot=self._momentum_snapshot(symbol_state),
+            )
             return
         verdict = intel.entry_guard.evaluate(state.leg, symbol_state, price, now)
+
+        snap = self._momentum_snapshot(symbol_state)
 
         if verdict.action == "ENTER":
             if intel.is_degraded:
                 state.waiting = True
+                self._emit_decision(state.leg.symbol, "ENTRY_WAIT", "Ticker degraded", momentum_snapshot=snap)
                 logger.warning(
                     "%s waiting: ticker degraded — blocking new entries until data recovers",
                     state.leg.symbol,
@@ -292,29 +355,51 @@ class Executor:
                     if result.action == "VETO":
                         state.skipped_reason = f"LLM veto: {result.reasoning}"
                         state.cancelled = True
+                        self._emit_decision(
+                            state.leg.symbol, "ENTRY_VETO", result.reasoning,
+                            momentum_snapshot=snap, escalated=True,
+                            llm_response={"action": "VETO", "reasoning": result.reasoning},
+                        )
                         logger.info(
                             "%s vetoed by LLM: %s", state.leg.symbol, result.reasoning
                         )
                         return
                     if result.action == "WAIT":
                         state.waiting = True
+                        self._emit_decision(
+                            state.leg.symbol, "ENTRY_WAIT", f"LLM: {result.reasoning}",
+                            momentum_snapshot=snap, escalated=True,
+                            llm_response={"action": "WAIT", "reasoning": result.reasoning},
+                        )
                         return
+                    self._emit_decision(
+                        state.leg.symbol, "LLM_ESCALATION", f"LLM approved: {result.reasoning}",
+                        momentum_snapshot=snap, escalated=True,
+                        llm_response={"action": result.action, "reasoning": result.reasoning},
+                    )
                 except Exception:
                     logger.warning("LLM escalation failed — blocking entry for safety", exc_info=True)
+                    self._emit_decision(state.leg.symbol, "ENTRY_WAIT", "LLM escalation failed", momentum_snapshot=snap, escalated=True)
                     state.waiting = True
                     return
+            self._emit_decision(
+                state.leg.symbol, "ENTRY_ENTER", verdict.reason,
+                momentum_snapshot=snap,
+            )
             state.waiting = False
             self._submit_entry(state)
 
         elif verdict.action == "VETO":
             state.skipped_reason = verdict.reason
             state.cancelled = True
+            self._emit_decision(state.leg.symbol, "ENTRY_VETO", verdict.reason, momentum_snapshot=snap)
             logger.info(
                 "%s vetoed by EntryGuard: %s", state.leg.symbol, verdict.reason
             )
 
         else:  # WAIT
             state.waiting = True
+            self._emit_decision(state.leg.symbol, "ENTRY_WAIT", verdict.reason, momentum_snapshot=snap)
             logger.info(
                 "%s waiting: %s (reassess in %ds)",
                 state.leg.symbol, verdict.reason, verdict.reassess_after,
@@ -376,6 +461,14 @@ class Executor:
         if decision is ClassicDecision.HOLD:
             return
 
+        decision_map = {
+            ClassicDecision.BOOK_TARGET_1: "BOOK_TARGET_1",
+            ClassicDecision.BOOK_TARGET_2: "BOOK_TARGET_2",
+            ClassicDecision.STOP_HIT: "STOP_HIT",
+            ClassicDecision.SQUARE_OFF: "SQUARE_OFF",
+        }
+        self._emit_decision(state.leg.symbol, decision_map[decision], f"Price {price:.2f}")
+
         if decision is ClassicDecision.BOOK_TARGET_1:
             half = max(1, state.filled_quantity // 2)
             self._close(state, half, price, reason="target_1", now=now)
@@ -417,6 +510,21 @@ class Executor:
 
         if decision is ExitDecision.HOLD:
             return
+
+        snap = self._momentum_snapshot(symbol_state)
+        decision_type_map = {
+            ExitDecision.BOOK_TARGET_1: "BOOK_TARGET_1",
+            ExitDecision.BOOK_TARGET_2: "BOOK_TARGET_2",
+            ExitDecision.STOP_HIT: "STOP_HIT",
+            ExitDecision.SQUARE_OFF: "SQUARE_OFF",
+            ExitDecision.MOMENTUM_EXIT: "MOMENTUM_EXIT",
+            ExitDecision.PATTERN_EXIT: "PATTERN_EXIT",
+            ExitDecision.TRAIL_STOP: "TRAIL_STOP",
+        }
+        self._emit_decision(
+            symbol, decision_type_map.get(decision, decision.value),
+            f"Price {price:.2f}", momentum_snapshot=snap,
+        )
 
         if decision is ExitDecision.BOOK_TARGET_1:
             half = max(1, state.filled_quantity // 2)
@@ -508,6 +616,10 @@ class Executor:
                 setup_id=state.leg.setup_id,
             )
         )
+
+        if state.filled_quantity == 0:
+            outcome = f"{reason}|pnl={pnl:+.2f}|entry={state.entry_fill_price:.2f}|exit={fill_price:.2f}"
+            self._decision_logger.update_outcome(self.plan.trade_date, state.leg.symbol, outcome)
 
         if state.filled_quantity > 0 and state.stop_order_id is None:
             self._replace_stop(state)

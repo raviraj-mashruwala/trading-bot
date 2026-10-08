@@ -60,21 +60,16 @@ def test_on_ticks_multiple_tokens():
         cb_b.assert_called_once_with(222, 20.0)
 
 
-def test_start_creates_ticker_and_thread():
+def test_start_creates_ticker_and_connects_threaded():
     with patch("tradingbot.data.kite_ticker.KiteTicker") as MockTicker:
         mock_ws = MagicMock()
         MockTicker.return_value = mock_ws
 
-        with patch("tradingbot.data.kite_ticker.threading") as mock_threading:
-            mock_thread = MagicMock()
-            mock_threading.Thread.return_value = mock_thread
+        manager = LiveTickManager(api_key="key", access_token="tok")
+        manager.start()
 
-            manager = LiveTickManager(api_key="key", access_token="tok")
-            manager.start()
-
-            MockTicker.assert_called_once_with("key", "tok")
-            mock_threading.Thread.assert_called_once()
-            mock_thread.start.assert_called_once()
+        MockTicker.assert_called_once_with("key", "tok")
+        mock_ws.connect.assert_called_once_with(threaded=True)
 
 
 def test_stop_closes_ticker():
@@ -82,11 +77,10 @@ def test_stop_closes_ticker():
         mock_ws = MagicMock()
         MockTicker.return_value = mock_ws
 
-        with patch("tradingbot.data.kite_ticker.threading"):
-            manager = LiveTickManager(api_key="key", access_token="tok")
-            manager.start()
-            manager.stop()
-            mock_ws.close.assert_called_once()
+        manager = LiveTickManager(api_key="key", access_token="tok")
+        manager.start()
+        manager.stop()
+        mock_ws.close.assert_called_once()
 
 
 def test_on_connect_subscribes_tokens():

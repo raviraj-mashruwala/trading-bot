@@ -56,8 +56,8 @@ def test_missing_risk_section_auto_derives_from_capital(tmp_path, env_secrets):
 
     assert config.risk.max_risk_per_trade_pct == 0.015
     assert config.risk.max_daily_loss_pct == 0.03
-    assert config.risk.max_capital_deployed_pct == 0.70
-    assert config.risk.max_concurrent_positions == 1
+    assert config.risk.max_capital_deployed_pct == 0.80
+    assert config.risk.max_concurrent_positions == 3
 
 
 def test_partial_risk_section_merges_with_auto(tmp_path, env_secrets):

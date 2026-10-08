@@ -12,12 +12,17 @@ import { DecisionTimeline } from "@/components/trading/decision-timeline";
 export default function TradingPage() {
   const execStatus = useExecutionStore((s) => s.status);
   const sessionResult = useExecutionStore((s) => s.sessionResult);
+  const recentDecisions = useExecutionStore((s) => s.recentDecisions);
 
   const { data: statusData } = useQuery({
     queryKey: ["execution-status"],
     queryFn: api.getExecutionStatus,
     refetchInterval: execStatus === "running" ? 5_000 : 30_000,
   });
+
+  const decisions = execStatus === "running" && recentDecisions.length > 0
+    ? recentDecisions
+    : statusData?.decision_log ?? [];
 
   return (
     <div className="space-y-6">
@@ -33,7 +38,7 @@ export default function TradingPage() {
         <PositionsGrid positions={statusData?.positions ?? []} />
       </div>
 
-      <DecisionTimeline decisions={statusData?.decision_log ?? []} />
+      <DecisionTimeline decisions={decisions} />
 
       {execStatus === "done" && sessionResult && (
         <SessionSummary result={sessionResult} />

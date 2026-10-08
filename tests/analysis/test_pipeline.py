@@ -25,7 +25,6 @@ def pipeline_deps(tmp_path):
         "tier3": AsyncMock(),
         "backtest_engine": MagicMock(),
         "monte_carlo": MagicMock(),
-        "quality_gates": MagicMock(),
         "run_store": RunStore(db),
         "setup_store": SetupStore(db),
         "event_bus": MagicMock(emit=AsyncMock()),
@@ -126,13 +125,6 @@ async def test_pipeline_with_shortlisted_stocks(pipeline_deps):
         "reasoning": "good picks",
     }
 
-    # Candle store returns empty df so backtest loop is skipped
-    import pandas as pd
-
-    deps["candle_store"].read.return_value = pd.DataFrame(
-        columns=["open", "high", "low", "close", "volume"]
-    )
-
     # Tier 3 returns setups for each stock
     deps["tier3"].deep_analyze.side_effect = [
         {
@@ -164,6 +156,11 @@ async def test_pipeline_with_shortlisted_stocks(pipeline_deps):
     }
 
     pipeline = AnalysisPipeline(**deps)
+    # Patch _fetch_indicators_for_symbol to return valid indicator data so the
+    # pipeline doesn't skip stocks for missing candle data.
+    pipeline._fetch_indicators_for_symbol = lambda sym: (
+        {"rsi_14": 55, "vwap": 1500}, f"{sym} price action summary"
+    )
     run = await pipeline.run(date(2026, 9, 27))
 
     assert run.tier2_shortlisted == 2
@@ -210,11 +207,6 @@ async def test_pipeline_no_adversarial_when_no_setups(pipeline_deps):
         "reasoning": "one pick",
     }
 
-    import pandas as pd
-
-    deps["candle_store"].read.return_value = pd.DataFrame(
-        columns=["open", "high", "low", "close", "volume"]
-    )
     deps["tier3"].deep_analyze.return_value = {
         "symbol": "RELIANCE",
         "setups": [],
@@ -222,6 +214,10 @@ async def test_pipeline_no_adversarial_when_no_setups(pipeline_deps):
     }
 
     pipeline = AnalysisPipeline(**deps)
+    # Patch _fetch_indicators_for_symbol so the pipeline doesn't skip RELIANCE
+    pipeline._fetch_indicators_for_symbol = lambda sym: (
+        {"rsi_14": 50, "vwap": 2500}, f"{sym} price action summary"
+    )
     run = await pipeline.run(date(2026, 9, 27))
 
     # 4 calls: regime + sectors + shortlist + 1 deep_analyze, no adversarial
@@ -283,79 +279,10 @@ def _make_candle_df(n=300):
     })
 
 
-def test_run_backtests_uses_injected_engine(pipeline_deps):
-    """_run_backtests must call self._backtest.run(), not import Backtester internally."""
-    from tradingbot.backtest.walk_forward import WalkForwardEngine
-
-    wf_engine = MagicMock(spec=WalkForwardEngine)
-    mock_report = MagicMock()
-    mock_report.total_trades = 10
-    mock_report.winners = 6
-    mock_report.losers = 4
-    mock_report.avg_winner = 2.0
-    mock_report.avg_loser = -1.0
-    wf_engine.run.return_value = mock_report
-
-    pipeline_deps["backtest_engine"] = wf_engine
-    pipeline_deps["candle_store"].read.return_value = _make_candle_df(300)
-
-    p = AnalysisPipeline(**pipeline_deps)
-    results = []
-    p._run_backtests("TCS", results, regime={"regime": "trending_up"})
-
-    assert wf_engine.run.called
-
-
-def test_run_backtests_reads_candles_once_not_per_strategy(pipeline_deps):
-    """candle_store.read must be called exactly once per symbol, not once per strategy."""
-    from tradingbot.backtest.walk_forward import WalkForwardEngine
-
-    wf = MagicMock(spec=WalkForwardEngine)
-    mock_report = MagicMock()
-    mock_report.total_trades = 0  # gate rejects — not the point
-    wf.run.return_value = mock_report
-
-    pipeline_deps["backtest_engine"] = wf
-    pipeline_deps["candle_store"].read.return_value = _make_candle_df(300)
-
-    p = AnalysisPipeline(**pipeline_deps)
-    results = []
-    p._run_backtests("TCS", results, regime={"regime": "trending_up"})
-
-    # trending_up has 5 eligible strategies — read must still be called only once
-    read_calls = [
-        c for c in pipeline_deps["candle_store"].read.call_args_list
-        if c.args[0] == "TCS" and c.args[1] == "15minute"
-    ]
-    assert len(read_calls) == 1, (
-        f"Expected 1 candle read for TCS/15minute, got {len(read_calls)}"
-    )
-
-
-# ── Lookback days tests ───────────────────────────────────────────────────────
-
 def test_pipeline_accepts_lookback_days_param(pipeline_deps):
     """AnalysisPipeline must accept lookback_days kwarg without raising."""
     p = AnalysisPipeline(**pipeline_deps, lookback_days=90)
     assert p._lookback_days == 90
-
-
-def test_run_backtests_uses_lookback_days_for_from_dt(pipeline_deps):
-    """from_dt passed to candle_store.read must be approximately now - lookback_days."""
-    from datetime import timedelta
-
-    pipeline_deps["candle_store"].read.return_value = pd.DataFrame()
-    p = AnalysisPipeline(**pipeline_deps, lookback_days=60)
-    p._run_backtests("TCS", [], regime={"regime": "trending_up"})
-
-    call = next(
-        c for c in pipeline_deps["candle_store"].read.call_args_list
-        if c.args[0] == "TCS" and c.args[1] == "15minute"
-    )
-    from_dt = call.args[2]
-    expected_approx = datetime.now(tz=IST) - timedelta(days=60)
-    delta = abs((from_dt - expected_approx).total_seconds())
-    assert delta < 5, f"from_dt off by {delta:.1f}s — expected ~60 days ago"
 
 
 # ── Indicator fetch tests ─────────────────────────────────────────────────────
@@ -483,7 +410,7 @@ def test_hub_and_spoke_drops_hub_not_spokes():
             "data_sync": MagicMock(), "candle_store": candle_store,
             "screener": MagicMock(), "tier2": MagicMock(), "tier3": MagicMock(),
             "backtest_engine": MagicMock(), "monte_carlo": MagicMock(),
-            "quality_gates": MagicMock(), "run_store": RunStore(db),
+            "run_store": RunStore(db),
             "setup_store": SetupStore(db), "event_bus": MagicMock(), "capital": 100_000,
         }
         p = AnalysisPipeline(**deps)

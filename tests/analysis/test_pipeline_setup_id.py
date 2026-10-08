@@ -14,7 +14,7 @@ def test_pipeline_records_setup_id_from_save():
     p = AnalysisPipeline(
         data_sync=MagicMock(), candle_store=MagicMock(), screener=MagicMock(),
         tier2=MagicMock(), tier3=MagicMock(), backtest_engine=MagicMock(),
-        monte_carlo=MagicMock(), quality_gates=MagicMock(), run_store=MagicMock(),
+        monte_carlo=MagicMock(), run_store=MagicMock(),
         setup_store=setup_store, event_bus=MagicMock(), capital=100_000,
     )
 

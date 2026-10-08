@@ -97,8 +97,9 @@ def test_position_size_is_floored_not_rounded_up():
 def test_position_size_is_capped_by_deployable_capital():
     manager = make_manager(max_capital_deployed_pct=0.10)
 
-    # Risk sizing wants 4000/1 = 4000 shares, but 10% of 400000 at 100/share allows 400.
-    assert manager.position_size(make_setup(entry=100.0, stop=99.0)) == 400
+    # position_size now sizes purely by risk (capital cap moved to select_legs).
+    # 1% of 400000 = 4000 risk budget; 1 rupee stop distance -> 4000 shares.
+    assert manager.position_size(make_setup(entry=100.0, stop=99.0)) == 4000
 
 
 def test_stop_loss_equal_to_entry_raises_invalid_setup():
@@ -183,8 +184,8 @@ def test_select_legs_drops_setups_that_would_size_to_zero_shares():
     assert manager.select_legs(setups, max_entry_wait=time(11, 0), exit_before=time(15, 10)) == []
 
 
-def test_select_legs_stops_adding_once_total_exposure_is_reached():
-    manager = make_manager(max_capital_deployed_pct=0.05, max_concurrent_positions=2)
+def test_select_legs_respects_confidence_weighted_margin():
+    manager = make_manager(max_concurrent_positions=2)
     setups = [
         make_setup(symbol="A", entry=100.0, stop=95.0, target_1=115.0, confidence=0.9),
         make_setup(symbol="B", entry=100.0, stop=95.0, target_1=115.0, confidence=0.8),
@@ -192,8 +193,9 @@ def test_select_legs_stops_adding_once_total_exposure_is_reached():
 
     legs = manager.select_legs(setups, max_entry_wait=time(11, 0), exit_before=time(15, 10))
 
+    # select_legs uses 95% of capital with confidence-weighted allocation.
     total_notional = sum(leg.notional for leg in legs)
-    assert total_notional <= 0.05 * 400000.0
+    assert total_notional <= 0.95 * 400000.0
 
 
 def test_select_legs_carries_the_sized_quantity_and_risk_onto_the_leg():

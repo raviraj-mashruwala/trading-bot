@@ -1,6 +1,7 @@
 """Shared fixtures for API tests."""
 
 import pytest
+from unittest.mock import MagicMock
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
@@ -70,6 +71,11 @@ async def api_client(tmp_path, monkeypatch, config_text):
     app = create_app(config_path=tmp_path / "config.toml", data_dir=tmp_path)
     transport = ASGITransport(app=app)
     async with LifespanManager(app):
+        # Provide a candle_store mock so the /analyze endpoint doesn't 400
+        # with "Data cache is empty" before reaching other validations.
+        mock_store = MagicMock()
+        mock_store.freshness.return_value = {"last_sync": "2026-09-29T06:00:00"}
+        app.state.app_state.candle_store = mock_store
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             ac._app = app
             ac._tmp_path = tmp_path

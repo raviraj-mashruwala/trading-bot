@@ -91,7 +91,6 @@ class AnalysisPipeline:
         tier3: Any,
         backtest_engine: Any,
         monte_carlo: Any,
-        quality_gates: Any,
         run_store: Any,
         setup_store: Any,
         event_bus: Any,
@@ -117,7 +116,6 @@ class AnalysisPipeline:
         self._tier3 = tier3
         self._backtest = backtest_engine
         self._mc = monte_carlo
-        self._gates = quality_gates
         self._lookback_days = lookback_days
         self._runs = run_store
         self._setups = setup_store
@@ -883,47 +881,6 @@ class AnalysisPipeline:
             lines.append(f"Calibration: {cal}")
 
         return "\n".join(lines)
-
-    def _run_backtests(self, symbol: str, results: list, regime: dict | None = None) -> None:
-        """Run ALL strategies on one symbol — direction-agnostic.
-
-        Every strategy gets a chance regardless of regime. The LLM and
-        quality gates filter bad setups; the regime gate was dropping
-        valid setups in stocks that bucked the broader trend.
-        """
-        from tradingbot.strategy.strategies import STRATEGY_REGISTRY
-
-        df = None
-        if getattr(self, '_duckdb', None) is not None:
-            df = self._duckdb.read(symbol, "15m", days=180)
-        if (df is None or df.empty) and self._candles is not None:
-            from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
-            df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
-        if df is None:
-            import pandas as _pd
-            df = _pd.DataFrame()
-        if len(df) == 0:
-            return
-
-        for strategy_name, strategy in STRATEGY_REGISTRY.items():
-            log.info("Backtesting %s/%s (%d candles)", symbol, strategy_name.value, len(df))
-            report = self._backtest.run(symbol, df, strategy)
-            if report.total_trades >= 3:
-                trade_pnls = (
-                    [report.avg_winner] * report.winners
-                    + [report.avg_loser] * report.losers
-                )
-                mc = self._mc.run(trade_pnls) if trade_pnls else None
-                gate = self._gates.evaluate(report, mc)
-                if gate.passed:
-                    from dataclasses import asdict
-                    results.append(asdict(report))
-                else:
-                    log.info(
-                        "Backtest gate FAILED %s/%s: %s",
-                        symbol, strategy_name.value,
-                        ", ".join(gate.failures) if gate.failures else "unknown",
-                    )
 
     def _run_single_backtest(self, symbol: str, strategy_name: StrategyName, results: list) -> None:
         """Run ONE specific strategy backtest for validation. No quality gate."""
