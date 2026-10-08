@@ -34,17 +34,19 @@ class RiskManager:
         capital: float,
         plan_max_age_hours: float = DEFAULT_PLAN_MAX_AGE_HOURS,
         max_entry_price_drift_pct: float = DEFAULT_MAX_ENTRY_DRIFT_PCT,
+        margin_fetcher: Any = None,
     ) -> None:
         self.risk = risk_config
         self.strategy = strategy_config
         self.capital = capital
         self.plan_max_age_hours = plan_max_age_hours
         self.max_entry_price_drift_pct = max_entry_price_drift_pct
+        self._margin_fetcher = margin_fetcher
 
     # ----- Layer 1: analysis time -------------------------------------------------
 
     def position_size(self, setup: TradeSetup) -> int:
-        """Shares to trade, from the risk budget, capped by deployable capital."""
+        """Shares to trade, from the risk budget, capped by deployable margin."""
         stop_distance = abs(setup.entry_price - setup.stop_loss)
         if stop_distance < MIN_STOP_DISTANCE:
             raise InvalidSetupError(
@@ -56,9 +58,21 @@ class RiskManager:
         by_risk = math.floor(risk_budget / stop_distance)
 
         deployable = self.capital * self.risk.max_capital_deployed_pct
-        by_capital = math.floor(deployable / setup.entry_price) if setup.entry_price > 0 else 0
+        margin_per_share = self._get_margin_per_share(setup)
+        by_capital = math.floor(deployable / margin_per_share) if margin_per_share > 0 else 0
 
         return max(0, min(by_risk, by_capital))
+
+    def _get_margin_per_share(self, setup: TradeSetup) -> float:
+        """Get margin required per share — uses Kite API if available, else full price."""
+        if self._margin_fetcher is not None:
+            try:
+                margin = self._margin_fetcher(setup)
+                if margin > 0:
+                    return margin
+            except Exception:
+                pass
+        return setup.entry_price
 
     def risk_amount_for(self, setup: TradeSetup, quantity: int) -> float:
         return abs(setup.entry_price - setup.stop_loss) * quantity
@@ -113,11 +127,12 @@ class RiskManager:
                 logger.info("dropping %s: position sizes to zero shares", setup.symbol)
                 continue
 
-            notional = quantity * setup.entry_price
+            margin_per_share = self._get_margin_per_share(setup)
+            margin_needed = quantity * margin_per_share
             remaining = exposure_ceiling - deployed
-            if notional > remaining:
-                quantity = math.floor(remaining / setup.entry_price) if setup.entry_price > 0 else 0
-                notional = quantity * setup.entry_price
+            if margin_needed > remaining:
+                quantity = math.floor(remaining / margin_per_share) if margin_per_share > 0 else 0
+                margin_needed = quantity * margin_per_share
             if quantity <= 0:
                 logger.info("dropping %s: no room in exposure ceiling", setup.symbol)
                 continue
@@ -130,7 +145,7 @@ class RiskManager:
                     exit_before=exit_before,
                 )
             )
-            deployed += notional
+            deployed += margin_needed
 
         return legs
 

@@ -309,10 +309,31 @@ def _build_plan_builder(state: AppState):
     config = state.config
     capital = state.capital
     risk_config = auto_risk_config(capital)
+
+    margin_fetcher = None
+    if state.kite_auth and state.kite_auth.is_authenticated():
+        kite = state.kite_auth.kite
+
+        def _fetch_margin(setup):
+            tx = "SELL" if setup.direction.value == "short" else "BUY"
+            result = kite.order_margins([{
+                "exchange": "NSE",
+                "tradingsymbol": setup.symbol,
+                "transaction_type": tx,
+                "quantity": 1,
+                "product": "MIS",
+                "order_type": "LIMIT",
+                "price": setup.entry_price,
+            }])
+            return result[0].get("total", setup.entry_price)
+
+        margin_fetcher = _fetch_margin
+
     rm = RiskManager(
         risk_config=risk_config,
         strategy_config=config.strategy,
         capital=capital,
+        margin_fetcher=margin_fetcher,
     )
     return PlanBuilder(state.setup_store, rm)
 
