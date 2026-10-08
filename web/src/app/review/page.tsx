@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { PerformanceCards } from "@/components/review/performance-cards";
 import { StrategyBreakdown } from "@/components/review/strategy-breakdown";
@@ -21,8 +21,12 @@ function todayStr() {
 }
 
 export default function ReviewPage() {
-  const [days, setDays] = useState(30);
-  const [scorecardDate, setScorecardDate] = useState(todayStr);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const days = Number(searchParams.get("days") ?? 30);
+  const scorecardDate = searchParams.get("date") ?? todayStr();
+  const setDays = (d: number) => router.replace(`/review?days=${d}&date=${scorecardDate}`);
+  const setScorecardDate = (d: string) => router.replace(`/review?days=${days}&date=${d}`);
 
   const { data: stats } = useQuery({
     queryKey: ["performance-stats", days],
