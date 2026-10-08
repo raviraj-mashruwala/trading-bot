@@ -71,7 +71,11 @@ def create_app(
                 db = Database(Path(state_ref.data_dir) / "tradingbot.db")
                 db.initialise()
                 try:
-                    await run_nightly_review(db, llm)
+                    await run_nightly_review(
+                        db, llm,
+                        setup_store=getattr(state_ref, "setup_store", None),
+                        candle_store=getattr(state_ref, "candle_store", None),
+                    )
                 finally:
                     db.close()
             except Exception:
@@ -84,19 +88,40 @@ def create_app(
             while True:
                 await asyncio.sleep(60)
                 try:
+                    from tradingbot.scanner.calendar import is_trading_day
                     now = _dt.now(tz=IST)
                     today = now.date()
-                    if now.hour == 20 and now.minute == 0 and last_sync_date != today:
-                        import logging
-                        logging.getLogger(__name__).info("Scheduled daily sync triggered at 8 PM IST")
-                        state = app.state.app_state
-                        if state.sync_task is None or state.sync_task.done():
-                            state.sync_task = asyncio.create_task(_run_sync(state))
+
+                    if now.hour == 16 and now.minute == 0 and last_sync_date != today:
+                        if is_trading_day(today):
+                            import logging
+                            logging.getLogger(__name__).info("Scheduled daily sync at 4 PM IST")
+                            state = app.state.app_state
+                            if state.sync_task is None or state.sync_task.done():
+                                state.sync_task = asyncio.create_task(_run_sync(state))
+                                last_sync_date = today
+                        else:
+                            import logging
+                            logging.getLogger(__name__).info("Skipping sync — not a trading day")
                             last_sync_date = today
+
                     if now.hour == 20 and now.minute == 30 and last_review_date != today:
-                        state = app.state.app_state
-                        asyncio.create_task(_nightly_review(state))
-                        last_review_date = today
+                        if is_trading_day(today):
+                            state = app.state.app_state
+                            existing = Database(
+                                Path(state.data_dir) / "tradingbot.db"
+                            )
+                            existing.initialise()
+                            already_done = existing.get_nightly_review(str(today)) is not None
+                            existing.close()
+                            if not already_done:
+                                asyncio.create_task(_nightly_review(state))
+                            else:
+                                import logging
+                                logging.getLogger(__name__).info("Nightly review already exists for %s", today)
+                            last_review_date = today
+                        else:
+                            last_review_date = today
                 except Exception:
                     pass
 

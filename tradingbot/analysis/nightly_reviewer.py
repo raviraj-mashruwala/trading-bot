@@ -1,11 +1,15 @@
-"""One Claude call per day: review all trades, extract lessons, suggest improvements."""
+"""One Claude call per day: review all trades, extract lessons, suggest improvements.
+
+Collects all proposed setups (traded or not), their intraday candle data,
+execution decisions, and trade outcomes to give a complete picture of the day.
+"""
 
 from __future__ import annotations
 
 import json
 import logging
 from dataclasses import asdict
-from datetime import datetime
+from datetime import date, datetime
 
 from tradingbot.core.database import Database
 from tradingbot.core.llm.provider import LLMProvider
@@ -22,8 +26,18 @@ You have deep knowledge of:
 - Execution quality (entry timing, slippage, drift)
 - Behavioral finance (discipline, overtrading, revenge trading)
 
-Review the provided trades and execution decisions. Be specific and actionable.
-Reference actual numbers from the data. Don't give generic advice."""
+You are given:
+1. All proposed setups for the day (traded and not traded)
+2. Intraday candle data (15m, 5m, 1m) for each proposed stock
+3. Execution decisions (ENTER/WAIT/VETO and their reasons)
+4. Trade outcomes (entry, exit, P&L)
+
+For each stock, study what actually happened during the day using the candle data.
+For traded stocks, evaluate: was the entry well-timed? Did we exit too early or hold too long?
+For untaken setups, evaluate: would the setup have worked? Did the bot correctly skip it?
+
+Be specific and actionable. Reference actual prices, times, and candle patterns.
+Don't give generic advice."""
 
 REVIEW_SCHEMA = {
     "type": "object",
@@ -31,22 +45,22 @@ REVIEW_SCHEMA = {
     "properties": {
         "summary": {
             "type": "string",
-            "description": "2-3 sentence summary of the day. Include total P&L, win rate, and the key story of the day.",
+            "description": "2-3 sentence summary of the day. Include total P&L, win rate, and the key story.",
         },
         "lessons": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "3-5 specific lessons from today's trades. Reference actual symbols, prices, and decisions. Example: 'GLAND short entry at 3154 was well-timed — momentum was -45 and VWAP rejection confirmed the move.'",
+            "description": "3-5 specific lessons. Reference actual symbols, prices, candle patterns, and timing. For untaken setups, say whether the skip was correct. Example: 'GLAND short entry at 3154 was well-timed — 15m candles show consistent lower highs from 9:15 to 9:25, and the 3122 target hit cleanly at 09:25.'",
         },
         "improvements": {
             "type": "array",
             "items": {"type": "string"},
-            "description": "2-4 concrete improvements for the bot or the trader. Be specific about what parameter to change or what behavior to add. Example: 'EntryGuard should WAIT when 5m momentum is between -30 and -60 for shorts — today this gray zone caused a late entry on NELCAST.'",
+            "description": "2-4 concrete improvements. Be specific about parameters or rules. Example: 'EntryGuard vetoed NELCAST due to drift, but 5m candles show price returned to entry within 10 minutes — consider a 15-minute WAIT instead of immediate VETO for drift between 3-5%.'",
         },
         "grade": {
             "type": "string",
             "enum": ["A", "B", "C", "D", "F"],
-            "description": "A=excellent execution and P&L, B=good with minor issues, C=mixed results, D=poor execution, F=significant losses or failures",
+            "description": "A=excellent execution, B=good with minor issues, C=mixed, D=poor execution, F=significant losses",
         },
     },
 }
@@ -55,13 +69,15 @@ REVIEW_SCHEMA = {
 def _format_trade(trade) -> str:
     d = asdict(trade)
     pnl_sign = "+" if d["pnl"] >= 0 else ""
-    r_mult = d["pnl"] / abs(d["entry_price"] - d["stop_loss"]) / d["quantity"] if d["quantity"] > 0 else 0
+    stop_dist = abs(d["entry_price"] - d["stop_loss"])
+    r_mult = d["pnl"] / (stop_dist * d["quantity"]) if d["quantity"] > 0 and stop_dist > 0 else 0
     return (
         f"  {d['symbol']} {d['direction'].upper()} x{d['quantity']}: "
         f"entry={d['entry_price']:.2f} exit={d['exit_price']:.2f} "
-        f"SL={d['stop_loss']:.2f} T1={d['target_1']:.2f} "
+        f"SL={d['stop_loss']:.2f} T1={d['target_1']:.2f} T2={d['target_2']:.2f} "
         f"P&L={pnl_sign}{d['pnl']:.2f} ({pnl_sign}{r_mult:.1f}R) "
-        f"exit_reason={d['exit_reason']} strategy={d['strategy'].value}"
+        f"exit_reason={d['exit_reason']} "
+        f"entered={d['entered_at']} exited={d['exited_at']}"
     )
 
 
@@ -76,46 +92,126 @@ def _format_decision(dec: dict) -> str:
     return "".join(parts)
 
 
-def _build_prompt(trade_date: str, trades, decisions: list[dict]) -> str:
-    if not trades:
-        return f"No trades were executed on {trade_date}. Review the decisions to understand why."
+def _format_setup(s: dict) -> str:
+    return (
+        f"  {s['symbol']} {s['direction'].upper()} ({s['strategy']}): "
+        f"entry={s['entry_price']} SL={s['stop_loss']} T1={s['target_1']} "
+        f"confidence={s.get('confidence', '?')} status={s['status']} "
+        f"reasoning={s.get('reasoning', '')[:120]}"
+    )
 
-    total_pnl = sum(t.pnl for t in trades)
-    wins = sum(1 for t in trades if t.pnl > 0)
-    losses = sum(1 for t in trades if t.pnl <= 0)
+
+def _format_candles(df, interval: str, max_rows: int = 40) -> str:
+    if df is None or df.empty:
+        return f"  No {interval} data available"
+    rows = df.tail(max_rows)
+    lines = [f"  {interval} candles ({len(df)} total, showing last {len(rows)}):"]
+    lines.append("  time        | open     | high     | low      | close    | volume")
+    for _, r in rows.iterrows():
+        ts = str(r["timestamp"])[11:16] if len(str(r["timestamp"])) > 11 else str(r["timestamp"])
+        lines.append(
+            f"  {ts:>5} | {r['open']:>8.2f} | {r['high']:>8.2f} | {r['low']:>8.2f} | {r['close']:>8.2f} | {int(r['volume']):>8}"
+        )
+    return "\n".join(lines)
+
+
+def _build_prompt(
+    trade_date: str,
+    trades,
+    decisions: list[dict],
+    setups: list[dict],
+    candle_data: dict[str, dict[str, object]],
+) -> str:
+    total_pnl = sum(t.pnl for t in trades) if trades else 0
+    wins = sum(1 for t in trades if t.pnl > 0) if trades else 0
+    losses = sum(1 for t in trades if t.pnl <= 0) if trades else 0
+    traded_symbols = {t.symbol for t in trades}
 
     lines = [
         f"## Trading Day: {trade_date}",
         f"Total P&L: ₹{total_pnl:+,.2f} | Trades: {len(trades)} | Wins: {wins} | Losses: {losses}",
-        "",
-        "## Trades",
+        f"Proposed setups: {len(setups)} | Traded: {len(traded_symbols)}",
     ]
-    for t in trades:
-        lines.append(_format_trade(t))
+
+    if setups:
+        lines.append("")
+        lines.append("## Proposed Setups")
+        for s in setups:
+            tag = " [TRADED]" if s["symbol"] in traded_symbols else " [NOT TAKEN]"
+            lines.append(_format_setup(s) + tag)
+
+    if trades:
+        lines.append("")
+        lines.append("## Executed Trades")
+        for t in trades:
+            lines.append(_format_trade(t))
 
     if decisions:
-        entry_decisions = [d for d in decisions if d["decision_type"].startswith("ENTRY_")]
-        exit_decisions = [d for d in decisions if not d["decision_type"].startswith("ENTRY_")]
-
-        if entry_decisions:
+        entry_decs = [d for d in decisions if d["decision_type"].startswith("ENTRY_")]
+        exit_decs = [d for d in decisions if not d["decision_type"].startswith("ENTRY_")]
+        if entry_decs:
             lines.append("")
-            lines.append(f"## Entry Decisions ({len(entry_decisions)})")
-            for d in entry_decisions:
+            lines.append(f"## Entry Decisions ({len(entry_decs)})")
+            for d in entry_decs:
+                lines.append(_format_decision(d))
+        if exit_decs:
+            lines.append("")
+            lines.append(f"## Exit Decisions ({len(exit_decs)})")
+            for d in exit_decs:
                 lines.append(_format_decision(d))
 
-        if exit_decisions:
-            lines.append("")
-            lines.append(f"## Exit Decisions ({len(exit_decisions)})")
-            for d in exit_decisions:
-                lines.append(_format_decision(d))
+    # Candle data per symbol
+    all_symbols = sorted({s["symbol"] for s in setups} | traded_symbols)
+    if candle_data and all_symbols:
+        lines.append("")
+        lines.append("## Intraday Candle Data")
+        for sym in all_symbols:
+            sym_data = candle_data.get(sym, {})
+            if not sym_data:
+                lines.append(f"\n### {sym} — no candle data")
+                continue
+            lines.append(f"\n### {sym}")
+            for interval in ["15m", "5m", "1m"]:
+                df = sym_data.get(interval)
+                lines.append(_format_candles(df, interval))
+
+    if not trades and not setups:
+        return f"No trades or setups for {trade_date}. Review decisions to understand why."
 
     return "\n".join(lines)
+
+
+def _load_candle_data(
+    candle_store,
+    symbols: list[str],
+    trade_date: str,
+) -> dict[str, dict]:
+    if candle_store is None:
+        return {}
+
+    from datetime import date as _date
+    td = _date.fromisoformat(trade_date)
+    result: dict[str, dict] = {}
+
+    for sym in symbols:
+        sym_data = {}
+        for interval in ["15m", "5m", "1m"]:
+            try:
+                df = candle_store.read(sym, interval, from_date=td, to_date=td)
+                sym_data[interval] = df if not df.empty else None
+            except Exception:
+                sym_data[interval] = None
+        result[sym] = sym_data
+
+    return result
 
 
 async def run_nightly_review(
     database: Database,
     llm: LLMProvider,
     trade_date: str | None = None,
+    setup_store=None,
+    candle_store=None,
 ) -> dict:
     if trade_date is None:
         trade_date = now_ist().strftime("%Y-%m-%d")
@@ -123,12 +219,26 @@ async def run_nightly_review(
     trades = database.trades_for_date(trade_date)
     decisions = database.get_decisions_for_date(trade_date)
 
-    if not trades and not decisions:
-        logger.info("No trades or decisions for %s — skipping review", trade_date)
+    setups: list[dict] = []
+    if setup_store is not None:
+        try:
+            setups = setup_store.get_all_for_date(date.fromisoformat(trade_date))
+        except Exception:
+            logger.warning("Failed to load setups for %s", trade_date, exc_info=True)
+
+    if not trades and not decisions and not setups:
+        logger.info("No activity for %s — skipping review", trade_date)
         return {"trade_date": trade_date, "skipped": True, "reason": "no activity"}
 
-    prompt = _build_prompt(trade_date, trades, decisions)
-    logger.info("Running nightly review for %s (%d trades, %d decisions)", trade_date, len(trades), len(decisions))
+    # Collect symbols from both setups and trades
+    all_symbols = sorted({s["symbol"] for s in setups} | {t.symbol for t in trades})
+    candle_data = _load_candle_data(candle_store, all_symbols, trade_date)
+
+    prompt = _build_prompt(trade_date, trades, decisions, setups, candle_data)
+    logger.info(
+        "Running nightly review for %s (%d trades, %d decisions, %d setups, %d symbols with candles)",
+        trade_date, len(trades), len(decisions), len(setups), len(candle_data),
+    )
 
     result = await llm.analyze(
         system_prompt=SYSTEM_PROMPT,

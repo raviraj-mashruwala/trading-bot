@@ -106,7 +106,11 @@ async def run_nightly_review(request: Request, date: str | None = None):
     db = Database(Path(state.data_dir) / "tradingbot.db")
     db.initialise()
     try:
-        review = await _run(db, llm, trade_date=date)
+        review = await _run(
+            db, llm, trade_date=date,
+            setup_store=getattr(state, "setup_store", None),
+            candle_store=getattr(state, "candle_store", None),
+        )
         return review
     except Exception as exc:
         logging.getLogger(__name__).error("Nightly review failed: %s", exc, exc_info=True)
