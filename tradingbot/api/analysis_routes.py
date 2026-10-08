@@ -429,6 +429,20 @@ async def kite_status(request: Request):
         auth.kite.margins("equity")
         return {"authenticated": True}
     except Exception:
+        from tradingbot.execution.kite_auth import KiteAuth
+        saved_token = KiteAuth.load_saved_token()
+        if saved_token and saved_token != auth._access_token:
+            try:
+                from kiteconnect import KiteConnect
+                kite = KiteConnect(api_key=state.config.secrets.kite_api_key)
+                kite.set_access_token(saved_token)
+                kite.margins("equity")
+                auth._access_token = saved_token
+                auth._kite = kite
+                logger.info("Refreshed Kite token from file")
+                return {"authenticated": True}
+            except Exception:
+                pass
         return {"authenticated": False, "error": "token expired"}
 
 
