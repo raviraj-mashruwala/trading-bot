@@ -426,7 +426,7 @@ async def kite_status(request: Request):
     if not auth.is_authenticated():
         return {"authenticated": False}
     try:
-        auth.kite.profile()
+        auth.kite.margins("equity")
         return {"authenticated": True}
     except Exception:
         return {"authenticated": False, "error": "token expired"}
