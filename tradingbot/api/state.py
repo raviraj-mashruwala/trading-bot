@@ -71,7 +71,7 @@ class AppState:
             try:
                 margins = self.kite_auth.kite.margins("equity")
                 available = margins.get("available", {})
-                live = available.get("live_balance", 0) + available.get("intraday_payin", 0)
+                live = available.get("live_balance", 0)
                 if live > 0:
                     self._cached_capital = live
                     self._capital_fetched_at = now
