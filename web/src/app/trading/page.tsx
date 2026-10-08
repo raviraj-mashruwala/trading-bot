@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useExecutionStore } from "@/lib/execution-store";
@@ -15,11 +16,19 @@ export default function TradingPage() {
   const sessionResult = useExecutionStore((s) => s.sessionResult);
   const recentDecisions = useExecutionStore((s) => s.recentDecisions);
 
+  const reset = useExecutionStore((s) => s.reset);
+
   const { data: statusData } = useQuery({
     queryKey: ["execution-status"],
     queryFn: api.getExecutionStatus,
     refetchInterval: execStatus === "running" ? 5_000 : 30_000,
   });
+
+  useEffect(() => {
+    if (statusData && execStatus === "running" && statusData.status !== "running") {
+      reset();
+    }
+  }, [statusData, execStatus, reset]);
 
   const decisions = execStatus === "running" && recentDecisions.length > 0
     ? recentDecisions
