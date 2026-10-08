@@ -89,59 +89,90 @@ def create_app(
                 logging.getLogger(__name__).warning("Nightly review failed", exc_info=True)
                 await state_ref.event_bus.emit("review.failed", {"error": "Review failed"})
 
-        async def _daily_sync_scheduler():
+        async def _auto_start_execution(state_ref):
+            try:
+                import logging
+                _log = logging.getLogger(__name__)
+                if state_ref.executor_status == "running":
+                    _log.info("Execution already running — skipping auto-start")
+                    return
+                from tradingbot.scanner.calendar import next_trading_day
+                from tradingbot.core.models import now_ist, Mode
+                now = now_ist()
+                today = now.date()
+                target = today if now.hour < 16 else next_trading_day(today)
+                try:
+                    plan = state_ref.plan_store.load(str(target))
+                except Exception:
+                    _log.info("No plan for %s — skipping auto-start", target)
+                    return
+                if not plan.legs:
+                    _log.info("Plan for %s has no legs — skipping auto-start", target)
+                    return
+                mode_str = getattr(state_ref.config.general, "mode", "paper")
+                mode = Mode.LIVE if mode_str == "live" else Mode.PAPER
+                _log.info("Auto-starting %s execution for %s (%d legs)", mode.value, target, len(plan.legs))
+                await state_ref.event_bus.emit("exec.auto_start", {
+                    "trade_date": str(target), "mode": mode.value, "legs": len(plan.legs),
+                })
+                from tradingbot.api.execution_routes import _run_execution
+                state_ref.execution_task = asyncio.create_task(_run_execution(state_ref, mode, plan))
+            except Exception:
+                import logging
+                logging.getLogger(__name__).warning("Auto-start execution failed", exc_info=True)
+
+        async def _daily_scheduler():
+            from tradingbot.scheduler import should_start_execution, should_sync, should_review
+            from tradingbot.scanner.calendar import is_trading_day
+            last_exec_date = None
             last_sync_date = None
             last_review_date = None
             while True:
-                await asyncio.sleep(60)
+                await asyncio.sleep(30)
                 try:
-                    from tradingbot.scanner.calendar import is_trading_day
                     now = _dt.now(tz=IST)
                     today = now.date()
+                    trading = is_trading_day(today)
+                    now_time = now.timetz().replace(tzinfo=None)
 
-                    if now.hour == 16 and now.minute == 0 and last_sync_date != today:
-                        if is_trading_day(today):
-                            import logging
-                            logging.getLogger(__name__).info("Scheduled daily sync at 4 PM IST")
-                            state = app.state.app_state
-                            if state.sync_task is None or state.sync_task.done():
-                                async def _sync_with_events(s):
-                                    await s.event_bus.emit("sync.started", {})
-                                    await _run_sync(s)
-                                    status = s.sync_status or {}
-                                    await s.event_bus.emit("sync.complete", {
-                                        "stocks_synced": status.get("stocks_synced", 0),
-                                        "rows_written": status.get("rows_written", 0),
-                                        "status": status.get("status", "unknown"),
-                                    })
-                                state.sync_task = asyncio.create_task(_sync_with_events(state))
-                                last_sync_date = today
+                    if should_start_execution(now_time, today, last_exec_date, trading):
+                        state = app.state.app_state
+                        asyncio.create_task(_auto_start_execution(state))
+                        last_exec_date = today
+
+                    if should_sync(now_time, today, last_sync_date, trading):
+                        import logging
+                        logging.getLogger(__name__).info("Scheduled daily sync at 4 PM IST")
+                        state = app.state.app_state
+                        if state.sync_task is None or state.sync_task.done():
+                            async def _sync_with_events(s):
+                                await s.event_bus.emit("sync.started", {})
+                                await _run_sync(s)
+                                status = s.sync_status or {}
+                                await s.event_bus.emit("sync.complete", {
+                                    "stocks_synced": status.get("stocks_synced", 0),
+                                    "rows_written": status.get("rows_written", 0),
+                                    "status": status.get("status", "unknown"),
+                                })
+                            state.sync_task = asyncio.create_task(_sync_with_events(state))
+                        last_sync_date = today
+
+                    if should_review(now_time, today, last_review_date, trading):
+                        state = app.state.app_state
+                        existing = Database(Path(state.data_dir) / "tradingbot.db")
+                        existing.initialise()
+                        already_done = existing.get_nightly_review(str(today)) is not None
+                        existing.close()
+                        if not already_done:
+                            asyncio.create_task(_nightly_review(state))
                         else:
                             import logging
-                            logging.getLogger(__name__).info("Skipping sync — not a trading day")
-                            last_sync_date = today
-
-                    if now.hour == 20 and now.minute == 30 and last_review_date != today:
-                        if is_trading_day(today):
-                            state = app.state.app_state
-                            existing = Database(
-                                Path(state.data_dir) / "tradingbot.db"
-                            )
-                            existing.initialise()
-                            already_done = existing.get_nightly_review(str(today)) is not None
-                            existing.close()
-                            if not already_done:
-                                asyncio.create_task(_nightly_review(state))
-                            else:
-                                import logging
-                                logging.getLogger(__name__).info("Nightly review already exists for %s", today)
-                            last_review_date = today
-                        else:
-                            last_review_date = today
+                            logging.getLogger(__name__).info("Nightly review already exists for %s", today)
+                        last_review_date = today
                 except Exception:
                     pass
 
-        scheduler_task = asyncio.create_task(_daily_sync_scheduler())
+        scheduler_task = asyncio.create_task(_daily_scheduler())
 
         yield
 
