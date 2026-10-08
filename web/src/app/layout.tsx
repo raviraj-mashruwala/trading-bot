@@ -18,8 +18,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trading Bot Dashboard",
-  description: "Trading bot analysis, execution, and monitoring dashboard",
+  title: "TradingBot",
+  description: "Automated intraday equity trading dashboard",
+  icons: { icon: "/icon.svg" },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

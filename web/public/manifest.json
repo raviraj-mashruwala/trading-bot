@@ -1,0 +1,16 @@
+{
+  "name": "TradingBot",
+  "short_name": "TradingBot",
+  "description": "Automated intraday equity trading dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070a0f",
+  "theme_color": "#d4a015",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
