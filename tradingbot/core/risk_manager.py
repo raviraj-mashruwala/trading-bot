@@ -46,7 +46,7 @@ class RiskManager:
     # ----- Layer 1: analysis time -------------------------------------------------
 
     def position_size(self, setup: TradeSetup) -> int:
-        """Shares to trade, from the risk budget, capped by deployable margin."""
+        """Shares to trade, from the risk budget. Used as standalone sizing."""
         stop_distance = abs(setup.entry_price - setup.stop_loss)
         if stop_distance < MIN_STOP_DISTANCE:
             raise InvalidSetupError(
@@ -57,11 +57,7 @@ class RiskManager:
         risk_budget = self.capital * self.risk.max_risk_per_trade_pct
         by_risk = math.floor(risk_budget / stop_distance)
 
-        deployable = self.capital * self.risk.max_capital_deployed_pct
-        margin_per_share = self._get_margin_per_share(setup)
-        by_capital = math.floor(deployable / margin_per_share) if margin_per_share > 0 else 0
-
-        return max(0, min(by_risk, by_capital))
+        return max(0, by_risk)
 
     def _get_margin_per_share(self, setup: TradeSetup) -> float:
         """Get margin required per share — uses Kite API if available, else full price."""
@@ -105,37 +101,48 @@ class RiskManager:
         max_entry_wait: time,
         exit_before: time,
     ) -> list[TradeLeg]:
-        """Rank by confidence, size each survivor, stop at the exposure ceiling."""
-        ranked = sorted(setups, key=lambda setup: setup.confidence, reverse=True)
+        """Size positions weighted by confidence, using 95% of available margin."""
         max_legs = min(self.strategy.max_trades_per_day, self.risk.max_concurrent_positions)
-        exposure_ceiling = self.capital * self.risk.max_capital_deployed_pct
+        total_margin = self.capital * 0.95
 
-        legs: list[TradeLeg] = []
-        deployed = 0.0
-
-        for setup in ranked:
-            if len(legs) >= max_legs:
-                break
-
+        eligible = []
+        for setup in setups:
             reason = self.vet_setup(setup)
             if reason is not None:
                 logger.info("dropping %s: %s", setup.symbol, reason)
                 continue
+            eligible.append(setup)
 
-            quantity = self.position_size(setup)
+        eligible = sorted(eligible, key=lambda s: s.confidence, reverse=True)[:max_legs]
+
+        if not eligible:
+            return []
+
+        total_confidence = sum(s.confidence for s in eligible)
+        if total_confidence <= 0:
+            total_confidence = len(eligible)
+
+        legs: list[TradeLeg] = []
+        for setup in eligible:
+            weight = setup.confidence / total_confidence
+            allocated_margin = total_margin * weight
+
+            stop_distance = abs(setup.entry_price - setup.stop_loss)
+            risk_budget = self.capital * self.risk.max_risk_per_trade_pct
+            by_risk = math.floor(risk_budget / stop_distance) if stop_distance > 0.01 else 0
+
+            margin_per_share = self._get_margin_per_share(setup)
+            by_margin = math.floor(allocated_margin / margin_per_share) if margin_per_share > 0 else 0
+
+            quantity = max(0, min(by_risk, by_margin))
             if quantity <= 0:
                 logger.info("dropping %s: position sizes to zero shares", setup.symbol)
                 continue
 
-            margin_per_share = self._get_margin_per_share(setup)
-            margin_needed = quantity * margin_per_share
-            remaining = exposure_ceiling - deployed
-            if margin_needed > remaining:
-                quantity = math.floor(remaining / margin_per_share) if margin_per_share > 0 else 0
-                margin_needed = quantity * margin_per_share
-            if quantity <= 0:
-                logger.info("dropping %s: no room in exposure ceiling", setup.symbol)
-                continue
+            logger.info(
+                "%s: weight=%.0f%% allocated=%.0f margin/share=%.0f qty=%d",
+                setup.symbol, weight * 100, allocated_margin, margin_per_share, quantity,
+            )
 
             legs.append(
                 setup.to_leg(
@@ -145,7 +152,6 @@ class RiskManager:
                     exit_before=exit_before,
                 )
             )
-            deployed += margin_needed
 
         return legs
 
