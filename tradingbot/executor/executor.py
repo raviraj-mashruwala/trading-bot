@@ -140,16 +140,15 @@ class Executor:
                 self._adopt(state, existing)
                 continue
 
-            price = self.broker.get_ltp(leg.symbol)
-            drift = self.risk_manager.vet_leg_at_open(leg, price)
-            if drift is not None:
-                logger.warning("skipping %s: %s", leg.symbol, drift)
-                state.skipped_reason = drift
-                continue
-
             if self._intelligence is not None:
-                self._evaluate_entry(state, now)
+                state.waiting = True
             else:
+                price = self.broker.get_ltp(leg.symbol)
+                drift = self.risk_manager.vet_leg_at_open(leg, price)
+                if drift is not None:
+                    logger.warning("skipping %s: %s", leg.symbol, drift)
+                    state.skipped_reason = drift
+                    continue
                 self._submit_entry(state)
 
     def tick(self) -> None:
@@ -222,6 +221,17 @@ class Executor:
                     intel.aggregator.get_candles(state.leg.symbol, "5min") or [],
                 )
         if symbol_state is None:
+            live_price = intel.aggregator.last_price(state.leg.symbol)
+            if live_price and live_price > 0:
+                drift_pct = abs(live_price - state.leg.entry_price) / state.leg.entry_price * 100
+                if drift_pct <= 1.0:
+                    logger.info(
+                        "%s: price %.1f within 1%% of entry %.1f — entering on price proximity",
+                        state.leg.symbol, live_price, state.leg.entry_price,
+                    )
+                    state.waiting = False
+                    self._submit_entry(state)
+                    return
             state.waiting = True
             logger.warning(
                 "%s waiting: no candle data yet — will not enter without market data",
@@ -244,6 +254,10 @@ class Executor:
             return
 
         price = intel.aggregator.last_price(state.leg.symbol) or state.leg.entry_price
+        drift_pct = abs(price - state.leg.entry_price) / state.leg.entry_price * 100
+        if drift_pct > 5.0:
+            state.waiting = True
+            return
         verdict = intel.entry_guard.evaluate(state.leg, symbol_state, price, now)
 
         if verdict.action == "ENTER":

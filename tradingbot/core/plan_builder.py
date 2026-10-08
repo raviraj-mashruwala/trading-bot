@@ -20,9 +20,9 @@ from tradingbot.persistence.setup_store import SetupStore
 
 log = logging.getLogger(__name__)
 
-DEFAULT_ENTRY_WINDOW_START = time(9, 20)
-DEFAULT_ENTRY_WINDOW_END = time(10, 30)
-DEFAULT_MAX_ENTRY_WAIT = time(11, 0)
+DEFAULT_ENTRY_WINDOW_START = time(9, 16)
+DEFAULT_ENTRY_WINDOW_END = time(14, 0)
+DEFAULT_MAX_ENTRY_WAIT = time(14, 30)
 DEFAULT_EXIT_BEFORE = time(15, 10)
 
 
