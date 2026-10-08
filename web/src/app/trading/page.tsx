@@ -8,6 +8,7 @@ import { PositionsGrid } from "@/components/trading/positions-grid";
 import { SessionSummary } from "@/components/trading/session-summary";
 import { TickerHealthIndicator } from "@/components/trading/ticker-health-indicator";
 import { DecisionTimeline } from "@/components/trading/decision-timeline";
+import { SquareOffCountdown } from "@/components/trading/square-off-countdown";
 
 export default function TradingPage() {
   const execStatus = useExecutionStore((s) => s.status);
@@ -24,18 +25,32 @@ export default function TradingPage() {
     ? recentDecisions
     : statusData?.decision_log ?? [];
 
+  const positions = statusData?.positions ?? [];
+  const totalUnrealisedPnl = positions.reduce((sum, p) => sum + (p.unrealised_pnl ?? 0), 0);
+  const hasPositions = positions.length > 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Live Trading</h1>
-        <TickerHealthIndicator health={statusData?.ticker_health} />
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-semibold">Live Trading</h1>
+          {hasPositions && (
+            <span className={`text-lg font-mono font-semibold ${totalUnrealisedPnl >= 0 ? "text-[#2da44e]" : "text-[#f85149]"}`}>
+              {totalUnrealisedPnl >= 0 ? "+" : ""}₹{totalUnrealisedPnl.toFixed(0)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-4">
+          <SquareOffCountdown />
+          <TickerHealthIndicator health={statusData?.ticker_health} />
+        </div>
       </div>
 
       <ExecutionControls />
 
       <div>
         <h2 className="mb-3 text-lg font-semibold">Positions</h2>
-        <PositionsGrid positions={statusData?.positions ?? []} />
+        <PositionsGrid positions={positions} />
       </div>
 
       <DecisionTimeline decisions={decisions} />

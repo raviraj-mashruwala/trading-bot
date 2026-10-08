@@ -7,6 +7,7 @@ import { KiteConnectButton } from "@/components/auth/kite-connect-button";
 import { KeepAwake } from "@/components/dashboard/keep-awake";
 import { Sheet } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/layout/sidebar";
+import { NotificationBell } from "@/components/ui/notification-bell";
 
 export function TopBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,8 +34,9 @@ export function TopBar() {
           </svg>
         </button>
 
-        <div className="flex items-center gap-4 ml-auto">
+        <div className="flex items-center gap-3 ml-auto">
           <KeepAwake />
+          <NotificationBell />
           <KiteConnectButton />
         </div>
         <div className="flex items-center gap-2 ml-4">

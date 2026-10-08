@@ -65,7 +65,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden md:flex h-screen w-52 flex-col border-r border-border/50 bg-[#0d1017] px-3 py-5">
+    <aside className="hidden md:flex h-screen w-52 flex-col border-r border-border/50 bg-[#0f1419] px-3 py-5">
       <SidebarNav />
     </aside>
   );

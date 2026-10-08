@@ -8,6 +8,7 @@ import { StrategyBreakdown } from "@/components/review/strategy-breakdown";
 import { ConfluenceChart } from "@/components/review/confluence-chart";
 import { ScorecardTable } from "@/components/review/scorecard-table";
 import { NightlyReviewCard } from "@/components/review/nightly-review-card";
+import { NightlyReviewHistory } from "@/components/review/nightly-review-history";
 
 const PERIODS = [
   { label: "7d", days: 7 },
@@ -71,6 +72,7 @@ export default function ReviewPage() {
       )}
 
       <NightlyReviewCard review={nightlyReview} date={scorecardDate} />
+      <NightlyReviewHistory />
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">

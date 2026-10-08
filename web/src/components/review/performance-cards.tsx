@@ -23,7 +23,7 @@ export function PerformanceCards({ stats }: { stats: PerformanceStatsData }) {
       {cards.map((c) => (
         <div key={c.label} className="rounded-lg border border-border/50 bg-card/80 p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{c.label}</p>
-          <p className={`mt-1 text-2xl font-semibold ${c.color ?? "text-foreground"}`}>{c.value}</p>
+          <p className={`mt-1 text-2xl font-semibold font-mono-nums ${c.color ?? "text-foreground"}`}>{c.value}</p>
           {c.sub && <p className="mt-0.5 text-xs text-muted-foreground/60">{c.sub}</p>}
         </div>
       ))}

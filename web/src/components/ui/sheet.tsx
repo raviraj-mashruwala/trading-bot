@@ -34,7 +34,7 @@ export function Sheet({ open, onClose, children, side = "left" }: SheetProps) {
       )}
       <div
         className={cn(
-          "fixed top-0 z-50 h-full w-64 bg-[#0d1017] border-r border-[rgba(28,39,54,0.5)] transition-transform duration-200 ease-out",
+          "fixed top-0 z-50 h-full w-64 bg-[#0f1419] border-r border-[rgba(28,39,54,0.5)] transition-transform duration-200 ease-out",
           side === "left" ? "left-0" : "right-0",
           open
             ? "translate-x-0"
