@@ -18,6 +18,11 @@ export function ExecutionControls() {
 
   const { data: config } = useQuery({ queryKey: ["config"], queryFn: api.getConfig });
   const { data: plans } = useQuery({ queryKey: ["plans"], queryFn: api.getPlans });
+  const { data: statusData } = useQuery({
+    queryKey: ["execution-status"],
+    queryFn: api.getExecutionStatus,
+    refetchInterval: 5000,
+  });
 
   const defaultMode = config?.general?.mode as string ?? "paper";
   const mode = selectedMode || defaultMode;
@@ -35,7 +40,7 @@ export function ExecutionControls() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["execution-status"] }),
   });
 
-  const isRunning = execStatus === "running";
+  const isRunning = execStatus === "running" || statusData?.status === "running";
   const hasPlans = plans && plans.length > 0;
 
   const handleStart = () => {

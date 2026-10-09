@@ -117,6 +117,8 @@ def create_app(
                     "trade_date": str(target), "mode": mode.value, "legs": len(plan.legs),
                 })
                 from tradingbot.api.execution_routes import _run_execution
+                state_ref.executor_status = "running"
+                state_ref.executor_mode = mode.value
                 state_ref.execution_task = asyncio.create_task(_run_execution(state_ref, mode, plan))
             except Exception:
                 import logging
