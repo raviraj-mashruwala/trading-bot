@@ -103,6 +103,17 @@ class LiveTickManager:
         self._ticker.connect(threaded=True)
         log.info("KiteTicker started")
 
+    def force_reconnect(self) -> None:
+        """Tear down the current WebSocket and reconnect fresh."""
+        log.warning("Force-reconnecting KiteTicker")
+        if self._ticker:
+            try:
+                self._ticker.close()
+            except Exception:
+                log.exception("Error closing ticker during force-reconnect")
+            self._ticker = None
+        self.start()
+
     def stop(self) -> None:
         """Close the WebSocket connection."""
         if self._ticker:

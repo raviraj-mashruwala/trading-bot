@@ -145,6 +145,13 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
         while not executor.is_done:
             executor.tick()
 
+            # Watchdog: force-reconnect ticker if ticks are stale
+            if intelligence is not None:
+                try:
+                    intelligence.check_and_reconnect()
+                except Exception:
+                    pass
+
             # Broadcast ticker health on every tick
             if ws_mgr is not None and intelligence is not None:
                 try:

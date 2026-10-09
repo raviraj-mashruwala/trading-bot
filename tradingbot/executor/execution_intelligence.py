@@ -16,6 +16,9 @@ from tradingbot.executor.llm_escalator import LLMEscalator
 logger = logging.getLogger(__name__)
 
 SEED_CANDLE_COUNT = 50
+STALE_TICK_THRESHOLD_SECONDS = 30
+MARKET_OPEN_HOUR = 9
+MARKET_OPEN_MINUTE = 15
 
 
 @dataclass
@@ -179,6 +182,30 @@ class ExecutionIntelligence:
     def on_reconnect(self) -> None:
         self.health.status = "healthy"
         logger.info("Ticker reconnected")
+
+    def check_and_reconnect(self) -> bool:
+        """If ticks are stale during market hours, force-reconnect the ticker.
+
+        Returns True if a reconnect was triggered.
+        """
+        now = datetime.now()
+        if now.hour < MARKET_OPEN_HOUR or (now.hour == MARKET_OPEN_HOUR and now.minute < MARKET_OPEN_MINUTE):
+            return False
+        if self.health.last_tick_at is None:
+            stale = (now - now.replace(hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0)).total_seconds()
+        else:
+            stale = (now - self.health.last_tick_at).total_seconds()
+        if stale > STALE_TICK_THRESHOLD_SECONDS:
+            logger.warning(
+                "Ticks stale for %.0fs (threshold %ds) — forcing reconnect",
+                stale, STALE_TICK_THRESHOLD_SECONDS,
+            )
+            self.health.status = "reconnecting"
+            if hasattr(self._ticker, "force_reconnect"):
+                self._ticker.force_reconnect()
+                self.health.reconnect_count += 1
+                return True
+        return False
 
     def mark_degraded(self, gap_seconds: int) -> None:
         self.health.gap_seconds_today += gap_seconds
