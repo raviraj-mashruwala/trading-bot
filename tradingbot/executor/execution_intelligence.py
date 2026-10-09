@@ -82,6 +82,11 @@ class ExecutionIntelligence:
                 self.aggregator.seed(sym, "5min", [c for c in candles if c.timeframe == "5min"])
             subscribe_tokens.append(token)
         self._ticker.subscribe(subscribe_tokens, self._on_ticks)
+        if hasattr(self._ticker, "set_lifecycle_callbacks"):
+            self._ticker.set_lifecycle_callbacks(
+                on_disconnect=self.on_disconnect,
+                on_reconnect=self.on_reconnect,
+            )
         self._ticker.start()
 
         self.aggregator.subscribe("1min_close", self._on_1min_close)

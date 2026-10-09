@@ -29,6 +29,8 @@ class LiveTickManager:
         self._subscribed: set[int] = set()
         self._thread: threading.Thread | None = None
         self._full_tick_callback: Callable[[Any, list[dict]], None] | None = None
+        self._on_disconnect_cb: Callable[[], None] | None = None
+        self._on_reconnect_cb: Callable[[], None] | None = None
 
     @property
     def subscribed_tokens(self) -> set[int]:
@@ -79,12 +81,24 @@ class LiveTickManager:
         if self._ticker is not None:
             self._ticker.unsubscribe(tokens)
 
+    def set_lifecycle_callbacks(
+        self,
+        on_disconnect: Callable[[], None] | None = None,
+        on_reconnect: Callable[[], None] | None = None,
+    ) -> None:
+        """Register callbacks for connection lifecycle events."""
+        self._on_disconnect_cb = on_disconnect
+        self._on_reconnect_cb = on_reconnect
+
     def start(self) -> None:
         """Create a KiteTicker and connect in a daemon thread."""
         self._ticker = KiteTicker(self._api_key, self._access_token)
         self._ticker.on_ticks = self._on_ticks
         self._ticker.on_connect = self._on_connect
         self._ticker.on_close = self._on_close
+        self._ticker.on_error = self._on_error
+        self._ticker.on_reconnect = self._on_ws_reconnect
+        self._ticker.on_noreconnect = self._on_noreconnect
 
         self._ticker.connect(threaded=True)
         log.info("KiteTicker started")
@@ -125,3 +139,22 @@ class LiveTickManager:
 
     def _on_close(self, ws: Any, code: int, reason: str) -> None:
         log.warning("KiteTicker closed: %s %s", code, reason)
+        if self._on_disconnect_cb is not None:
+            try:
+                self._on_disconnect_cb()
+            except Exception:
+                log.exception("Disconnect callback error")
+
+    def _on_error(self, ws: Any, code: int, reason: str) -> None:
+        log.error("KiteTicker error: %s %s", code, reason)
+
+    def _on_ws_reconnect(self, ws: Any, attempts_count: int) -> None:
+        log.info("KiteTicker reconnecting, attempt %d", attempts_count)
+        if self._on_reconnect_cb is not None:
+            try:
+                self._on_reconnect_cb()
+            except Exception:
+                log.exception("Reconnect callback error")
+
+    def _on_noreconnect(self, ws: Any) -> None:
+        log.error("KiteTicker exhausted all reconnect attempts")
