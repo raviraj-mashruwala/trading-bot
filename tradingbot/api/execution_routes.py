@@ -120,6 +120,18 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             jev_config=config.jev,
         )
 
+        regime_monitor = None
+        if config.jev and config.jev.enabled:
+            from tradingbot.core.jev_client import JevClient
+            from tradingbot.executor.regime_monitor import RegimeMonitor
+            try:
+                jev_client = JevClient(config.jev)
+                if jev_client.available:
+                    regime_monitor = RegimeMonitor(jev_client, check_interval_seconds=300)
+                    logger.info("Regime monitor enabled (every 5min)")
+            except Exception:
+                logger.warning("Regime monitor setup failed", exc_info=True)
+
         executor = Executor(
             broker=broker,
             plan=plan,
@@ -128,6 +140,7 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             execution_config=config.execution,
             mode=mode,
             intelligence=intelligence,
+            regime_monitor=regime_monitor,
         )
 
         state.executor_ref = executor

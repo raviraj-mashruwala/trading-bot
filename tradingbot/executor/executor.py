@@ -196,10 +196,14 @@ class Executor:
                 return
 
         if self._regime_monitor and self._regime_monitor.should_check(now):
-            result = self._regime_monitor.check({}, self._current_regime or "unknown")
+            market_data = self._build_regime_context()
+            regime = self._current_regime or getattr(self.plan.market_regime, "value", "unknown")
+            result = self._regime_monitor.check(market_data, regime)
             if result.changed:
+                old_regime = self._current_regime
                 self._current_regime = result.new_regime
-                logger.warning("Regime shift to %s — monitoring positions", result.new_regime)
+                self._emit_decision("ALL", "REGIME_SHIFT", f"{old_regime} → {result.new_regime} (conf={result.confidence:.2f})")
+                logger.warning("Regime shift %s → %s (conf=%.2f)", old_regime, result.new_regime, result.confidence)
 
         for state in self.states:
             if state.is_finished:
@@ -234,6 +238,27 @@ class Executor:
         return all(state.is_finished for state in self.states)
 
     # ----- Decision emission ------------------------------------------------------
+
+    def _build_regime_context(self) -> dict:
+        """Gather live market data for regime monitor."""
+        intel = self._intelligence
+        if intel is None:
+            return {}
+        ctx: dict = {"positions": []}
+        for state in self.states:
+            if state.filled_quantity > 0:
+                sym_state = intel.scorer.get_state(state.leg.symbol)
+                pos = {"symbol": state.leg.symbol, "direction": state.leg.direction.value}
+                if sym_state:
+                    pos.update({
+                        "momentum_1m": sym_state.momentum_1m,
+                        "momentum_5m": sym_state.momentum_5m,
+                        "volume_ratio": sym_state.volume_ratio,
+                        "vwap_position": sym_state.vwap_position,
+                        "trend_alignment": sym_state.trend_alignment,
+                    })
+                ctx["positions"].append(pos)
+        return ctx
 
     _decision_counter: int = 0
 
@@ -562,6 +587,7 @@ class Executor:
         )
 
         if decision is ExitDecision.HOLD:
+            self._jev_exit_check(state, symbol_state, candles_1m or [], candles_5m or [], price, now)
             return
 
         snap = self._momentum_snapshot(symbol_state)
@@ -612,6 +638,59 @@ class Executor:
         }
         reason = reason_map.get(decision, decision.value)
         self._close(state, state.filled_quantity, price, reason=reason, now=now)
+
+    def _jev_exit_check(
+        self,
+        state: LegState,
+        symbol_state: Any,
+        candles_1m: list,
+        candles_5m: list,
+        price: float,
+        now: datetime,
+    ) -> None:
+        """Consult Jev escalator when AdaptiveExitManager says HOLD."""
+        intel = self._intelligence
+        if intel is None or not hasattr(intel.escalator, "evaluate_exit"):
+            return
+        try:
+            import asyncio
+            coro = intel.escalator.evaluate_exit(state, symbol_state, candles_1m, candles_5m)
+            try:
+                loop = asyncio.get_running_loop()
+                future = asyncio.run_coroutine_threadsafe(coro, loop)
+                result = future.result(timeout=12)
+            except RuntimeError:
+                result = asyncio.run(coro)
+        except Exception:
+            logger.debug("Jev exit check failed", exc_info=True)
+            return
+
+        snap = self._momentum_snapshot(symbol_state)
+
+        if result.action == "EXIT":
+            logger.info("%s Jev recommends exit: %s", state.leg.symbol, result.reasoning)
+            self._emit_decision(
+                state.leg.symbol, "JEV_EXIT", result.reasoning,
+                momentum_snapshot=snap, escalated=True,
+                llm_response={"action": "EXIT", "reasoning": result.reasoning},
+            )
+            self._close(state, state.filled_quantity, price, reason="jev_exit", now=now)
+        elif result.action == "HOLD" and "tighten_stop" in (result.reasoning or ""):
+            logger.info("%s Jev recommends tighten stop: %s", state.leg.symbol, result.reasoning)
+            trail = intel.adaptive_exit.compute_trail_price(
+                state, symbol_state, candles_5m, candles_1m,
+            )
+            if trail is not None:
+                is_long = state.leg.direction is Direction.LONG
+                tighter = trail if is_long else trail
+                if (is_long and tighter > state.current_stop) or (not is_long and tighter < state.current_stop):
+                    state.current_stop = tighter
+                    self._replace_stop(state)
+                    self._emit_decision(
+                        state.leg.symbol, "JEV_TIGHTEN_STOP",
+                        f"Jev: {result.reasoning} — stop tightened to {tighter:.2f}",
+                        momentum_snapshot=snap, escalated=True,
+                    )
 
     def _replace_stop(self, state: LegState) -> None:
         if state.stop_order_id is not None:
