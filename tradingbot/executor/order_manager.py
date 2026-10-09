@@ -54,6 +54,21 @@ class OrderManager:
         )
         return order_id
 
+    def submit_entry_market(self, leg: TradeLeg) -> str:
+        """Place a market entry order (used when limit would sit unfilled)."""
+        side = entry_side(leg.direction)
+        order_id = self.broker.place_order(
+            symbol=leg.symbol,
+            side=side,
+            order_type=OrderType.MARKET,
+            quantity=leg.quantity,
+        )
+        logger.info(
+            "submitted %s MARKET entry for %s x%d (order %s)",
+            side.value, leg.symbol, leg.quantity, order_id,
+        )
+        return order_id
+
     def submit_stop(self, leg: TradeLeg, quantity: int, trigger_price: float | None = None) -> str:
         trigger = leg.stop_loss if trigger_price is None else trigger_price
         order_id = self.broker.place_order(

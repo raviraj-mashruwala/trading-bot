@@ -12,6 +12,7 @@ from tradingbot.core.config import ExecutionConfig
 from tradingbot.core.database import Database
 from tradingbot.core.models import (
     Direction,
+    EntryType,
     ExecutedTrade,
     Mode,
     TradeLeg,
@@ -51,6 +52,7 @@ class LegState:
     entered_at: datetime | None = None
     realised_pnl: float = 0.0
     waiting: bool = False
+    entry_submitted_at: datetime | None = None
 
     @property
     def effective_target_1(self) -> float:
@@ -161,7 +163,7 @@ class Executor:
                     logger.warning("skipping %s: %s", leg.symbol, drift)
                     state.skipped_reason = drift
                     continue
-                self._submit_entry(state)
+                self._submit_entry(state, current_price=price)
 
     _MARKET_START = time(9, 0)
     _MARKET_END = time(15, 30)
@@ -280,6 +282,8 @@ class Executor:
             escalated=escalated,
             llm_response=llm_response,
         )
+        if not decision_type.endswith("_ANNOTATION"):
+            self._annotate_decision(symbol, decision_type, reason, momentum_snapshot)
         if self.event_bus:
             Executor._decision_counter += 1
             self.event_bus.emit_sync("decision", {
@@ -294,6 +298,53 @@ class Executor:
                 "llm_response": None,
                 "outcome": None,
             })
+
+    def _annotate_decision(self, symbol: str, decision_type: str, reason: str,
+                           momentum_snapshot: dict | None) -> None:
+        """Fire-and-forget Jev annotation for educational decision context."""
+        intel = self._intelligence
+        if intel is None:
+            return
+        jev = getattr(intel.escalator, "_jev", None)
+        if jev is None or not getattr(jev, "available", False):
+            return
+        try:
+            from tradingbot.core.jev_client import Noul
+            if Noul is None:
+                return
+            import threading
+
+            def _run():
+                try:
+                    answers = jev.evaluate(
+                        state={
+                            "symbol": symbol,
+                            "decision": decision_type,
+                            "reason": reason,
+                            "momentum": momentum_snapshot or {},
+                        },
+                        questions={
+                            "explanation": Noul(
+                                instructions="Explain this trading decision in 1-2 sentences for a learning trader. Be specific about what the indicators mean.",
+                            ),
+                        },
+                    )
+                    if answers and "explanation" in answers:
+                        annotation = f"{answers['explanation'].noul:.2f}: {reason}"
+                        self._decision_logger.log_decision(
+                            trade_date=self.plan.trade_date,
+                            symbol=symbol,
+                            decision_type=f"{decision_type}_ANNOTATION",
+                            reason=annotation,
+                            llm_response={"jev_annotation": str(answers["explanation"].noul)},
+                        )
+                except Exception:
+                    pass
+
+            t = threading.Thread(target=_run, daemon=True)
+            t.start()
+        except Exception:
+            pass
 
     @staticmethod
     def _momentum_snapshot(symbol_state) -> dict | None:
@@ -341,7 +392,7 @@ class Executor:
                     )
                     self._emit_decision(state.leg.symbol, "ENTRY_ENTER", f"Price proximity entry (within {prox:.0f}%, no candle data)")
                     state.waiting = False
-                    self._submit_entry(state)
+                    self._submit_entry(state, current_price=live_price)
                     return
             if not state.waiting:
                 self._emit_decision(state.leg.symbol, "ENTRY_WAIT", "No candle data yet")
@@ -445,7 +496,7 @@ class Executor:
                 momentum_snapshot=snap,
             )
             state.waiting = False
-            self._submit_entry(state)
+            self._submit_entry(state, current_price=price)
 
         elif verdict.action == "VETO":
             state.skipped_reason = verdict.reason
@@ -463,9 +514,39 @@ class Executor:
                 state.leg.symbol, verdict.reason, verdict.reassess_after,
             )
 
-    def _submit_entry(self, state: LegState) -> None:
-        """Place the entry order via OrderManager."""
-        state.entry_order_id = self.orders.submit_entry(state.leg)
+    def _submit_entry(self, state: LegState, current_price: float | None = None) -> None:
+        """Place the entry order via OrderManager.
+
+        If the limit order would sit unfilled because price gapped through
+        the entry level, fall back to a market order when within slippage
+        tolerance.
+        """
+        leg = state.leg
+        use_market = False
+
+        if current_price is not None and leg.entry_type is EntryType.LIMIT:
+            if leg.direction is Direction.SHORT and current_price < leg.entry_price:
+                gap_pct = abs(current_price - leg.entry_price) / leg.entry_price * 100
+                if gap_pct <= self.config.entry_slippage_pct:
+                    use_market = True
+                    self._emit_decision(
+                        leg.symbol, "ENTRY_MARKET_FALLBACK",
+                        f"Price {current_price:.2f} gapped through entry {leg.entry_price:.2f} ({gap_pct:.2f}%) — market order",
+                    )
+            elif leg.direction is Direction.LONG and current_price > leg.entry_price:
+                gap_pct = abs(current_price - leg.entry_price) / leg.entry_price * 100
+                if gap_pct <= self.config.entry_slippage_pct:
+                    use_market = True
+                    self._emit_decision(
+                        leg.symbol, "ENTRY_MARKET_FALLBACK",
+                        f"Price {current_price:.2f} gapped through entry {leg.entry_price:.2f} ({gap_pct:.2f}%) — market order",
+                    )
+
+        if use_market:
+            state.entry_order_id = self.orders.submit_entry_market(leg)
+        else:
+            state.entry_order_id = self.orders.submit_entry(leg)
+        state.entry_submitted_at = self.clock()
 
     def _poll_entry(self, state: LegState, now: datetime) -> None:
         if state.entry_order_id is None:
@@ -514,6 +595,29 @@ class Executor:
         if status in (OrderStatus.CANCELLED, OrderStatus.REJECTED):
             state.cancelled = True
             return
+
+        # Market order fallback: if limit sits unfilled for 5min and price is within 1%
+        if state.entry_submitted_at is not None:
+            elapsed = (now - state.entry_submitted_at).total_seconds()
+            if elapsed > 300:
+                try:
+                    current_price = self.broker.get_ltp(state.leg.symbol)
+                    gap_pct = abs(current_price - state.leg.entry_price) / state.leg.entry_price * 100
+                    if gap_pct <= 1.0:
+                        logger.info(
+                            "%s limit unfilled for %.0fs, price within %.2f%% — converting to market",
+                            state.leg.symbol, elapsed, gap_pct,
+                        )
+                        self.orders.cancel(state.entry_order_id)
+                        state.entry_order_id = self.orders.submit_entry_market(state.leg)
+                        state.entry_submitted_at = now
+                        self._emit_decision(
+                            state.leg.symbol, "ENTRY_MARKET_FALLBACK",
+                            f"Limit unfilled for {elapsed:.0f}s, price within {gap_pct:.2f}% — market order",
+                        )
+                        return
+                except Exception:
+                    logger.warning("Market fallback price check failed for %s", state.leg.symbol, exc_info=True)
 
         cutoff = state.leg.max_entry_wait
         if now.timetz().replace(tzinfo=None) >= cutoff:

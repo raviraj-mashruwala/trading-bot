@@ -73,7 +73,73 @@ def _build_exit_questions() -> dict[str, Any]:
     }
 
 
-def _state_from_entry(leg: Any, state: SymbolState, candles_5m: list[LiveCandle]) -> dict:
+def _compute_indicators(candles_1m: list[LiveCandle], candles_5m: list[LiveCandle]) -> dict:
+    """Compute technical indicators for Jev context."""
+    indicators: dict[str, Any] = {}
+    if not candles_1m:
+        return indicators
+
+    closes = [c.close for c in candles_1m]
+
+    # RSI(14)
+    if len(closes) >= 15:
+        deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
+        gains = [max(d, 0) for d in deltas]
+        losses = [max(-d, 0) for d in deltas]
+        ag = sum(gains[:14]) / 14
+        al = sum(losses[:14]) / 14
+        for i in range(14, len(gains)):
+            ag = (ag * 13 + gains[i]) / 14
+            al = (al * 13 + losses[i]) / 14
+        indicators["rsi_14"] = round(100 - 100 / (1 + ag / al), 1) if al else 100.0
+
+    # BB position (0=lower, 0.5=mid, 1=upper)
+    if len(closes) >= 20:
+        sma20 = sum(closes[-20:]) / 20
+        std = (sum((c - sma20) ** 2 for c in closes[-20:]) / 20) ** 0.5
+        if std > 0:
+            bb_upper = sma20 + 2 * std
+            bb_lower = sma20 - 2 * std
+            indicators["bb_position"] = round((closes[-1] - bb_lower) / (bb_upper - bb_lower), 3)
+
+    # ATR(14)
+    if len(candles_1m) >= 2:
+        trs = []
+        for i in range(1, min(15, len(candles_1m))):
+            c = candles_1m[i]
+            prev_close = candles_1m[i - 1].close
+            trs.append(max(c.high - c.low, abs(c.high - prev_close), abs(c.low - prev_close)))
+        if trs:
+            indicators["atr_1m"] = round(sum(trs) / len(trs), 2)
+
+    # Candle trend: ratio of green vs red in last 5 candles (-1 to 1)
+    recent = candles_1m[-5:]
+    if recent:
+        green = sum(1 for c in recent if c.close >= c.open)
+        indicators["candle_trend_1m"] = round((2 * green / len(recent)) - 1, 2)
+
+    # Volume surge: latest vol / avg of last 20
+    vols = [c.volume for c in candles_1m[-20:]]
+    if len(vols) >= 2 and sum(vols[:-1]) > 0:
+        avg_vol = sum(vols[:-1]) / len(vols[:-1])
+        indicators["volume_surge"] = round(vols[-1] / avg_vol, 2) if avg_vol > 0 else 1.0
+
+    return indicators
+
+
+def _state_from_entry(leg: Any, state: SymbolState, candles_1m: list[LiveCandle], candles_5m: list[LiveCandle]) -> dict:
+    live = {
+        "momentum_1m": state.momentum_1m,
+        "momentum_5m": state.momentum_5m,
+        "volume_ratio": state.volume_ratio,
+        "vwap_position": state.vwap_position,
+        "trend_alignment": state.trend_alignment,
+        "strength": state.strength,
+        "body_dominance": state.body_dominance,
+        "last_pattern_1m": state.last_pattern_1m,
+        "last_pattern_5m": state.last_pattern_5m,
+    }
+    live.update(_compute_indicators(candles_1m, candles_5m))
     return {
         "setup": {
             "symbol": leg.symbol,
@@ -83,17 +149,7 @@ def _state_from_entry(leg: Any, state: SymbolState, candles_5m: list[LiveCandle]
             "stop_loss": leg.stop_loss,
             "target_1": leg.target_1,
         },
-        "live": {
-            "momentum_1m": state.momentum_1m,
-            "momentum_5m": state.momentum_5m,
-            "volume_ratio": state.volume_ratio,
-            "vwap_position": state.vwap_position,
-            "trend_alignment": state.trend_alignment,
-            "strength": state.strength,
-            "body_dominance": state.body_dominance,
-            "last_pattern_1m": state.last_pattern_1m,
-            "last_pattern_5m": state.last_pattern_5m,
-        },
+        "live": live,
         "candles_5m": [
             {"o": c.open, "h": c.high, "l": c.low, "c": c.close, "v": c.volume}
             for c in candles_5m[-6:]
@@ -101,21 +157,23 @@ def _state_from_entry(leg: Any, state: SymbolState, candles_5m: list[LiveCandle]
     }
 
 
-def _state_from_exit(leg_state: Any, state: SymbolState, candles_5m: list[LiveCandle]) -> dict:
+def _state_from_exit(leg_state: Any, state: SymbolState, candles_1m: list[LiveCandle], candles_5m: list[LiveCandle]) -> dict:
     leg = getattr(leg_state, "leg", None)
+    position = {
+        "symbol": state.symbol,
+        "direction": getattr(getattr(leg, "direction", None), "value", "unknown"),
+        "entry_price": getattr(leg_state, "entry_fill_price", None),
+        "current_stop": getattr(leg_state, "current_stop", None),
+        "momentum_1m": state.momentum_1m,
+        "momentum_5m": state.momentum_5m,
+        "volume_ratio": state.volume_ratio,
+        "vwap_position": state.vwap_position,
+        "trend_alignment": state.trend_alignment,
+        "strength": state.strength,
+    }
+    position.update(_compute_indicators(candles_1m, candles_5m))
     return {
-        "position": {
-            "symbol": state.symbol,
-            "direction": getattr(getattr(leg, "direction", None), "value", "unknown"),
-            "entry_price": getattr(leg_state, "entry_fill_price", None),
-            "current_stop": getattr(leg_state, "current_stop", None),
-            "momentum_1m": state.momentum_1m,
-            "momentum_5m": state.momentum_5m,
-            "volume_ratio": state.volume_ratio,
-            "vwap_position": state.vwap_position,
-            "trend_alignment": state.trend_alignment,
-            "strength": state.strength,
-        },
+        "position": position,
         "candles_5m": [
             {"o": c.open, "h": c.high, "l": c.low, "c": c.close, "v": c.volume}
             for c in candles_5m[-6:]
@@ -165,7 +223,7 @@ class JevEscalator:
         ticker_degraded: bool = False,
     ) -> EscalationResult:
         answers = await self._jev.aevaluate(
-            state=_state_from_entry(leg, state, candles_5m),
+            state=_state_from_entry(leg, state, candles_1m, candles_5m),
             questions=_build_entry_questions(),
         )
 
@@ -204,7 +262,7 @@ class JevEscalator:
         candles_5m: list[LiveCandle],
     ) -> EscalationResult:
         answers = await self._jev.aevaluate(
-            state=_state_from_exit(leg_state, state, candles_5m),
+            state=_state_from_exit(leg_state, state, candles_1m, candles_5m),
             questions=_build_exit_questions(),
         )
 
