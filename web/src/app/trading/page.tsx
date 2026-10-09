@@ -21,8 +21,10 @@ export default function TradingPage() {
   const { data: statusData } = useQuery({
     queryKey: ["execution-status"],
     queryFn: api.getExecutionStatus,
-    refetchInterval: execStatus === "running" ? 5_000 : 30_000,
+    refetchInterval: 5_000,
   });
+
+  const isRunning = execStatus === "running" || statusData?.status === "running";
 
   useEffect(() => {
     if (statusData && execStatus === "running" && statusData.status !== "running") {
@@ -30,14 +32,13 @@ export default function TradingPage() {
     }
   }, [statusData, execStatus, reset]);
 
-  const decisions = execStatus === "running" && recentDecisions.length > 0
+  const decisions = isRunning && recentDecisions.length > 0
     ? recentDecisions
     : statusData?.decision_log ?? [];
 
   const positions = statusData?.positions ?? [];
   const totalUnrealisedPnl = positions.reduce((sum, p) => sum + (p.unrealised_pnl ?? 0), 0);
   const hasPositions = positions.length > 0;
-  const isRunning = execStatus === "running";
 
   return (
     <div className="space-y-5">
