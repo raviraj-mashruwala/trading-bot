@@ -69,10 +69,30 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
         from tradingbot.core.risk_manager import RiskManager
         from tradingbot.executor.executor import Executor
 
+        margin_fetcher = None
+        if state.kite_auth and state.kite_auth.is_authenticated():
+            kite_for_margin = state.kite_auth.kite
+
+            def _fetch_margin(setup):
+                tx = "SELL" if setup.direction.value == "short" else "BUY"
+                result = kite_for_margin.order_margins([{
+                    "exchange": "NSE",
+                    "tradingsymbol": setup.symbol,
+                    "transaction_type": tx,
+                    "quantity": 1,
+                    "product": "MIS",
+                    "order_type": "LIMIT",
+                    "price": setup.entry_price,
+                }])
+                return result[0].get("total", setup.entry_price)
+
+            margin_fetcher = _fetch_margin
+
         risk_manager = RiskManager(
             config.risk, config.strategy, capital=state.capital,
             plan_max_age_hours=config.execution.plan_max_age_hours,
             max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
+            margin_fetcher=margin_fetcher,
         )
 
         # Build execution intelligence (live tick feed + momentum scoring)
