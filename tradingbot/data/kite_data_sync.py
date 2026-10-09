@@ -312,7 +312,7 @@ class KiteDataSync:
             log.info(msg)
             if progress_callback:
                 progress_callback(msg)
-            rows = await self.fetch_on_demand(symbol, progress_callback=None)
+            rows = await self.fetch_on_demand(symbol, progress_callback=progress_callback)
             log.info("Intraday data: %s done, %d rows written", symbol, rows)
             results[symbol] = rows
         total = sum(results.values())
