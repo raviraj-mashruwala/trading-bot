@@ -206,12 +206,60 @@ def _load_candle_data(
     return result
 
 
+async def _pre_grade_trades(trades, jev_client) -> dict[str, dict]:
+    """Run Jev trade grader on each trade before Claude review."""
+    if jev_client is None or not trades:
+        return {}
+
+    from tradingbot.analysis.jev_trade_grader import grade_trade
+    from dataclasses import asdict
+
+    grades: dict[str, dict] = {}
+    for trade in trades:
+        try:
+            d = asdict(trade)
+            stop_dist = abs(d["entry_price"] - d["stop_loss"])
+            r_mult = d["pnl"] / (stop_dist * d["quantity"]) if d["quantity"] > 0 and stop_dist > 0 else 0
+            scorecard = {
+                "predicted_entry": d["entry_price"],
+                "predicted_stop": d["stop_loss"],
+                "predicted_target_1": d["target_1"],
+                "strategy": d.get("strategy", ""),
+                "direction": d.get("direction", ""),
+                "actual_entry": d["entry_price"],
+                "actual_exit": d["exit_price"],
+                "pnl": d["pnl"],
+                "exit_reason": d["exit_reason"],
+                "r_multiple": r_mult,
+            }
+            grade = await grade_trade(jev_client, scorecard)
+            grades[trade.symbol] = grade
+            logger.info("Jev pre-grade %s: exec=%.2f plan=%.2f notable=%s",
+                        trade.symbol, grade["execution_grade"], grade["plan_quality"], grade["notable"])
+        except Exception:
+            logger.warning("Jev pre-grade failed for %s", trade.symbol, exc_info=True)
+    return grades
+
+
+def _format_jev_grades(grades: dict[str, dict]) -> str:
+    if not grades:
+        return ""
+    lines = ["\n## Jev Pre-Grades (AI quantitative assessment)"]
+    for sym, g in grades.items():
+        exec_pct = int(g["execution_grade"] * 100)
+        plan_pct = int(g["plan_quality"] * 100)
+        notable = " ★ NOTABLE" if g.get("notable") else ""
+        lines.append(f"  {sym}: execution={exec_pct}% plan_quality={plan_pct}%{notable}")
+    return "\n".join(lines)
+
+
 async def run_nightly_review(
     database: Database,
     llm: LLMProvider,
     trade_date: str | None = None,
     setup_store=None,
     candle_store=None,
+    jev_client=None,
 ) -> dict:
     if trade_date is None:
         trade_date = now_ist().strftime("%Y-%m-%d")
@@ -230,11 +278,15 @@ async def run_nightly_review(
         logger.info("No activity for %s — skipping review", trade_date)
         return {"trade_date": trade_date, "skipped": True, "reason": "no activity"}
 
+    jev_grades = await _pre_grade_trades(trades, jev_client)
+
     # Collect symbols from both setups and trades
     all_symbols = sorted({s["symbol"] for s in setups} | {t.symbol for t in trades})
     candle_data = _load_candle_data(candle_store, all_symbols, trade_date)
 
     prompt = _build_prompt(trade_date, trades, decisions, setups, candle_data)
+    if jev_grades:
+        prompt += _format_jev_grades(jev_grades)
     logger.info(
         "Running nightly review for %s (%d trades, %d decisions, %d setups, %d symbols with candles)",
         trade_date, len(trades), len(decisions), len(setups), len(candle_data),

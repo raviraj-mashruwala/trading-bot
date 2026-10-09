@@ -106,10 +106,20 @@ async def run_nightly_review(request: Request, date: str | None = None):
     db = Database(Path(state.data_dir) / "tradingbot.db")
     db.initialise()
     try:
+        jev_for_review = None
+        if state.config.jev and state.config.jev.enabled:
+            from tradingbot.core.jev_client import JevClient
+            try:
+                jev_for_review = JevClient(state.config.jev)
+                if not jev_for_review.available:
+                    jev_for_review = None
+            except Exception:
+                pass
         review = await _run(
             db, llm, trade_date=date,
             setup_store=getattr(state, "setup_store", None),
             candle_store=getattr(state, "candle_store", None),
+            jev_client=jev_for_review,
         )
         return review
     except Exception as exc:

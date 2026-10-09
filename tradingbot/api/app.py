@@ -72,11 +72,21 @@ def create_app(
                 db = Database(Path(state_ref.data_dir) / "tradingbot.db")
                 db.initialise()
                 try:
+                    jev_for_review = None
+                    if state_ref.config.jev and state_ref.config.jev.enabled:
+                        from tradingbot.core.jev_client import JevClient
+                        try:
+                            jev_for_review = JevClient(state_ref.config.jev)
+                            if not jev_for_review.available:
+                                jev_for_review = None
+                        except Exception:
+                            pass
                     result = await run_nightly_review(
                         db, llm,
                         trade_date=review_date,
                         setup_store=getattr(state_ref, "setup_store", None),
                         candle_store=getattr(state_ref, "candle_store", None),
+                        jev_client=jev_for_review,
                     )
                 finally:
                     db.close()

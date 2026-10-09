@@ -57,7 +57,10 @@ class ExecutionIntelligence:
             max_drift_pct=config.max_entry_price_drift_pct,
             jev_client=jev_client,
         )
-        self.adaptive_exit = AdaptiveExitManager(square_off_time=config.square_off_time)
+        self.adaptive_exit = AdaptiveExitManager(
+            square_off_time=config.square_off_time,
+            jev_client=jev_client if (jev_client and jev_client.available) else None,
+        )
 
         llm_escalator = LLMEscalator()
         if jev_client and jev_client.available:

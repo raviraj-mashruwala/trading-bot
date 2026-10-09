@@ -31,10 +31,11 @@ class AdaptiveExitManager:
     Stops only tighten, never widen.
     """
 
-    def __init__(self, square_off_time: time) -> None:
+    def __init__(self, square_off_time: time, jev_client=None) -> None:
         self._square_off_time = square_off_time
         self._peak_momentum_high: dict[str, float] = defaultdict(float)
         self._peak_momentum_low: dict[str, float] = defaultdict(float)
+        self._jev = jev_client
 
     def track_peak_momentum(self, symbol: str, momentum_5m: float) -> None:
         """Record high-water marks for momentum exit detection.
@@ -139,13 +140,57 @@ class AdaptiveExitManager:
             if is_long:
                 trail = min(c.low for c in candles_5m[-3:])
                 floor = max(trail, breakeven)
-                return max(floor, state.current_stop)
+                candle_trail = max(floor, state.current_stop)
             else:
                 trail = max(c.high for c in candles_5m[-3:])
                 floor = min(trail, breakeven)
-                return min(floor, state.current_stop)
+                candle_trail = min(floor, state.current_stop)
+
+            current_price = candles_5m[-1].close if candles_5m else candle_trail
+            candle_trail = self._jev_tighten(candle_trail, state, symbol_state, current_price, is_long)
+            return candle_trail
 
         return state.current_stop
+
+    def _jev_tighten(self, candle_trail: float, state, symbol_state: SymbolState,
+                     price: float, is_long: bool) -> float:
+        """Ask Jev if trail should be tighter than candle geometry suggests."""
+        if self._jev is None:
+            return candle_trail
+        try:
+            from tradingbot.core.jev_client import Noul
+            answers = self._jev.evaluate(
+                state={
+                    "symbol": symbol_state.symbol,
+                    "direction": "long" if is_long else "short",
+                    "price": price,
+                    "candle_trail": candle_trail,
+                    "current_stop": state.current_stop,
+                    "entry_price": state.entry_fill_price,
+                    "momentum_1m": symbol_state.momentum_1m,
+                    "momentum_5m": symbol_state.momentum_5m,
+                    "volume_ratio": symbol_state.volume_ratio,
+                    "trend_alignment": symbol_state.trend_alignment,
+                },
+                questions={
+                    "should_tighten": Noul(
+                        instructions="Should the trailing stop be tighter than the candle-based level?",
+                        criteria={
+                            "true": "Non-price signals (volume divergence, momentum decay, regime shift) suggest risk is elevated — tighten",
+                            "false": "Candle-based trail is appropriate for current conditions",
+                        },
+                    ),
+                },
+            )
+            if answers and answers["should_tighten"].noul > 0.7:
+                midpoint = (candle_trail + price) / 2
+                if is_long:
+                    return max(midpoint, candle_trail)
+                else:
+                    return min(midpoint, candle_trail)
+        except Exception:
+            pass
+        return candle_trail
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -153,17 +198,53 @@ class AdaptiveExitManager:
 
     def _check_momentum_exit(self, state, ss: SymbolState,
                              price: float, is_long: bool) -> bool:
-        """Momentum reversal: profitable + peak >40 + now flipped + volume."""
+        """Momentum reversal: profitable + peak momentum decayed significantly."""
         symbol = ss.symbol
         profitable = (price > state.entry_fill_price) if is_long else (price < state.entry_fill_price)
         if not profitable:
             return False
+
         if is_long:
-            peak_high = self._peak_momentum_high.get(symbol, 0.0)
-            return (peak_high > 40 and ss.momentum_5m < -20
+            peak = self._peak_momentum_high.get(symbol, 0.0)
+            decay = (peak - ss.momentum_5m) / peak if peak > 10 else 0
+        else:
+            peak = self._peak_momentum_low.get(symbol, 0.0)
+            decay = (ss.momentum_5m - peak) / abs(peak) if peak < -10 else 0
+
+        if self._jev is not None and decay > 0.5:
+            try:
+                from tradingbot.core.jev_client import Noul
+                answers = self._jev.evaluate(
+                    state={
+                        "symbol": symbol,
+                        "direction": "long" if is_long else "short",
+                        "momentum_1m": ss.momentum_1m,
+                        "momentum_5m": ss.momentum_5m,
+                        "peak_momentum": peak,
+                        "decay_pct": decay,
+                        "volume_ratio": ss.volume_ratio,
+                        "vwap_position": ss.vwap_position,
+                    },
+                    questions={
+                        "exhausted": Noul(
+                            instructions="Is the momentum that drove this trade exhausted?",
+                            criteria={
+                                "true": "Peak momentum has decayed significantly, trend losing steam",
+                                "false": "Momentum is pausing but trend structure is intact",
+                            },
+                        ),
+                    },
+                )
+                if answers and answers["exhausted"].noul > 0.7:
+                    return True
+            except Exception:
+                pass
+
+        # Hardcoded fallback
+        if is_long:
+            return (peak > 40 and ss.momentum_5m < -20
                     and ss.momentum_1m < -40 and ss.volume_ratio > 1.0)
-        peak_low = self._peak_momentum_low.get(symbol, 0.0)
-        return (peak_low < -40 and ss.momentum_5m > 20
+        return (peak < -40 and ss.momentum_5m > 20
                 and ss.momentum_1m > 40 and ss.volume_ratio > 1.0)
 
     def _check_pattern_exit(self, state, ss: SymbolState,
