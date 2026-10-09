@@ -69,10 +69,12 @@ class AdaptiveExitManager:
             return ExitDecision.STOP_HIT
 
         # P3: target 2
+        t1 = getattr(state, "effective_target_1", state.leg.target_1)
+        t2 = getattr(state, "effective_target_2", state.leg.target_2)
         if state.target_1_booked:
-            if is_long and state.leg.target_2 > 0 and price >= state.leg.target_2:
+            if is_long and t2 > 0 and price >= t2:
                 return ExitDecision.BOOK_TARGET_2
-            if not is_long and state.leg.target_2 > 0 and price <= state.leg.target_2:
+            if not is_long and t2 > 0 and price <= t2:
                 return ExitDecision.BOOK_TARGET_2
 
         # P4: momentum reversal exit
@@ -85,9 +87,9 @@ class AdaptiveExitManager:
 
         # P6: target 1
         if not state.target_1_booked:
-            if is_long and price >= state.leg.target_1:
+            if is_long and price >= t1:
                 return ExitDecision.BOOK_TARGET_1
-            if not is_long and price <= state.leg.target_1:
+            if not is_long and price <= t1:
                 return ExitDecision.BOOK_TARGET_1
 
         # P7: trailing stop tightened

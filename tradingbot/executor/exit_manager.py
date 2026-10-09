@@ -33,21 +33,24 @@ class ExitManager:
         leg = state.leg
         stop = state.current_stop
 
+        t1 = getattr(state, "effective_target_1", leg.target_1)
+        t2 = getattr(state, "effective_target_2", leg.target_2)
+
         if leg.direction is Direction.LONG:
             if price <= stop:
                 return ExitDecision.STOP_HIT
             if state.target_1_booked:
-                if leg.target_2 > 0 and price >= leg.target_2:
+                if t2 > 0 and price >= t2:
                     return ExitDecision.BOOK_TARGET_2
-            elif price >= leg.target_1:
+            elif price >= t1:
                 return ExitDecision.BOOK_TARGET_1
         else:
             if price >= stop:
                 return ExitDecision.STOP_HIT
             if state.target_1_booked:
-                if leg.target_2 > 0 and price <= leg.target_2:
+                if t2 > 0 and price <= t2:
                     return ExitDecision.BOOK_TARGET_2
-            elif price <= leg.target_1:
+            elif price <= t1:
                 return ExitDecision.BOOK_TARGET_1
 
         return ExitDecision.HOLD

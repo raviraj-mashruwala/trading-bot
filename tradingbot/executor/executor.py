@@ -42,6 +42,8 @@ class LegState:
     filled_quantity: int = 0
     entry_fill_price: float = 0.0
     current_stop: float = 0.0
+    adjusted_target_1: float | None = None
+    adjusted_target_2: float | None = None
     target_1_booked: bool = False
     cancelled: bool = False
     adopted: bool = False
@@ -49,6 +51,14 @@ class LegState:
     entered_at: datetime | None = None
     realised_pnl: float = 0.0
     waiting: bool = False
+
+    @property
+    def effective_target_1(self) -> float:
+        return self.adjusted_target_1 if self.adjusted_target_1 is not None else self.leg.target_1
+
+    @property
+    def effective_target_2(self) -> float:
+        return self.adjusted_target_2 if self.adjusted_target_2 is not None else self.leg.target_2
 
     def __post_init__(self) -> None:
         if self.current_stop == 0.0:
@@ -443,8 +453,28 @@ class Executor:
             state.filled_quantity = order.quantity
             state.entry_fill_price = float(order.filled_price)
             state.entered_at = now
-            state.current_stop = state.leg.stop_loss
-            state.stop_order_id = self.orders.submit_stop(state.leg, state.filled_quantity)
+
+            slippage = state.entry_fill_price - state.leg.entry_price
+            if abs(slippage) > 0.01:
+                planned_risk = abs(state.leg.entry_price - state.leg.stop_loss)
+                if state.leg.direction is Direction.SHORT:
+                    state.current_stop = state.entry_fill_price + planned_risk
+                    state.adjusted_target_1 = state.entry_fill_price - abs(state.leg.entry_price - state.leg.target_1)
+                    state.adjusted_target_2 = state.entry_fill_price - abs(state.leg.entry_price - state.leg.target_2)
+                else:
+                    state.current_stop = state.entry_fill_price - planned_risk
+                    state.adjusted_target_1 = state.entry_fill_price + abs(state.leg.target_1 - state.leg.entry_price)
+                    state.adjusted_target_2 = state.entry_fill_price + abs(state.leg.target_2 - state.leg.entry_price)
+                logger.info(
+                    "%s fill slippage %.2f — adjusted stop=%.2f t1=%.2f t2=%.2f (planned: sl=%.2f t1=%.2f t2=%.2f)",
+                    state.leg.symbol, slippage, state.current_stop,
+                    state.adjusted_target_1, state.adjusted_target_2,
+                    state.leg.stop_loss, state.leg.target_1, state.leg.target_2,
+                )
+            else:
+                state.current_stop = state.leg.stop_loss
+
+            state.stop_order_id = self.orders.submit_stop(state.leg, state.filled_quantity, trigger_price=state.current_stop)
             logger.info(
                 "%s filled x%d at %.2f", state.leg.symbol, state.filled_quantity, state.entry_fill_price
             )
@@ -628,8 +658,8 @@ class Executor:
                 entry_price=state.entry_fill_price,
                 exit_price=fill_price,
                 stop_loss=state.current_stop,
-                target_1=state.leg.target_1,
-                target_2=state.leg.target_2,
+                target_1=state.effective_target_1,
+                target_2=state.effective_target_2,
                 entered_at=state.entered_at or now,
                 exited_at=now,
                 pnl=pnl,
