@@ -88,6 +88,7 @@ class Executor:
         event_bus=None,
         intelligence: ExecutionIntelligence | None = None,
         regime_monitor=None,
+        telegram=None,
     ) -> None:
         self.broker = broker
         self.plan = plan
@@ -99,6 +100,7 @@ class Executor:
         self.event_bus = event_bus
         self._intelligence = intelligence
         self._regime_monitor = regime_monitor
+        self._telegram = telegram
         self._current_regime: str | None = None
 
         if intelligence is None:
@@ -194,6 +196,8 @@ class Executor:
                 logger.error("daily loss limit breached at %.2f; halting", realised)
                 self._emit_decision("ALL", "KILL_SWITCH", f"Daily loss limit breached at {realised:.2f}")
                 self.kill_switch_tripped = True
+                if self._telegram:
+                    self._telegram.notify_kill_switch(f"Daily loss limit breached at ₹{realised:.0f}", realised)
                 self._halt_everything(now)
                 return
 
@@ -206,6 +210,8 @@ class Executor:
                 self._current_regime = result.new_regime
                 self._emit_decision("ALL", "REGIME_SHIFT", f"{old_regime} → {result.new_regime} (conf={result.confidence:.2f})")
                 logger.warning("Regime shift %s → %s (conf=%.2f)", old_regime, result.new_regime, result.confidence)
+                if self._telegram:
+                    self._telegram.notify_regime_shift(old_regime or "unknown", result.new_regime, result.confidence)
 
         for state in self.states:
             if state.is_finished:
@@ -502,6 +508,8 @@ class Executor:
             state.skipped_reason = verdict.reason
             state.cancelled = True
             self._emit_decision(state.leg.symbol, "ENTRY_VETO", verdict.reason, momentum_snapshot=snap)
+            if self._telegram:
+                self._telegram.notify_entry_vetoed(state.leg.symbol, verdict.reason)
             logger.info(
                 "%s vetoed by EntryGuard: %s", state.leg.symbol, verdict.reason
             )
@@ -584,6 +592,11 @@ class Executor:
             logger.info(
                 "%s filled x%d at %.2f", state.leg.symbol, state.filled_quantity, state.entry_fill_price
             )
+            if self._telegram:
+                self._telegram.notify_entry_filled(
+                    state.leg.symbol, state.leg.direction.value,
+                    state.filled_quantity, state.entry_fill_price,
+                )
             if self.event_bus:
                 self.event_bus.emit_sync("exec.entry_filled", {
                     "symbol": state.leg.symbol,
@@ -824,12 +837,23 @@ class Executor:
 
         logger.info(
             "closed %s x%d at %.2f (%s), pnl %.2f",
-            state.leg.symbol,
-            quantity,
-            fill_price,
-            reason,
-            pnl,
+            state.leg.symbol, quantity, fill_price, reason, pnl,
         )
+
+        if self._telegram:
+            if "target_1" in reason:
+                self._telegram.notify_target_hit(state.leg.symbol, 1, pnl, fill_price, quantity)
+            elif "target_2" in reason:
+                self._telegram.notify_target_hit(state.leg.symbol, 2, pnl, fill_price, quantity)
+            elif "stop" in reason:
+                self._telegram.notify_stop_hit(state.leg.symbol, pnl, fill_price)
+            elif "jev" in reason:
+                self._telegram.notify_jev_exit(state.leg.symbol, reason)
+            else:
+                sign = "+" if pnl >= 0 else ""
+                self._telegram.send_sync(
+                    f"\U0001f4ca <b>{reason.upper()}</b>: {state.leg.symbol} {sign}₹{pnl:.0f} @ {fill_price:.2f}"
+                )
 
         self.database.record_trade(
             ExecutedTrade(

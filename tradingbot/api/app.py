@@ -40,6 +40,47 @@ def create_app(
         candle_store = CandleStore(resolved_data_dir / "candles.duckdb")
 
         event_bus.subscribe(lambda event: asyncio.ensure_future(manager.broadcast(event)))
+
+        from tradingbot.core.telegram_notifier import build_notifier
+        telegram = build_notifier()
+        if telegram.enabled:
+            import logging as _log_mod
+            _log_mod.getLogger(__name__).info("Telegram notifications enabled")
+
+            async def _telegram_handler(event: dict):
+                etype = event.get("type", "")
+                data = event.get("data", {})
+                try:
+                    if etype == "exec.started":
+                        telegram.notify_session_started(data.get("mode", "?"), data.get("legs", []))
+                    elif etype == "exec.entry_filled":
+                        telegram.notify_entry_filled(
+                            data.get("symbol", "?"), data.get("direction", "?"),
+                            data.get("quantity", 0), data.get("fill_price", 0),
+                        )
+                    elif etype == "exec.session_done":
+                        telegram.notify_session_done(
+                            data.get("total_pnl", 0), data.get("trades_count", 0),
+                            data.get("mode", "?"),
+                        )
+                    elif etype == "review.complete":
+                        telegram.notify_nightly_review(
+                            data.get("grade", "?"), data.get("total_pnl", 0),
+                            data.get("summary", ""),
+                        )
+                    elif etype == "sync.complete":
+                        telegram.notify_sync_complete(
+                            data.get("stocks_synced", 0), data.get("rows_written", 0),
+                        )
+                    elif etype == "analysis.plan_generated":
+                        telegram.notify_plan_generated(
+                            data.get("trade_date", "?"), data.get("legs", []),
+                        )
+                except Exception:
+                    pass
+
+            event_bus.subscribe(lambda event: asyncio.ensure_future(_telegram_handler(event)))
+
         flush_task = asyncio.create_task(event_bus.flush_loop())
 
         app.state.app_state = AppState(
@@ -52,6 +93,7 @@ def create_app(
             ws_manager=manager,
             candle_store=candle_store,
         )
+        app.state.app_state._telegram = telegram
 
         # Scheduled jobs: sync at 4 PM, review at 8:30 PM (trading days only)
         from tradingbot.api.sync_routes import _run_sync

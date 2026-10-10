@@ -141,6 +141,7 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             mode=mode,
             intelligence=intelligence,
             regime_monitor=regime_monitor,
+            telegram=getattr(state, "_telegram", None),
         )
 
         state.executor_ref = executor
