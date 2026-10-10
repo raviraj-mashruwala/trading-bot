@@ -12,6 +12,7 @@ connection_timeout_sec = 30
 heartbeat_interval_sec = 60
 plan_max_age_hours = 14
 max_entry_price_drift_pct = 2.0
+max_position_loss_pct = 3.0
 
 [llm]
 provider = "anthropic"

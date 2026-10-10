@@ -162,6 +162,23 @@ def create_app(
                 if not plan.legs:
                     _log.info("Plan for %s has no legs — skipping auto-start", target)
                     return
+                # Preflight checks
+                preflight_errors = []
+                if not state_ref.kite_auth or not state_ref.kite_auth.is_authenticated():
+                    preflight_errors.append("Kite not authenticated")
+                try:
+                    margin = state_ref.capital
+                    if margin < 10000:
+                        preflight_errors.append(f"Insufficient margin: ₹{margin:,.0f}")
+                except Exception as pf_exc:
+                    preflight_errors.append(f"Margin check failed: {type(pf_exc).__name__}")
+                if preflight_errors:
+                    _log.error("Preflight failed: %s", preflight_errors)
+                    tg = getattr(state_ref, "_telegram", None)
+                    if tg:
+                        tg.notify_auto_start_failed("Preflight: " + "; ".join(preflight_errors))
+                    return
+
                 mode_str = getattr(state_ref.config.general, "mode", "paper")
                 mode = Mode.LIVE if mode_str == "live" else Mode.PAPER
                 _log.info("Auto-starting %s execution for %s (%d legs)", mode.value, target, len(plan.legs))

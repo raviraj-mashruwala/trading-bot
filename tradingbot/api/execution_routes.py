@@ -214,12 +214,48 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             "mode": mode.value,
         })
 
+        # EOD square-off verification
+        if mode is Mode.LIVE:
+            await _verify_squareoff(state, broker, plan)
+
     except asyncio.CancelledError:
         state.executor_status = "idle"
         raise
     except Exception as exc:  # noqa: BLE001
         logger.error("execution failed: %s", exc, exc_info=True)
         state.executor_status = "idle"
+
+
+async def _verify_squareoff(state: AppState, broker, plan) -> None:
+    """Wait 60s after session done, then verify all positions are flat."""
+    try:
+        await asyncio.sleep(60)
+        plan_symbols = {leg.symbol for leg in plan.legs}
+        positions = broker.get_positions()
+        still_open = [p for p in positions if p.symbol in plan_symbols and p.quantity != 0]
+        if not still_open:
+            logger.info("Square-off verification: all positions flat")
+            return
+
+        for pos in still_open:
+            logger.error("CRITICAL: %s still open after square-off! qty=%d", pos.symbol, pos.quantity)
+            try:
+                from tradingbot.core.broker import OrderSide, OrderType
+                side = OrderSide.BUY if pos.quantity < 0 else OrderSide.SELL
+                broker.place_order(
+                    symbol=pos.symbol, side=side,
+                    order_type=OrderType.MARKET, quantity=abs(pos.quantity),
+                )
+                logger.info("Emergency market order placed for %s x%d", pos.symbol, abs(pos.quantity))
+            except Exception:
+                logger.error("Emergency exit FAILED for %s", pos.symbol, exc_info=True)
+
+        tg = getattr(state, "_telegram", None)
+        if tg:
+            symbols = ", ".join(p.symbol for p in still_open)
+            tg.notify_squareoff_failed(symbols)
+    except Exception:
+        logger.error("Square-off verification failed", exc_info=True)
 
 
 @router.post("/execute")

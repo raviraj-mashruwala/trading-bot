@@ -168,6 +168,7 @@ class ExecutionConfig:
     heartbeat_interval_sec: int
     plan_max_age_hours: float
     max_entry_price_drift_pct: float
+    max_position_loss_pct: float = 3.0
     mode: str = "paper"
     shadow_fraction: float = 0.1
 
@@ -349,6 +350,7 @@ def load_config(config_path: Path | None = None) -> Config:
             heartbeat_interval_sec=int(execution_raw["heartbeat_interval_sec"]),
             plan_max_age_hours=float(execution_raw["plan_max_age_hours"]),
             max_entry_price_drift_pct=float(execution_raw["max_entry_price_drift_pct"]),
+            max_position_loss_pct=float(execution_raw.get("max_position_loss_pct", 3.0)),
             mode=execution_raw.get("mode", "paper"),
             shadow_fraction=float(execution_raw.get(
                 "shadow_fraction",

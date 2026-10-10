@@ -189,9 +189,6 @@ class Executor:
             return
 
         if not self.kill_switch_tripped:
-            # _close() writes every exit to the database as it happens, so the
-            # database is the single source of truth here. Adding an in-memory
-            # tally on top would double count each loss.
             realised = self.database.realised_pnl_for_date(self.plan.trade_date)
             if self.risk_manager.daily_loss_breached(realised):
                 logger.error("daily loss limit breached at %.2f; halting", realised)
@@ -199,6 +196,19 @@ class Executor:
                 self.kill_switch_tripped = True
                 if self._telegram:
                     self._telegram.notify_kill_switch(f"Daily loss limit breached at ₹{realised:.0f}", realised)
+                self._halt_everything(now)
+                return
+
+            unrealised = sum(self._unrealised_pnl(s) for s in self.states if s.filled_quantity > 0)
+            total_exposure = realised + unrealised
+            if self.risk_manager.daily_loss_breached(total_exposure):
+                logger.error("daily loss limit breached (unrealised) at %.2f; halting", total_exposure)
+                self._emit_decision("ALL", "KILL_SWITCH",
+                                    f"Unrealised+realised loss {total_exposure:.2f} breached limit")
+                self.kill_switch_tripped = True
+                if self._telegram:
+                    self._telegram.notify_kill_switch(
+                        f"Unrealised+realised loss ₹{total_exposure:.0f}", total_exposure)
                 self._halt_everything(now)
                 return
 
@@ -245,6 +255,20 @@ class Executor:
         if self.blocked:
             return True
         return all(state.is_finished for state in self.states)
+
+    # ----- Helpers ----------------------------------------------------------------
+
+    def _unrealised_pnl(self, state: LegState) -> float:
+        if state.filled_quantity <= 0:
+            return 0.0
+        try:
+            price = self.broker.get_ltp(state.leg.symbol)
+            delta = price - state.entry_fill_price
+            if state.leg.direction is Direction.SHORT:
+                delta = -delta
+            return delta * state.filled_quantity
+        except Exception:
+            return 0.0
 
     # ----- Decision emission ------------------------------------------------------
 
@@ -664,10 +688,37 @@ class Executor:
     # ----- Open position handling -------------------------------------------------
 
     def _manage_open_leg(self, state: LegState, now: datetime) -> None:
+        if self._check_position_drawdown(state, now):
+            return
         if self._intelligence is not None:
             self._manage_open_leg_smart(state, now)
         else:
             self._manage_open_leg_classic(state, now)
+
+    def _check_position_drawdown(self, state: LegState, now: datetime) -> bool:
+        """Force-close if unrealised loss exceeds max_position_loss_pct of capital."""
+        unrealised = self._unrealised_pnl(state)
+        capital = self.risk_manager.capital
+        if capital <= 0 or unrealised >= 0:
+            return False
+        loss_pct = abs(unrealised) / capital * 100
+        if loss_pct >= self.config.max_position_loss_pct:
+            price = self.broker.get_ltp(state.leg.symbol)
+            logger.error(
+                "%s position loss %.1f%% (₹%.0f) exceeds %.1f%% limit — force closing",
+                state.leg.symbol, loss_pct, unrealised, self.config.max_position_loss_pct,
+            )
+            self._emit_decision(
+                state.leg.symbol, "POSITION_DRAWDOWN_EXIT",
+                f"Unrealised loss {loss_pct:.1f}% (₹{unrealised:.0f}) exceeds {self.config.max_position_loss_pct}% limit",
+            )
+            if self._telegram:
+                self._telegram.notify_critical(
+                    f"{state.leg.symbol} loss {loss_pct:.1f}% of capital (₹{unrealised:.0f}) — force closing"
+                )
+            self._close(state, state.filled_quantity, price, reason="position_drawdown", now=now)
+            return True
+        return False
 
     def _manage_open_leg_classic(self, state: LegState, now: datetime) -> None:
         """Original exit logic via ExitManager (no intelligence)."""
