@@ -65,14 +65,90 @@ def _vwap(candles: list[LiveCandle]) -> float:
     return cum_pv / cum_vol if cum_vol > 0 else 0
 
 
-class ScoutScanner:
-    """Stateless scanner — call scan() with current candles, get alerts back."""
+@dataclass
+class _PendingAlert:
+    db_id: int
+    symbol: str
+    direction: str
+    entry_price: float
+    target_price: float
+    stop_price: float
+    fired_at: datetime
+    candles_seen: int = 0
 
-    def __init__(self) -> None:
+MAX_CANDLES_TO_RESOLVE = 15
+
+
+class ScoutScanner:
+    """Scanner with auto-grading — tracks pending alerts and resolves outcomes."""
+
+    def __init__(self, database=None) -> None:
         self._fired: set[str] = set()
+        self._pending: list[_PendingAlert] = []
+        self._db = database
 
     def reset_day(self) -> None:
         self._fired.clear()
+        self._pending.clear()
+
+    def add_pending(self, db_id: int, alert: ScoutAlert) -> None:
+        self._pending.append(_PendingAlert(
+            db_id=db_id, symbol=alert.symbol, direction=alert.direction,
+            entry_price=alert.entry_price, target_price=alert.target_price,
+            stop_price=alert.stop_price, fired_at=alert.timestamp,
+        ))
+
+    def grade_pending(self, symbol: str, candles_1m: list[LiveCandle]) -> None:
+        """Check pending alerts against latest candle data and resolve outcomes."""
+        if not self._pending or not candles_1m:
+            return
+
+        resolved: list[int] = []
+        for i, p in enumerate(self._pending):
+            if p.symbol != symbol:
+                continue
+
+            p.candles_seen += 1
+            price = candles_1m[-1].close
+
+            if p.direction == "long":
+                high_since = max(c.high for c in candles_1m[-min(p.candles_seen, len(candles_1m)):])
+                low_since = min(c.low for c in candles_1m[-min(p.candles_seen, len(candles_1m)):])
+                if high_since >= p.target_price:
+                    self._resolve(i, "target_hit", (p.target_price - p.entry_price) / p.entry_price * 100)
+                    resolved.append(i)
+                elif low_since <= p.stop_price:
+                    self._resolve(i, "stop_hit", (p.stop_price - p.entry_price) / p.entry_price * 100)
+                    resolved.append(i)
+                elif p.candles_seen >= MAX_CANDLES_TO_RESOLVE:
+                    pnl_pct = (price - p.entry_price) / p.entry_price * 100
+                    self._resolve(i, "timeout", pnl_pct)
+                    resolved.append(i)
+            else:
+                high_since = max(c.high for c in candles_1m[-min(p.candles_seen, len(candles_1m)):])
+                low_since = min(c.low for c in candles_1m[-min(p.candles_seen, len(candles_1m)):])
+                if low_since <= p.target_price:
+                    self._resolve(i, "target_hit", (p.entry_price - p.target_price) / p.entry_price * 100)
+                    resolved.append(i)
+                elif high_since >= p.stop_price:
+                    self._resolve(i, "stop_hit", (p.entry_price - p.stop_price) / p.entry_price * 100)
+                    resolved.append(i)
+                elif p.candles_seen >= MAX_CANDLES_TO_RESOLVE:
+                    pnl_pct = (p.entry_price - price) / p.entry_price * 100
+                    self._resolve(i, "timeout", pnl_pct)
+                    resolved.append(i)
+
+        for i in sorted(resolved, reverse=True):
+            self._pending.pop(i)
+
+    def _resolve(self, idx: int, outcome: str, pnl_pct: float) -> None:
+        p = self._pending[idx]
+        log.info("Scout %s %s %s: %s (%.2f%%)", p.symbol, p.direction, p.db_id, outcome, pnl_pct)
+        if self._db is not None:
+            try:
+                self._db.update_scout_outcome(p.db_id, outcome, round(pnl_pct, 4))
+            except Exception:
+                log.warning("Failed to update scout outcome for %d", p.db_id, exc_info=True)
 
     def scan(
         self,

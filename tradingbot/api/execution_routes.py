@@ -325,12 +325,13 @@ async def execution_status(request: Request):
             scanner = getattr(state, "_scout_scanner", None)
             if scanner is None:
                 from tradingbot.executor.scout_scanner import ScoutScanner
-                scanner = ScoutScanner()
+                scanner = ScoutScanner(database=state.database)
                 state._scout_scanner = scanner
             for leg_state in (executor.states if executor and hasattr(executor, "states") else []):
                 sym = leg_state.leg.symbol
                 candles = intel.aggregator.get_candles(sym, "1min")
                 if candles:
+                    scanner.grade_pending(sym, candles)
                     alerts = scanner.scan(sym, candles)
                     for a in alerts:
                         alert_dict = a.to_dict()
@@ -338,7 +339,8 @@ async def execution_status(request: Request):
                             from tradingbot.core.models import now_ist
                             alert_dict["trade_date"] = now_ist().strftime("%Y-%m-%d")
                             try:
-                                state.database.save_scout_alert(alert_dict)
+                                db_id = state.database.save_scout_alert(alert_dict)
+                                scanner.add_pending(db_id, a)
                             except Exception:
                                 pass
                         scout_alerts.append(alert_dict)
