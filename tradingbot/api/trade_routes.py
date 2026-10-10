@@ -9,6 +9,19 @@ from tradingbot.core.models import now_ist
 
 router = APIRouter(prefix="/api")
 
+NIFTY_SECTORS = {
+    "Banks": ["HDFCBANK", "ICICIBANK", "SBIN", "KOTAKBANK", "AXISBANK", "BANKBARODA", "PNB", "INDUSINDBK", "BANDHANBNK", "IDFCFIRSTB", "FEDERALBNK", "KARURVYSYA", "AUBANK"],
+    "IT": ["TCS", "INFY", "WIPRO", "HCLTECH", "TECHM", "LTIM", "MPHASIS", "COFORGE", "PERSISTENT", "SONATSOFTW"],
+    "Pharma": ["SUNPHARMA", "DRREDDY", "CIPLA", "DIVISLAB", "AUROPHARMA", "BIOCON", "LUPIN", "TORNTPHARM", "FORTIS", "MOREPENLAB"],
+    "Auto": ["MARUTI", "TATAMOTORS", "M&M", "BAJAJ-AUTO", "HEROMOTOCO", "EICHERMOT", "ASHOKLEY", "TVSMTR"],
+    "Infrastructure": ["ADANIENT", "ADANIPORTS", "LT", "KEC", "COCHINSHIP", "IRCON", "NBCC", "INOXWIND"],
+    "Energy": ["RELIANCE", "ONGC", "BPCL", "IOC", "NTPC", "POWERGRID", "TATAPOWER", "ADANIGREEN"],
+    "Metals": ["TATASTEEL", "HINDALCO", "JSWSTEEL", "VEDL", "NMDC", "COALINDIA", "SAIL", "NATIONALUM", "JAIBALAJI"],
+    "FMCG": ["HINDUNILVR", "ITC", "NESTLEIND", "BRITANNIA", "DABUR", "MARICO", "COLPAL", "GODREJCP", "TATACONSUM"],
+    "Realty": ["DLF", "GODREJPROP", "PRESTIGE", "OBEROIRLTY", "BRIGADE", "DBREALTY", "SOBHA"],
+    "Chemicals": ["PIDILITIND", "UPL", "SRF", "AARTI", "DEEPAKNTR", "CLEAN", "DHAMPURSUG", "INDIAGLYCO"],
+}
+
 
 @router.get("/trades")
 async def get_trades(request: Request, days: int = 30, date: str | None = None):
@@ -89,6 +102,54 @@ async def get_trade_stats(request: Request, days: int = 30):
         "best_day": max(daily_values),
         "worst_day": min(daily_values),
     }
+
+
+@router.get("/sectors/heatmap")
+async def sector_heatmap(request: Request):
+    state: AppState = request.app.state.app_state
+    candle_store = getattr(state, "candle_store", None)
+    if candle_store is None:
+        return []
+
+    from datetime import date, timedelta
+    today = now_ist().date()
+    yesterday = today - timedelta(days=1)
+
+    sectors = []
+    for sector_name, symbols in NIFTY_SECTORS.items():
+        changes = []
+        for sym in symbols:
+            try:
+                df = candle_store.read(sym, "day", from_date=yesterday, to_date=today)
+                if df is not None and len(df) >= 2:
+                    prev_close = float(df.iloc[-2]["close"])
+                    curr_close = float(df.iloc[-1]["close"])
+                    if prev_close > 0:
+                        changes.append((curr_close - prev_close) / prev_close * 100)
+                elif df is not None and len(df) == 1:
+                    row = df.iloc[0]
+                    if float(row["open"]) > 0:
+                        changes.append((float(row["close"]) - float(row["open"])) / float(row["open"]) * 100)
+            except Exception:
+                continue
+
+        if changes:
+            avg_change = sum(changes) / len(changes)
+            sectors.append({
+                "sector": sector_name,
+                "avg_change_pct": round(avg_change, 2),
+                "stock_count": len(changes),
+                "total_stocks": len(symbols),
+            })
+
+    sectors.sort(key=lambda s: s["avg_change_pct"], reverse=True)
+    return sectors
+
+
+@router.get("/trades/stats/by-strategy")
+async def strategy_performance(request: Request):
+    state: AppState = request.app.state.app_state
+    return state.database.strategy_stats()
 
 
 @router.post("/trades/{trade_id}/notes")

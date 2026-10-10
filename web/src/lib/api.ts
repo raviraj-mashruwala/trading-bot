@@ -124,6 +124,11 @@ export const api = {
   getScoutAlerts: (date?: string) =>
     get<Record<string, unknown>[]>(date ? `/api/scout/alerts?date=${date}` : "/api/scout/alerts"),
 
+  // Analytics
+  getStrategyStats: () => get<Record<string, unknown>[]>("/api/trades/stats/by-strategy"),
+  getPlanExecutionReport: (date: string) => get<Record<string, unknown>>(`/api/plans/${date}/execution-report`),
+  getSectorHeatmap: () => get<{ sector: string; avg_change_pct: number; stock_count: number }[]>("/api/sectors/heatmap"),
+
   // Data Sync
   startSync: (forceFull = false) =>
     post<{ status: string }>("/api/sync/start", forceFull ? { force_full: true } : undefined),

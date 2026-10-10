@@ -187,6 +187,14 @@ async def approve_plan(date: str, request: Request):
     return {"status": "approved", "trade_date": date}
 
 
+@router.get("/plans/{date}/execution-report")
+async def plan_execution_report(date: str, request: Request):
+    state: AppState = request.app.state.app_state
+    if state.database is None:
+        raise HTTPException(status_code=500, detail="database unavailable")
+    return state.database.plan_execution_report(date)
+
+
 @router.get("/plans/{date}/review-status")
 async def plan_review_status(date: str, request: Request):
     state: AppState = request.app.state.app_state

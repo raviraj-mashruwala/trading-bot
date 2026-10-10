@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { TradeTable } from "./trade-table";
+import { PlanExecutionReport } from "./plan-execution-report";
 import type { Trade } from "@/types";
 
 function fmt(n: number): string {
@@ -33,9 +34,10 @@ export function DayGroup({ date, trades, dailyPnl }: Props) {
           {fmt(dailyPnl)}
         </span>
       </CardHeader>
-      {open && trades.length > 0 && (
-        <CardContent className="px-4 pb-4 pt-0" onClick={(e) => e.stopPropagation()}>
-          <TradeTable trades={trades} />
+      {open && (
+        <CardContent className="px-4 pb-4 pt-0 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <PlanExecutionReport date={date} />
+          {trades.length > 0 && <TradeTable trades={trades} />}
         </CardContent>
       )}
     </Card>

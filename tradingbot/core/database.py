@@ -290,6 +290,119 @@ class Database:
         ).fetchall()
         return [dict(r) for r in rows]
 
+    def strategy_stats(self) -> list[dict]:
+        rows = self.connection.execute("""
+            SELECT strategy,
+                   COUNT(*) as total,
+                   SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) as wins,
+                   SUM(CASE WHEN pnl <= 0 THEN 1 ELSE 0 END) as losses,
+                   SUM(pnl) as total_pnl,
+                   AVG(pnl) as avg_pnl,
+                   MAX(pnl) as best_trade,
+                   MIN(pnl) as worst_trade
+            FROM trades
+            GROUP BY strategy
+            ORDER BY total_pnl DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+    def plan_execution_report(self, trade_date: str) -> dict:
+        plan_row = self.connection.execute(
+            "SELECT payload FROM plan_snapshots WHERE trade_date = ?", (trade_date,),
+        ).fetchone()
+        if not plan_row:
+            return {"trade_date": trade_date, "legs": [], "summary": "No plan snapshot found"}
+
+        import json as _json
+        plan_data = _json.loads(plan_row["payload"])
+        plan_legs = plan_data.get("legs", [])
+
+        trades = self.trades_for_date(trade_date)
+        trade_by_symbol = {t.symbol: t for t in trades}
+
+        decisions = self.get_decisions_for_date(trade_date)
+        decisions_by_symbol: dict[str, list[dict]] = {}
+        for d in decisions:
+            sym = d.get("symbol", "")
+            decisions_by_symbol.setdefault(sym, []).append(d)
+
+        legs = []
+        entered = 0
+        vetoed = 0
+        missed = 0
+        total_pnl = 0.0
+
+        for leg in plan_legs:
+            sym = leg.get("symbol", "")
+            trade = trade_by_symbol.get(sym)
+            sym_decisions = decisions_by_symbol.get(sym, [])
+
+            key_decisions = [
+                f"{d['decision_type']}: {d.get('reason', '')}"
+                for d in sym_decisions
+                if d["decision_type"] not in ("ENTRY_WAIT",) or "Stale" not in d.get("reason", "")
+            ][-5:]
+
+            if trade:
+                entered += 1
+                drift_pct = abs(trade.entry_price - leg.get("entry_price", 0)) / leg.get("entry_price", 1) * 100
+                pnl = trade.pnl
+                total_pnl += pnl
+                legs.append({
+                    "symbol": sym,
+                    "direction": leg.get("direction", ""),
+                    "planned_entry": leg.get("entry_price", 0),
+                    "status": "entered",
+                    "actual_entry": trade.entry_price,
+                    "actual_exit": trade.exit_price,
+                    "drift_pct": round(drift_pct, 2),
+                    "pnl": round(pnl, 2),
+                    "exit_reason": trade.exit_reason,
+                    "key_decisions": key_decisions,
+                })
+            else:
+                veto_decisions = [d for d in sym_decisions if "VETO" in d.get("decision_type", "")]
+                timeout_decisions = [d for d in sym_decisions if "timeout" in d.get("reason", "").lower()]
+
+                if veto_decisions:
+                    status = "vetoed"
+                    vetoed += 1
+                    reason = veto_decisions[-1].get("reason", "unknown")
+                elif timeout_decisions:
+                    status = "timeout"
+                    missed += 1
+                    reason = "Wait timeout"
+                else:
+                    status = "missed"
+                    missed += 1
+                    reason = "No entry signal"
+
+                legs.append({
+                    "symbol": sym,
+                    "direction": leg.get("direction", ""),
+                    "planned_entry": leg.get("entry_price", 0),
+                    "status": status,
+                    "actual_entry": None,
+                    "actual_exit": None,
+                    "drift_pct": None,
+                    "pnl": None,
+                    "exit_reason": reason,
+                    "key_decisions": key_decisions,
+                })
+
+        wins = sum(1 for l in legs if l["pnl"] is not None and l["pnl"] > 0)
+        losses = sum(1 for l in legs if l["pnl"] is not None and l["pnl"] <= 0)
+
+        return {
+            "trade_date": trade_date,
+            "legs": legs,
+            "summary": f"{len(plan_legs)} planned → {entered} entered → {wins} win → {losses} loss → {vetoed} vetoed → {missed} missed",
+            "total_pnl": round(total_pnl, 2),
+            "entered": entered,
+            "vetoed": vetoed,
+            "missed": missed,
+        }
+
     def save_scout_alert(self, alert: dict) -> int:
         self.connection.execute(
             """INSERT INTO scout_alerts

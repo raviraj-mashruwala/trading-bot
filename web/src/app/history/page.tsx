@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { DayGroup } from "@/components/history/day-group";
+import { StrategyBreakdown } from "@/components/history/strategy-breakdown";
+import { PlanExecutionReport } from "@/components/history/plan-execution-report";
 import { StatCards } from "@/components/dashboard/stat-cards";
 import type { Trade } from "@/types";
 
@@ -82,6 +84,8 @@ export default function HistoryPage() {
       </div>
 
       {stats && <StatCards stats={stats} />}
+
+      <StrategyBreakdown />
 
       <div className="flex flex-col gap-1.5">
         {grouped.size === 0 ? (

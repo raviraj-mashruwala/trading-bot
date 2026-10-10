@@ -8,6 +8,7 @@ import { WinRateDonut } from "@/components/dashboard/win-rate-donut";
 import { LastAnalysis } from "@/components/dashboard/last-analysis";
 import { MarketStatus } from "@/components/dashboard/market-status";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
+import { SectorHeatmap } from "@/components/dashboard/sector-heatmap";
 
 function fmt(n: number): string {
   const abs = Math.abs(n);
@@ -68,6 +69,8 @@ export default function DashboardPage() {
         <WinRateDonut winRate={winRate} tradeCount={tradeCount} />
         <LastAnalysis />
       </div>
+
+      <SectorHeatmap />
     </div>
   );
 }
