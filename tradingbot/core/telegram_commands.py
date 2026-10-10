@@ -374,10 +374,11 @@ class TelegramCommandHandler:
             login_url = s.kite_auth.get_login_url()
             return (
                 "\U0001f511 <b>Kite Login Required</b>\n\n"
-                f"<a href=\"{login_url}\">Tap here to login</a>\n\n"
-                "After login, Kite redirects to the callback URL. "
-                "Make sure the server is running and accessible.\n\n"
-                "Send /health after login to verify authentication."
+                f"<a href=\"{login_url}\">Login URL</a>\n\n"
+                "⚠️ Open this on your <b>Mac browser</b> (where the server runs), "
+                "not on your phone — Kite redirects to localhost:8000 which only "
+                "works on the machine running the server.\n\n"
+                "After login, send /health to verify."
             )
         except Exception as exc:
             return f"❌ Failed to generate login URL: {type(exc).__name__}"
