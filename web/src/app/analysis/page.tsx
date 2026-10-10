@@ -9,6 +9,7 @@ import { PlanLegsCards } from "@/components/analysis/plan-legs-cards";
 import { RunHistory } from "@/components/analysis/run-history";
 import { RankedSetups } from "@/components/analysis/ranked-setups";
 import { Button } from "@/components/ui/button";
+import { PlanApproveButton } from "@/components/analysis/plan-approve-button";
 import type { TradePlan } from "@/types";
 
 export default function AnalysisPage() {
@@ -112,7 +113,14 @@ export default function AnalysisPage() {
       </div>
 
       {/* V1 legacy plan legs (if v1 was used) */}
-      {latestPlan && latestPlan.legs.length > 0 && <PlanLegsCards legs={latestPlan.legs} />}
+      {latestPlan && latestPlan.legs.length > 0 && (
+        <>
+          <PlanLegsCards legs={latestPlan.legs} />
+          {analysisStatus?.trade_date && (
+            <PlanApproveButton tradeDate={analysisStatus.trade_date} />
+          )}
+        </>
+      )}
 
       {/* V2 ranked setups */}
       <RankedSetups />

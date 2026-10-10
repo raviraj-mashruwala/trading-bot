@@ -176,3 +176,20 @@ async def delete_plan(date: str, request: Request):
         raise HTTPException(status_code=404, detail=f"no plan for {date}")
     path.unlink()
     return {"status": "deleted", "trade_date": date}
+
+
+@router.post("/plans/{date}/approve")
+async def approve_plan(date: str, request: Request):
+    state: AppState = request.app.state.app_state
+    if state.database is None:
+        raise HTTPException(status_code=500, detail="database unavailable")
+    state.database.approve_plan(date)
+    return {"status": "approved", "trade_date": date}
+
+
+@router.get("/plans/{date}/review-status")
+async def plan_review_status(date: str, request: Request):
+    state: AppState = request.app.state.app_state
+    if state.database is None:
+        return {"reviewed": False}
+    return {"reviewed": state.database.is_plan_reviewed(date)}

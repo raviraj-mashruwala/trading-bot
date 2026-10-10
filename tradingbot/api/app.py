@@ -181,7 +181,18 @@ def create_app(
 
                 mode_str = getattr(state_ref.config.general, "mode", "paper")
                 mode = Mode.LIVE if mode_str == "live" else Mode.PAPER
-                _log.info("Auto-starting %s execution for %s (%d legs)", mode.value, target, len(plan.legs))
+                reviewed = state_ref.database.is_plan_reviewed(str(target)) if state_ref.database else False
+                review_tag = "" if reviewed else " [UNREVIEWED]"
+                _log.info("Auto-starting %s execution for %s (%d legs)%s", mode.value, target, len(plan.legs), review_tag)
+                tg = getattr(state_ref, "_telegram", None)
+                if tg and not reviewed:
+                    leg_lines = ", ".join(l.symbol for l in plan.legs[:6])
+                    tg.send_sync(
+                        f"⚠️ <b>Auto-executing unreviewed plan</b>\n"
+                        f"Date: {target} | Mode: {mode.value}\n"
+                        f"Legs: {leg_lines}\n"
+                        f"Approve at /plans/{target}/approve to dismiss this warning."
+                    )
                 await state_ref.event_bus.emit("exec.auto_start", {
                     "trade_date": str(target), "mode": mode.value, "legs": len(plan.legs),
                 })

@@ -39,8 +39,12 @@ export const api = {
   testLlm: () => post<{ ok: boolean; error?: string }>("/api/config/test-llm"),
   getPlans: () => get<PlanSummary[]>("/api/plans"),
   getPlan: (date: string) => get<TradePlan>(`/api/plans/${date}`),
+  approvePlan: (date: string) => post<{ status: string }>(`/api/plans/${date}/approve`),
+  getPlanReviewStatus: (date: string) => get<{ reviewed: boolean }>(`/api/plans/${date}/review-status`),
   getTrades: (days = 30) => get<Trade[]>(`/api/trades?days=${days}`),
   getTradeStats: (days = 30) => get<TradeStats>(`/api/trades/stats?days=${days}`),
+  updateTradeNotes: (tradeId: number, notes: string) =>
+    post<{ status: string }>(`/api/trades/${tradeId}/notes`, { notes }),
   getAnalysisStatus: () => get<AnalysisStatus>("/api/analyze/status"),
   postAnalyze: (tradeDate?: string) =>
     post<{ status: string; trade_date: string }>(
@@ -114,6 +118,11 @@ export const api = {
   // Market Calendar
   getMarketCalendar: () => get<MarketCalendarResponse>("/api/market-calendar"),
   refreshMarketCalendar: () => post<MarketCalendarResponse>("/api/market-calendar/refresh"),
+
+  // Scout
+  getScoutStats: () => get<Record<string, unknown>>("/api/scout/stats"),
+  getScoutAlerts: (date?: string) =>
+    get<Record<string, unknown>[]>(date ? `/api/scout/alerts?date=${date}` : "/api/scout/alerts"),
 
   // Data Sync
   startSync: (forceFull = false) =>

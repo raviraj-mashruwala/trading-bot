@@ -38,6 +38,7 @@ export interface TradePlan {
 }
 
 export interface Trade {
+  id: number;
   trade_date: string;
   symbol: string;
   strategy: StrategyName;
@@ -51,6 +52,7 @@ export interface Trade {
   mode: Mode;
   entered_at: string;
   exited_at: string;
+  notes?: string;
 }
 
 export interface TradeStats {
@@ -161,12 +163,25 @@ export interface ExecutionPosition {
   original_stop?: number;
 }
 
+export interface ScoutAlert {
+  timestamp: string;
+  symbol: string;
+  signal: string;
+  direction: string;
+  confidence: number;
+  entry_price: number;
+  target_price: number;
+  stop_price: number;
+  reasoning: string;
+}
+
 export interface ExecutionStatusResponse {
   status: string;
   mode: string | null;
   positions: ExecutionPosition[];
   ticker_health: TickerHealth;
   decision_log: ExecutionDecision[];
+  scout_alerts: ScoutAlert[];
 }
 
 export interface SessionResult {

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from tradingbot.api.state import AppState
 from tradingbot.core.models import now_ist
@@ -14,28 +14,36 @@ router = APIRouter(prefix="/api")
 async def get_trades(request: Request, days: int = 30, date: str | None = None):
     state: AppState = request.app.state.app_state
     if date is not None:
-        trades = state.database.trades_for_date(date)
+        rows = state.database.connection.execute(
+            "SELECT * FROM trades WHERE trade_date = ? ORDER BY id", (date,)
+        ).fetchall()
     else:
+        from datetime import timedelta
         today = now_ist().date()
-        trades = state.database.recent_trades(days=days, today=today)
+        cutoff = (today - timedelta(days=days)).isoformat()
+        rows = state.database.connection.execute(
+            "SELECT * FROM trades WHERE trade_date >= ? ORDER BY trade_date, id", (cutoff,)
+        ).fetchall()
 
     return [
         {
-            "trade_date": t.trade_date,
-            "symbol": t.symbol,
-            "strategy": t.strategy.value,
-            "direction": t.direction.value,
-            "quantity": t.quantity,
-            "entry_price": t.entry_price,
-            "exit_price": t.exit_price,
-            "pnl": t.pnl,
-            "exit_reason": t.exit_reason,
-            "status": t.status.value,
-            "mode": t.mode.value,
-            "entered_at": t.entered_at.isoformat(),
-            "exited_at": t.exited_at.isoformat(),
+            "id": row["id"],
+            "trade_date": row["trade_date"],
+            "symbol": row["symbol"],
+            "strategy": row["strategy"],
+            "direction": row["direction"],
+            "quantity": row["quantity"],
+            "entry_price": row["entry_price"],
+            "exit_price": row["exit_price"],
+            "pnl": row["pnl"],
+            "exit_reason": row["exit_reason"],
+            "status": row["status"],
+            "mode": row["mode"],
+            "entered_at": row["entered_at"],
+            "exited_at": row["exited_at"],
+            "notes": row["notes"] if "notes" in row.keys() else "",
         }
-        for t in trades
+        for row in rows
     ]
 
 
@@ -81,3 +89,12 @@ async def get_trade_stats(request: Request, days: int = 30):
         "best_day": max(daily_values),
         "worst_day": min(daily_values),
     }
+
+
+@router.post("/trades/{trade_id}/notes")
+async def update_trade_notes(trade_id: int, request: Request):
+    state: AppState = request.app.state.app_state
+    body = await request.json()
+    notes = body.get("notes", "")
+    state.database.update_trade_notes(trade_id, notes)
+    return {"status": "ok", "trade_id": trade_id}

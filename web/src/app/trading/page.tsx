@@ -10,6 +10,7 @@ import { SessionSummary } from "@/components/trading/session-summary";
 import { TickerHealthIndicator } from "@/components/trading/ticker-health-indicator";
 import { DecisionTimeline } from "@/components/trading/decision-timeline";
 import { ScoutAlerts } from "@/components/trading/scout-alerts";
+import { ScoutStats } from "@/components/trading/scout-stats";
 import { SquareOffCountdown } from "@/components/trading/square-off-countdown";
 
 export default function TradingPage() {
@@ -88,6 +89,7 @@ export default function TradingPage() {
       )}
 
       <ScoutAlerts alerts={statusData?.scout_alerts ?? []} />
+      <ScoutStats />
 
       <DecisionTimeline decisions={decisions} />
 

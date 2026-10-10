@@ -112,6 +112,18 @@ class Database:
             self.connection.execute("ALTER TABLE trades ADD COLUMN setup_id INTEGER")
         except Exception:
             pass
+        try:
+            self.connection.execute("ALTER TABLE trades ADD COLUMN notes TEXT DEFAULT ''")
+        except Exception:
+            pass
+        try:
+            self.connection.execute("ALTER TABLE plan_snapshots ADD COLUMN reviewed INTEGER DEFAULT 0")
+        except Exception:
+            pass
+        try:
+            self.connection.execute("ALTER TABLE plan_snapshots ADD COLUMN reviewed_at TEXT")
+        except Exception:
+            pass
         self.connection.commit()
 
     def close(self) -> None:
@@ -165,6 +177,14 @@ class Database:
         ).fetchall()
         return [self._row_to_trade(row) for row in rows]
 
+    def update_trade_notes(self, trade_id: int, notes: str) -> None:
+        self.connection.execute("UPDATE trades SET notes = ? WHERE id = ?", (notes, trade_id))
+        self.connection.commit()
+
+    def get_trade_notes(self, trade_id: int) -> str:
+        row = self.connection.execute("SELECT notes FROM trades WHERE id = ?", (trade_id,)).fetchone()
+        return row["notes"] if row and row["notes"] else ""
+
     def realised_pnl_for_date(self, trade_date: str) -> float:
         row = self.connection.execute(
             "SELECT COALESCE(SUM(pnl), 0.0) AS total FROM trades WHERE trade_date = ?",
@@ -184,6 +204,19 @@ class Database:
             (plan.trade_date, plan.generated_at.isoformat(), json.dumps(plan.to_dict())),
         )
         self.connection.commit()
+
+    def approve_plan(self, trade_date: str) -> None:
+        self.connection.execute(
+            "UPDATE plan_snapshots SET reviewed = 1, reviewed_at = ? WHERE trade_date = ?",
+            (datetime.now().isoformat(), trade_date),
+        )
+        self.connection.commit()
+
+    def is_plan_reviewed(self, trade_date: str) -> bool:
+        row = self.connection.execute(
+            "SELECT reviewed FROM plan_snapshots WHERE trade_date = ?", (trade_date,),
+        ).fetchone()
+        return bool(row and row["reviewed"]) if row else False
 
     def log_execution_decision(self, **kwargs) -> None:
         self.connection.execute(

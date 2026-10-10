@@ -5,6 +5,7 @@ import { DayGroup } from "@/components/history/day-group";
 import type { Trade } from "@/types";
 
 const trade: Trade = {
+  id: 1,
   trade_date: "2026-09-25",
   symbol: "RELIANCE",
   strategy: "breakout",
