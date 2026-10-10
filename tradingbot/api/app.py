@@ -95,6 +95,17 @@ def create_app(
         )
         app.state.app_state._telegram = telegram
 
+        # Start Telegram command handler (polls for incoming commands)
+        telegram_cmd_task = None
+        if telegram.enabled:
+            from tradingbot.core.telegram_commands import TelegramCommandHandler
+            cmd_handler = TelegramCommandHandler(
+                bot_token=telegram._token,
+                chat_id=telegram._chat_id,
+                app_state=app.state.app_state,
+            )
+            telegram_cmd_task = asyncio.create_task(cmd_handler.start())
+
         # Scheduled jobs: sync at 4 PM, review at 8:30 PM (trading days only)
         from tradingbot.api.sync_routes import _run_sync
         from zoneinfo import ZoneInfo
@@ -300,6 +311,12 @@ def create_app(
 
         yield
 
+        if telegram_cmd_task is not None:
+            telegram_cmd_task.cancel()
+            try:
+                await telegram_cmd_task
+            except asyncio.CancelledError:
+                pass
         scheduler_task.cancel()
         try:
             await scheduler_task
