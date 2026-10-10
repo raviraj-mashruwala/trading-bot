@@ -62,6 +62,24 @@ CREATE TABLE IF NOT EXISTS execution_decisions (
 
 CREATE INDEX IF NOT EXISTS idx_execution_decisions_date ON execution_decisions (trade_date);
 
+CREATE TABLE IF NOT EXISTS scout_alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_date TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    signal TEXT NOT NULL,
+    direction TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    entry_price REAL NOT NULL,
+    target_price REAL NOT NULL,
+    stop_price REAL NOT NULL,
+    reasoning TEXT,
+    outcome TEXT,
+    outcome_pnl_pct REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_scout_alerts_date ON scout_alerts (trade_date);
+
 CREATE TABLE IF NOT EXISTS nightly_reviews (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     trade_date TEXT NOT NULL UNIQUE,
@@ -238,6 +256,59 @@ class Database:
             (limit,),
         ).fetchall()
         return [dict(r) for r in rows]
+
+    def save_scout_alert(self, alert: dict) -> int:
+        self.connection.execute(
+            """INSERT INTO scout_alerts
+            (trade_date, timestamp, symbol, signal, direction, confidence,
+             entry_price, target_price, stop_price, reasoning)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                alert["trade_date"], alert["timestamp"], alert["symbol"],
+                alert["signal"], alert["direction"], alert["confidence"],
+                alert["entry_price"], alert["target_price"], alert["stop_price"],
+                alert.get("reasoning"),
+            ),
+        )
+        self.connection.commit()
+        return self.connection.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    def update_scout_outcome(self, alert_id: int, outcome: str, pnl_pct: float) -> None:
+        self.connection.execute(
+            "UPDATE scout_alerts SET outcome = ?, outcome_pnl_pct = ? WHERE id = ?",
+            (outcome, pnl_pct, alert_id),
+        )
+        self.connection.commit()
+
+    def get_scout_alerts(self, trade_date: str | None = None, limit: int = 50) -> list[dict]:
+        if trade_date:
+            rows = self.connection.execute(
+                "SELECT * FROM scout_alerts WHERE trade_date = ? ORDER BY timestamp DESC",
+                (trade_date,),
+            ).fetchall()
+        else:
+            rows = self.connection.execute(
+                "SELECT * FROM scout_alerts ORDER BY timestamp DESC LIMIT ?", (limit,),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def scout_alert_stats(self) -> dict:
+        row = self.connection.execute("""
+            SELECT COUNT(*) as total,
+                   SUM(CASE WHEN outcome = 'target_hit' THEN 1 ELSE 0 END) as wins,
+                   SUM(CASE WHEN outcome = 'stop_hit' THEN 1 ELSE 0 END) as losses,
+                   SUM(CASE WHEN outcome = 'timeout' THEN 1 ELSE 0 END) as timeouts,
+                   AVG(outcome_pnl_pct) as avg_pnl_pct
+            FROM scout_alerts WHERE outcome IS NOT NULL
+        """).fetchone()
+        if not row or row[0] == 0:
+            return {"total": 0, "wins": 0, "losses": 0, "timeouts": 0, "win_rate": 0, "avg_pnl_pct": 0}
+        return {
+            "total": row[0], "wins": row[1] or 0, "losses": row[2] or 0,
+            "timeouts": row[3] or 0,
+            "win_rate": (row[1] or 0) / row[0] * 100 if row[0] > 0 else 0,
+            "avg_pnl_pct": row[4] or 0,
+        }
 
     @staticmethod
     def _row_to_trade(row) -> ExecutedTrade:

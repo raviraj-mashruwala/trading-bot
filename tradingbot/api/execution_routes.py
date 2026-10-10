@@ -332,7 +332,25 @@ async def execution_status(request: Request):
                 candles = intel.aggregator.get_candles(sym, "1min")
                 if candles:
                     alerts = scanner.scan(sym, candles)
-                    scout_alerts.extend(a.to_dict() for a in alerts)
+                    for a in alerts:
+                        alert_dict = a.to_dict()
+                        if state.database is not None:
+                            from tradingbot.core.models import now_ist
+                            alert_dict["trade_date"] = now_ist().strftime("%Y-%m-%d")
+                            try:
+                                state.database.save_scout_alert(alert_dict)
+                            except Exception:
+                                pass
+                        scout_alerts.append(alert_dict)
+        except Exception:
+            pass
+
+    # Include persisted alerts for today
+    if state.database is not None and not scout_alerts:
+        try:
+            from tradingbot.core.models import now_ist
+            today = now_ist().strftime("%Y-%m-%d")
+            scout_alerts = state.database.get_scout_alerts(trade_date=today)
         except Exception:
             pass
 
@@ -344,3 +362,19 @@ async def execution_status(request: Request):
         "decision_log": decision_log,
         "scout_alerts": scout_alerts,
     }
+
+
+@router.get("/scout/stats")
+async def scout_stats(request: Request):
+    state: AppState = request.app.state.app_state
+    if state.database is None:
+        return {"total": 0, "wins": 0, "losses": 0, "timeouts": 0, "win_rate": 0, "avg_pnl_pct": 0}
+    return state.database.scout_alert_stats()
+
+
+@router.get("/scout/alerts")
+async def scout_alerts_history(request: Request, date: str | None = None, limit: int = 50):
+    state: AppState = request.app.state.app_state
+    if state.database is None:
+        return []
+    return state.database.get_scout_alerts(trade_date=date, limit=limit)
