@@ -172,9 +172,12 @@ def create_app(
                 state_ref.executor_status = "running"
                 state_ref.executor_mode = mode.value
                 state_ref.execution_task = asyncio.create_task(_run_execution(state_ref, mode, plan))
-            except Exception:
+            except Exception as exc:
                 import logging
-                logging.getLogger(__name__).warning("Auto-start execution failed", exc_info=True)
+                logging.getLogger(__name__).warning("Auto-start execution failed: %s", exc)
+                tg = getattr(state_ref, "_telegram", None)
+                if tg:
+                    tg.notify_auto_start_failed(f"{type(exc).__name__}: check application logs")
 
         async def _auto_run_analysis(state_ref):
             try:

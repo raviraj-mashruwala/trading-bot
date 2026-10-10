@@ -94,6 +94,16 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         auth = _ensure_kite_auth(state)
         if not auth.is_authenticated():
             raise RuntimeError("Kite not authenticated. Connect Kite first from Settings.")
+
+        from tradingbot.api.state import CapitalUnavailableError
+        try:
+            live_capital = state.capital
+        except CapitalUnavailableError:
+            raise RuntimeError(
+                "Cannot generate plan: Kite margin unavailable. "
+                "Please check authentication and try again."
+            )
+
         from tradingbot.data.kite_client import KiteClient
         kite_for_universe = KiteClient(
             auth.kite,
@@ -113,11 +123,11 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             tier2=Tier2Analyzer(llm_provider),
             tier3=Tier3Analyzer(llm_provider),
             backtest_engine=WalkForwardEngine(),
-            monte_carlo=MonteCarloSimulator(capital=state.capital),
+            monte_carlo=MonteCarloSimulator(capital=live_capital),
             run_store=state.run_store,
             setup_store=state.setup_store,
             event_bus=state.event_bus,
-            capital=state.capital,
+            capital=live_capital,
             instrument_cache=inst_cache,
             context_fetcher=MarketContextFetcher(market_data_provider=market_provider),
             lookback_days=config.backtest.lookback_days,
@@ -303,7 +313,16 @@ def _build_plan_builder(state: AppState):
 
     _ensure_stores(state)
     config = state.config
-    capital = state.capital
+
+    from tradingbot.api.state import CapitalUnavailableError
+    try:
+        capital = state.capital
+    except CapitalUnavailableError:
+        raise RuntimeError(
+            "Cannot generate plan: Kite margin unavailable. "
+            "Please check authentication and try again."
+        )
+
     risk_config = auto_risk_config(capital)
 
     margin_fetcher = None
@@ -533,8 +552,9 @@ async def emergency_stop(request: Request):
 
     cap_mgr = CapitalManager(kite_client, deployed=0)
     executor = KiteExecutor(kite_client, cap_mgr)
+    emergency_capital = state.capital_or_none or state.config.general.capital
     safety = SafetyManager(
-        capital=state.capital,
+        capital=emergency_capital,
         max_daily_loss_pct=state.config.risk.max_daily_loss_pct,
     )
 

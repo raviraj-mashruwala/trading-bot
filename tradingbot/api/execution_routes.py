@@ -88,8 +88,17 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
             margin_fetcher = _fetch_margin
 
+        from tradingbot.api.state import CapitalUnavailableError
+        try:
+            live_capital = state.capital
+        except CapitalUnavailableError:
+            raise RuntimeError(
+                "Cannot start execution: Kite margin unavailable. "
+                "Please check authentication and try again."
+            )
+
         risk_manager = RiskManager(
-            config.risk, config.strategy, capital=state.capital,
+            config.risk, config.strategy, capital=live_capital,
             plan_max_age_hours=config.execution.plan_max_age_hours,
             max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
             margin_fetcher=margin_fetcher,

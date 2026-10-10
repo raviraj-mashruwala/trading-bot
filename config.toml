@@ -1,5 +1,6 @@
 [general]
 mode = "live"
+# capital is fetched live from Kite margins — this value is only used in tests
 capital = 400000
 log_level = "INFO"
 

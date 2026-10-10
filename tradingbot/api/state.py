@@ -63,7 +63,7 @@ class AppState:
 
     @property
     def capital(self) -> float:
-        """Live capital from Kite if authenticated, else config fallback."""
+        """Live capital from Kite. Falls back to config only if Kite is not configured."""
         if self.kite_auth and self.kite_auth.is_authenticated():
             now = _time.monotonic()
             if now - self._capital_fetched_at < _CAPITAL_CACHE_SECONDS and self._cached_capital > 0:
@@ -77,7 +77,22 @@ class AppState:
                     self._capital_fetched_at = now
                     return live
             except Exception:
-                log.debug("Failed to fetch Kite margins, using fallback", exc_info=True)
+                log.warning("Failed to fetch Kite margins")
             if self._cached_capital > 0:
                 return self._cached_capital
+            raise CapitalUnavailableError("Kite authenticated but margin fetch failed — check connection")
+        if self.kite_auth is not None:
+            raise CapitalUnavailableError("Kite not authenticated — cannot fetch live capital")
         return self.config.general.capital
+
+    @property
+    def capital_or_none(self) -> float | None:
+        """Live capital, or None if unavailable. Use for non-critical checks."""
+        try:
+            return self.capital
+        except CapitalUnavailableError:
+            return None
+
+
+class CapitalUnavailableError(Exception):
+    """Raised when live capital cannot be fetched from Kite."""

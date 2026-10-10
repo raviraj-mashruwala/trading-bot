@@ -128,6 +128,7 @@ class VirtualBroker(BrokerInterface):
     def _fill(self, order: Order, fill_price: float) -> None:
         order.status = OrderStatus.COMPLETE
         order.filled_price = fill_price
+        order.filled_quantity = order.quantity
         self._apply_to_position(order, fill_price)
 
     def _apply_to_position(self, order: Order, fill_price: float) -> None:

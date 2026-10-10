@@ -45,7 +45,8 @@ class Order:
     trigger_price: float | None
     status: OrderStatus
     filled_price: float | None
-    placed_at: datetime
+    filled_quantity: int = 0
+    placed_at: datetime = None
 
     @property
     def is_terminal(self) -> bool:

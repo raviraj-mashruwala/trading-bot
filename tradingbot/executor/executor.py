@@ -53,6 +53,7 @@ class LegState:
     realised_pnl: float = 0.0
     waiting: bool = False
     entry_submitted_at: datetime | None = None
+    partial_fill_at: datetime | None = None
 
     @property
     def effective_target_1(self) -> float:
@@ -564,7 +565,29 @@ class Executor:
 
         if status is OrderStatus.COMPLETE:
             order = self.broker.get_order(state.entry_order_id)
-            state.filled_quantity = order.quantity
+            actual_filled = getattr(order, "filled_quantity", 0) or order.quantity
+            if actual_filled < state.leg.quantity and state.partial_fill_at is None:
+                state.partial_fill_at = now
+                logger.warning(
+                    "%s partial fill: %d/%d shares. Waiting 120s for remainder.",
+                    state.leg.symbol, actual_filled, state.leg.quantity,
+                )
+                state.filled_quantity = actual_filled
+                state.entry_fill_price = float(order.filled_price)
+                return
+            if state.partial_fill_at is not None:
+                elapsed = (now - state.partial_fill_at).total_seconds()
+                order = self.broker.get_order(state.entry_order_id)
+                actual_filled = getattr(order, "filled_quantity", 0) or order.quantity
+                if actual_filled < state.leg.quantity and elapsed < 120:
+                    state.filled_quantity = actual_filled
+                    return
+                if actual_filled < state.leg.quantity:
+                    logger.info(
+                        "%s partial fill timeout: proceeding with %d/%d shares",
+                        state.leg.symbol, actual_filled, state.leg.quantity,
+                    )
+            state.filled_quantity = actual_filled
             state.entry_fill_price = float(order.filled_price)
             state.entered_at = now
 

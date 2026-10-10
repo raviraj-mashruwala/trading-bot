@@ -111,6 +111,7 @@ class KiteClient(BrokerInterface):
             trigger_price=float(latest.get("trigger_price") or 0.0) or None,
             status=KITE_STATUS_MAP.get(latest["status"], OrderStatus.OPEN),
             filled_price=float(latest.get("average_price") or 0.0) or None,
+            filled_quantity=int(latest.get("filled_quantity") or latest.get("quantity") or 0),
             placed_at=now_ist(),
         )
 
