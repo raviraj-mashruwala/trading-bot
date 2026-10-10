@@ -9,6 +9,7 @@ import { PositionsGrid } from "@/components/trading/positions-grid";
 import { SessionSummary } from "@/components/trading/session-summary";
 import { TickerHealthIndicator } from "@/components/trading/ticker-health-indicator";
 import { DecisionTimeline } from "@/components/trading/decision-timeline";
+import { ScoutAlerts } from "@/components/trading/scout-alerts";
 import { SquareOffCountdown } from "@/components/trading/square-off-countdown";
 
 export default function TradingPage() {
@@ -85,6 +86,8 @@ export default function TradingPage() {
       {!hasPositions && isRunning && (
         <p className="text-sm text-muted-foreground py-8 text-center">Evaluating entry conditions...</p>
       )}
+
+      <ScoutAlerts alerts={statusData?.scout_alerts ?? []} />
 
       <DecisionTimeline decisions={decisions} />
 

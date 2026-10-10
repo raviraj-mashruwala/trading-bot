@@ -318,10 +318,29 @@ async def execution_status(request: Request):
         except Exception:
             pass
 
+    # Scout alerts (observation only — no execution)
+    scout_alerts: list[dict] = []
+    if intel is not None:
+        try:
+            scanner = getattr(state, "_scout_scanner", None)
+            if scanner is None:
+                from tradingbot.executor.scout_scanner import ScoutScanner
+                scanner = ScoutScanner()
+                state._scout_scanner = scanner
+            for leg_state in (executor.states if executor and hasattr(executor, "states") else []):
+                sym = leg_state.leg.symbol
+                candles = intel.aggregator.get_candles(sym, "1min")
+                if candles:
+                    alerts = scanner.scan(sym, candles)
+                    scout_alerts.extend(a.to_dict() for a in alerts)
+        except Exception:
+            pass
+
     return {
         "status": state.executor_status,
         "mode": state.executor_mode,
         "positions": positions,
         "ticker_health": ticker_health,
         "decision_log": decision_log,
+        "scout_alerts": scout_alerts,
     }
