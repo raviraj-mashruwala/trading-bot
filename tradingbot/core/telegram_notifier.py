@@ -57,8 +57,8 @@ class TelegramNotifier:
                     log.warning("Telegram send failed: %s %s", resp.status_code, resp.text[:200])
                     return False
                 return True
-        except Exception:
-            log.warning("Telegram send error", exc_info=True)
+        except Exception as exc:
+            log.warning("Telegram send error: %s", type(exc).__name__)
             return False
 
     def send_sync(self, text: str) -> bool:
