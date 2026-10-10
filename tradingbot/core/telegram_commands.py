@@ -126,12 +126,15 @@ class TelegramCommandHandler:
         if s.executor_mode:
             lines[0] += f" ({s.executor_mode})"
 
-        # Capital
-        try:
-            cap = s.capital
-            lines.append(f"Margin: ₹{cap:,.0f}")
-        except Exception:
-            lines.append("Margin: unavailable")
+        # Capital (live from Kite only)
+        if s.kite_auth and s.kite_auth.is_authenticated():
+            try:
+                cap = s.capital
+                lines.append(f"Margin: ₹{cap:,.0f}")
+            except Exception:
+                lines.append("Margin: ❌ fetch failed")
+        else:
+            lines.append("Margin: ❌ Kite not authenticated (/login)")
 
         # Positions
         executor = s.executor_ref
@@ -285,12 +288,15 @@ class TelegramCommandHandler:
         else:
             lines.append("Kite: not configured")
 
-        # Margin
-        try:
-            cap = s.capital
-            lines.append(f"Margin: ₹{cap:,.0f}")
-        except Exception:
-            lines.append("Margin: ❌ unavailable")
+        # Margin (live from Kite only)
+        if s.kite_auth and s.kite_auth.is_authenticated():
+            try:
+                cap = s.capital
+                lines.append(f"Margin: ✅ ₹{cap:,.0f}")
+            except Exception:
+                lines.append("Margin: ❌ fetch failed")
+        else:
+            lines.append("Margin: ❌ not authenticated (/login)")
 
         # Ticker
         executor = s.executor_ref
