@@ -16,7 +16,7 @@ import httpx
 log = logging.getLogger(__name__)
 
 POLL_INTERVAL = 2
-ALLOWED_COMMANDS = {"/status", "/plan", "/scout", "/stats", "/health", "/stop", "/approve", "/help", "/start"}
+ALLOWED_COMMANDS = {"/status", "/plan", "/scout", "/stats", "/health", "/stop", "/approve", "/login", "/help", "/start"}
 
 
 class TelegramCommandHandler:
@@ -78,6 +78,7 @@ class TelegramCommandHandler:
             "/health": self._cmd_health,
             "/stop": self._cmd_stop,
             "/approve": self._cmd_approve,
+            "/login": self._cmd_login,
             "/help": self._cmd_help,
             "/start": self._cmd_help,
         }.get(cmd)
@@ -112,6 +113,7 @@ class TelegramCommandHandler:
             "/scout — Recent scout signals + stats\n"
             "/stats — Trading stats & strategy breakdown\n"
             "/health — System health check\n"
+            "/login — Kite login (daily auth)\n"
             "/stop — Emergency kill switch\n"
             "/approve — Approve pending plan\n"
             "/help — This message"
@@ -343,3 +345,33 @@ class TelegramCommandHandler:
             return f"✅ Plan for {plan.trade_date} approved ({len(plan.legs)} legs)"
         except Exception as exc:
             return f"❌ Failed to approve: {type(exc).__name__}"
+
+    async def _cmd_login(self, args: list[str]) -> str:
+        s = self._state
+
+        # Check if already authenticated
+        if s.kite_auth and s.kite_auth.is_authenticated():
+            try:
+                s.kite_auth.kite.profile()
+                return "✅ Kite already authenticated. No login needed."
+            except Exception:
+                pass
+
+        # Generate login URL
+        try:
+            from tradingbot.execution.kite_auth import KiteAuth
+            if s.kite_auth is None:
+                s.kite_auth = KiteAuth(
+                    api_key=s.config.secrets.kite_api_key,
+                    api_secret=s.config.secrets.kite_api_secret,
+                )
+            login_url = s.kite_auth.get_login_url()
+            return (
+                "\U0001f511 <b>Kite Login Required</b>\n\n"
+                f"<a href=\"{login_url}\">Tap here to login</a>\n\n"
+                "After login, Kite redirects to the callback URL. "
+                "Make sure the server is running and accessible.\n\n"
+                "Send /health after login to verify authentication."
+            )
+        except Exception as exc:
+            return f"❌ Failed to generate login URL: {type(exc).__name__}"
