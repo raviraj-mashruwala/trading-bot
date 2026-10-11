@@ -80,6 +80,7 @@ class TelegramCommandHandler:
             "/approve": self._cmd_approve,
             "/login": self._cmd_login,
             "/token": self._cmd_token,
+            "/deploy": self._cmd_deploy,
             "/help": self._cmd_help,
             "/start": self._cmd_help,
         }.get(cmd)
@@ -114,6 +115,7 @@ class TelegramCommandHandler:
             "/scout — Recent scout signals + stats\n"
             "/stats — Trading stats & strategy breakdown\n"
             "/health — System health check\n"
+            "/deploy — Pull latest code & restart\n"
             "/login — Kite login URL\n"
             "/token &lt;code&gt; — Complete Kite login with request_token\n"
             "/stop — Emergency kill switch\n"
@@ -353,6 +355,47 @@ class TelegramCommandHandler:
             return f"✅ Plan for {plan.trade_date} approved ({len(plan.legs)} legs)"
         except Exception as exc:
             return f"❌ Failed to approve: {type(exc).__name__}"
+
+    async def _cmd_deploy(self, args: list[str]) -> str:
+        import subprocess
+        try:
+            # Git pull
+            result = subprocess.run(
+                ["git", "pull", "origin", "master"],
+                capture_output=True, text=True, timeout=30,
+                cwd="/home/ubuntu/trading-bot",
+            )
+            pull_output = result.stdout.strip()
+            if result.returncode != 0:
+                return f"❌ Git pull failed:\n<code>{result.stderr[:200]}</code>"
+
+            if "Already up to date" in pull_output:
+                return "✅ Already up to date. No restart needed."
+
+            # Get latest commit
+            commit = subprocess.run(
+                ["git", "log", "-1", "--format=%h %s"],
+                capture_output=True, text=True, timeout=5,
+                cwd="/home/ubuntu/trading-bot",
+            ).stdout.strip()
+
+            # Restart service
+            restart = subprocess.run(
+                ["sudo", "systemctl", "restart", "tradingbot"],
+                capture_output=True, text=True, timeout=15,
+            )
+            if restart.returncode != 0:
+                return f"⚠️ Code updated but restart failed:\n<code>{restart.stderr[:200]}</code>"
+
+            return (
+                f"✅ <b>Deployed</b>\n\n"
+                f"<code>{commit}</code>\n"
+                f"Service restarted."
+            )
+        except subprocess.TimeoutExpired:
+            return "❌ Deploy timed out"
+        except Exception as exc:
+            return f"❌ Deploy failed: {type(exc).__name__}"
 
     async def _cmd_token(self, args: list[str]) -> str:
         if not args:
