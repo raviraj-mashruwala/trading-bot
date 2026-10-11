@@ -166,7 +166,7 @@ export function DataSyncSection() {
       <div className="flex gap-2">
         {!isRunning && isEmpty && (
           <button
-            onClick={handleStart}
+            onClick={() => handleStart()}
             className="rounded bg-[#d4a015] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#d4a015]/90"
           >
             Start Initial Fill

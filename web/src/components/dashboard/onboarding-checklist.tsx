@@ -56,7 +56,7 @@ export function OnboardingChecklist() {
   });
 
   const kiteConnected = kiteStatus?.authenticated ?? false;
-  const hasSyncData = !!(syncStatus?.freshness && Object.keys(syncStatus.freshness as Record<string, unknown>).length > 0);
+  const hasSyncData = !!(syncStatus && (syncStatus as Record<string, unknown>)?.freshness && Object.keys((syncStatus as Record<string, unknown>).freshness as Record<string, unknown>).length > 0);
   const hasPlans = (plans?.length ?? 0) > 0;
   const hasTrades = (stats?.trade_count ?? 0) > 0;
 

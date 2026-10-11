@@ -20,7 +20,7 @@ export function StrategyBreakdown() {
     queryFn: api.getStrategyStats,
   });
 
-  const rows = (data ?? []) as StrategyRow[];
+  const rows = (data ?? []) as unknown as StrategyRow[];
   if (rows.length === 0) return null;
 
   return (
