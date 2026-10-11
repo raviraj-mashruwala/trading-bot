@@ -17,6 +17,9 @@ Key routing rules:
 - Resume context → invoke /context-restore
 - Author a backlog-ready spec/issue → invoke /spec
 
+## Git
+Before committing, ensure git user.email is set to `raviraj.mashruwala@outlook.com` for this repo. Run `git config user.email "raviraj.mashruwala@outlook.com"` if needed. This is required for Vercel deployment.
+
 ## Design System
 Always read DESIGN.md before making any visual or UI decisions.
 All font choices, colors, spacing, and aesthetic direction are defined there.
