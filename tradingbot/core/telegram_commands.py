@@ -79,6 +79,7 @@ class TelegramCommandHandler:
             "/stop": self._cmd_stop,
             "/approve": self._cmd_approve,
             "/login": self._cmd_login,
+            "/token": self._cmd_token,
             "/help": self._cmd_help,
             "/start": self._cmd_help,
         }.get(cmd)
@@ -113,7 +114,8 @@ class TelegramCommandHandler:
             "/scout — Recent scout signals + stats\n"
             "/stats — Trading stats & strategy breakdown\n"
             "/health — System health check\n"
-            "/login — Kite login (daily auth)\n"
+            "/login — Kite login URL\n"
+            "/token &lt;code&gt; — Complete Kite login with request_token\n"
             "/stop — Emergency kill switch\n"
             "/approve — Approve pending plan\n"
             "/help — This message"
@@ -352,6 +354,40 @@ class TelegramCommandHandler:
         except Exception as exc:
             return f"❌ Failed to approve: {type(exc).__name__}"
 
+    async def _cmd_token(self, args: list[str]) -> str:
+        if not args:
+            return "Usage: <code>/token YOUR_REQUEST_TOKEN</code>\n\nGet the token from the URL bar after Kite login."
+
+        request_token = args[0].strip()
+        s = self._state
+
+        try:
+            from tradingbot.execution.kite_auth import KiteAuth
+            if s.kite_auth is None:
+                s.kite_auth = KiteAuth(
+                    api_key=s.config.secrets.kite_api_key,
+                    api_secret=s.config.secrets.kite_api_secret,
+                )
+
+            data = s.kite_auth.generate_session(request_token)
+            user_id = data.get("user_id", "unknown")
+
+            # Verify it works
+            try:
+                profile = s.kite_auth.kite.profile()
+                name = profile.get("user_name", user_id)
+            except Exception:
+                name = user_id
+
+            return (
+                f"✅ <b>Kite Authenticated</b>\n\n"
+                f"User: {name}\n"
+                f"Token saved. Bot ready for trading.\n\n"
+                f"Send /health to verify."
+            )
+        except Exception as exc:
+            return f"❌ Token exchange failed: {type(exc).__name__}\n\nMake sure you copied the full request_token from the URL."
+
     async def _cmd_login(self, args: list[str]) -> str:
         s = self._state
 
@@ -373,12 +409,14 @@ class TelegramCommandHandler:
                 )
             login_url = s.kite_auth.get_login_url()
             return (
-                "\U0001f511 <b>Kite Login Required</b>\n\n"
-                f"<a href=\"{login_url}\">Login URL</a>\n\n"
-                "⚠️ Open this on your <b>Mac browser</b> (where the server runs), "
-                "not on your phone — Kite redirects to localhost:8000 which only "
-                "works on the machine running the server.\n\n"
-                "After login, send /health to verify."
+                "\U0001f511 <b>Kite Login</b>\n\n"
+                f"1. <a href=\"{login_url}\">Tap here to login</a>\n"
+                "2. Login with your Kite credentials\n"
+                "3. Browser shows 'site can't be reached' — that's OK\n"
+                "4. Copy the <b>request_token</b> from the URL bar\n"
+                "   (everything after <code>request_token=</code>)\n"
+                "5. Send: <code>/token PASTE_TOKEN_HERE</code>\n\n"
+                "Example: <code>/token abc123xyz</code>"
             )
         except Exception as exc:
             return f"❌ Failed to generate login URL: {type(exc).__name__}"
