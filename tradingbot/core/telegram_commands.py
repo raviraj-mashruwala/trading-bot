@@ -379,9 +379,15 @@ class TelegramCommandHandler:
                 cwd="/home/ubuntu/trading-bot",
             ).stdout.strip()
 
-            # Restart service
+            # Kill any orphaned processes, then restart cleanly
+            subprocess.run(
+                ["sudo", "pkill", "-9", "-f", "tradingbot serve"],
+                capture_output=True, timeout=5,
+            )
+            import time
+            time.sleep(2)
             restart = subprocess.run(
-                ["sudo", "systemctl", "restart", "tradingbot"],
+                ["sudo", "systemctl", "start", "tradingbot"],
                 capture_output=True, text=True, timeout=15,
             )
             if restart.returncode != 0:
