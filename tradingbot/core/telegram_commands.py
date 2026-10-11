@@ -359,44 +359,33 @@ class TelegramCommandHandler:
     async def _cmd_deploy(self, args: list[str]) -> str:
         import subprocess
         try:
-            # Git pull
             result = subprocess.run(
                 ["git", "pull", "origin", "master"],
                 capture_output=True, text=True, timeout=30,
                 cwd="/home/ubuntu/trading-bot",
             )
-            pull_output = result.stdout.strip()
             if result.returncode != 0:
                 return f"❌ Git pull failed:\n<code>{result.stderr[:200]}</code>"
 
-            if "Already up to date" in pull_output:
+            if "Already up to date" in result.stdout:
                 return "✅ Already up to date. No restart needed."
 
-            # Get latest commit
             commit = subprocess.run(
                 ["git", "log", "-1", "--format=%h %s"],
                 capture_output=True, text=True, timeout=5,
                 cwd="/home/ubuntu/trading-bot",
             ).stdout.strip()
 
-            # Kill any orphaned processes, then restart cleanly
-            subprocess.run(
-                ["sudo", "pkill", "-9", "-f", "tradingbot serve"],
-                capture_output=True, timeout=5,
+            # Schedule restart in background after response is sent
+            subprocess.Popen(
+                ["bash", "-c", "sleep 3 && sudo systemctl restart tradingbot"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             )
-            import time
-            time.sleep(2)
-            restart = subprocess.run(
-                ["sudo", "systemctl", "start", "tradingbot"],
-                capture_output=True, text=True, timeout=15,
-            )
-            if restart.returncode != 0:
-                return f"⚠️ Code updated but restart failed:\n<code>{restart.stderr[:200]}</code>"
 
             return (
                 f"✅ <b>Deployed</b>\n\n"
                 f"<code>{commit}</code>\n"
-                f"Service restarted."
+                f"Service restarting in 3s..."
             )
         except subprocess.TimeoutExpired:
             return "❌ Deploy timed out"
