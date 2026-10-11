@@ -98,7 +98,8 @@ def create_app(
 
         # Start Telegram command handler (polls for incoming commands)
         telegram_cmd_task = None
-        if telegram.enabled:
+        if telegram.enabled and not getattr(app, "_telegram_cmd_started", False):
+            app._telegram_cmd_started = True
             from tradingbot.core.telegram_commands import TelegramCommandHandler
             cmd_handler = TelegramCommandHandler(
                 bot_token=telegram._token,
