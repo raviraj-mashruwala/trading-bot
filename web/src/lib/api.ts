@@ -6,7 +6,7 @@ import type {
   MarketCalendarResponse, NightlyReview,
 } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE = "";
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`);
