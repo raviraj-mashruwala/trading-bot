@@ -14,7 +14,12 @@ export function createWsManager(
 
   function connect() {
     intentionalClose = false;
-    socket = new WebSocket(url);
+    try {
+      socket = new WebSocket(url);
+    } catch {
+      onStatusChange?.("disconnected");
+      return;
+    }
 
     socket.onopen = () => {
       reconnectDelay = 1000;

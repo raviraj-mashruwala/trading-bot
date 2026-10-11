@@ -29,7 +29,9 @@ export function Providers({ children }: { children: ReactNode }) {
   const setWsConnected = usePipelineStore((s) => s.setWsConnected);
 
   useEffect(() => {
-    const wsUrl = `ws://${window.location.hostname}:8000/ws`;
+    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsHost = window.location.hostname === "localhost" ? `${window.location.hostname}:8000` : window.location.host;
+    const wsUrl = `${wsProto}//${wsHost}/ws`;
     const ws = createWsManager(
       wsUrl,
       (event) => {
