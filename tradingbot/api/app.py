@@ -97,9 +97,11 @@ def create_app(
         app.state.app_state._telegram = telegram
 
         # Start Telegram command handler (polls for incoming commands)
+        # Use module-level flag because uvicorn factory=True creates multiple app objects
+        import tradingbot.core.telegram_commands as _tg_cmd_mod
         telegram_cmd_task = None
-        if telegram.enabled and not getattr(app, "_telegram_cmd_started", False):
-            app._telegram_cmd_started = True
+        if telegram.enabled and not getattr(_tg_cmd_mod, "_singleton_started", False):
+            _tg_cmd_mod._singleton_started = True
             from tradingbot.core.telegram_commands import TelegramCommandHandler
             cmd_handler = TelegramCommandHandler(
                 bot_token=telegram._token,
