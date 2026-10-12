@@ -70,6 +70,13 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
         from tradingbot.executor.executor import Executor
 
         margin_fetcher = None
+        # Ensure kite_auth is initialized from saved token if not already
+        if state.kite_auth is None:
+            from tradingbot.api.analysis_routes import _ensure_kite_auth
+            try:
+                _ensure_kite_auth(state)
+            except Exception:
+                pass
         if state.kite_auth and state.kite_auth.is_authenticated():
             kite_for_margin = state.kite_auth.kite
 
