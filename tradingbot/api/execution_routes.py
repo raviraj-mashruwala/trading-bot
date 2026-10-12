@@ -223,9 +223,13 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
                     executor._last_tg_summary = now_mono
                     from tradingbot.core.models import now_ist
                     ist_now = now_ist()
-                    lines = [f"\U0001f4ca <b>{ist_now.strftime('%H:%M')} IST Update</b>\n"]
+                    lines = [
+                        f"📊 <b>{ist_now.strftime('%H:%M')} IST</b>",
+                        f"",
+                    ]
                     for st in executor.states:
                         sym = st.leg.symbol
+                        d_emoji = "📉" if st.leg.direction.value == "short" else "📈"
                         direction = st.leg.direction.value.upper()
                         if st.filled_quantity > 0:
                             try:
@@ -234,20 +238,26 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
                                 if st.leg.direction.value == "short":
                                     delta = -delta
                                 pnl = delta * st.filled_quantity
+                                pnl_emoji = "\U0001f7e2" if pnl >= 0 else "\U0001f534"
                                 sign = "+" if pnl >= 0 else ""
-                                lines.append(f"{sym} {direction}: IN @ {st.entry_fill_price:.2f} | LTP {price:.2f} | {sign}₹{pnl:.0f}")
+                                lines.append(
+                                    f"{d_emoji} <b>{sym}</b> {direction}\n"
+                                    f"   <code>@ {st.entry_fill_price:.2f}  →  ₹{price:.2f}</code>\n"
+                                    f"   {pnl_emoji} {sign}₹{pnl:,.0f}"
+                                )
                             except Exception:
-                                lines.append(f"{sym} {direction}: IN @ {st.entry_fill_price:.2f}")
+                                lines.append(f"{d_emoji} <b>{sym}</b> {direction}  •  <code>@ {st.entry_fill_price:.2f}</code>")
                         elif st.cancelled or st.skipped_reason:
                             reason = st.skipped_reason or "cancelled"
-                            lines.append(f"{sym}: ⏭️ {reason[:50]}")
+                            lines.append(f"⏭️ <b>{sym}</b>  •  <i>{reason[:50]}</i>")
                         elif st.waiting:
-                            lines.append(f"{sym} {direction}: ⏳ waiting for entry")
+                            lines.append(f"⏳ <b>{sym}</b> {direction}  •  <i>waiting</i>")
                         else:
-                            lines.append(f"{sym} {direction}: evaluating")
+                            lines.append(f"🔄 <b>{sym}</b> {direction}  •  <i>evaluating</i>")
                     if intelligence:
                         h = intelligence.health
-                        lines.append(f"\nTicker: {h.status} | Reconnects: {h.reconnect_count}")
+                        t_dot = "\U0001f7e2" if h.status == "healthy" else "\U0001f534"
+                        lines.append(f"\n⚡ Ticker {t_dot} {h.status}  •  {h.reconnect_count} reconnects")
                     try:
                         tg.send_sync("\n".join(lines))
                     except Exception:

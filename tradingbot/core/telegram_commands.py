@@ -19,6 +19,20 @@ POLL_INTERVAL = 2
 ALLOWED_COMMANDS = {"/status", "/plan", "/scout", "/stats", "/health", "/stop", "/approve", "/login", "/help", "/start"}
 
 
+def _sep() -> str:
+    return "━━━━━━━━━━━━━━━━━━━━"
+
+
+def _pnl(val: float) -> str:
+    emoji = "\U0001f7e2" if val >= 0 else "\U0001f534"
+    sign = "+" if val >= 0 else ""
+    return f"{emoji} {sign}₹{val:,.0f}"
+
+
+def _status_dot(ok: bool) -> str:
+    return "\U0001f7e2" if ok else "\U0001f534"
+
+
 class TelegramCommandHandler:
     """Long-polls Telegram for commands from the authorized chat."""
 
@@ -109,99 +123,114 @@ class TelegramCommandHandler:
 
     async def _cmd_help(self, args: list[str]) -> str:
         return (
-            "\U0001f916 <b>Trading Bot Commands</b>\n\n"
-            "/status — Positions, P&L, margin\n"
-            "/plan — Today's trading plan\n"
-            "/scout — Recent scout signals + stats\n"
-            "/stats — Trading stats & strategy breakdown\n"
-            "/health — System health check\n"
-            "/deploy — Pull latest code & restart\n"
-            "/login — Kite login URL\n"
-            "/token &lt;code&gt; — Complete Kite login with request_token\n"
-            "/stop — Emergency kill switch\n"
-            "/approve — Approve pending plan\n"
-            "/help — This message"
+            f"{_sep()}\n"
+            f"\U0001f916 <b>TRADING BOT</b>\n"
+            f"{_sep()}\n\n"
+            f"<code>"
+            f"/status    Positions &amp; P&amp;L\n"
+            f"/plan      Trading plan\n"
+            f"/scout     Scout signals\n"
+            f"/stats     Strategy stats\n"
+            f"/health    System health\n"
+            f"/deploy    Deploy updates\n"
+            f"/login     Kite login URL\n"
+            f"/token     Complete login\n"
+            f"/stop      Emergency stop\n"
+            f"/approve   Approve plan\n"
+            f"/help      This message"
+            f"</code>"
         )
 
     async def _cmd_status(self, args: list[str]) -> str:
         s = self._state
-        lines = [f"\U0001f4ca <b>Status: {s.executor_status.upper()}</b>"]
+        status = s.executor_status.upper()
+        mode = f"  •  {s.executor_mode}" if s.executor_mode else ""
+        status_dot = _status_dot(status == "RUNNING")
 
-        if s.executor_mode:
-            lines[0] += f" ({s.executor_mode})"
+        lines = [
+            f"┌─ <b>TRADING BOT</b> ─────────┐",
+            f"│  {status_dot} {status}{mode}",
+            f"└────────────────────────────┘",
+        ]
 
-        # Capital (live from Kite only)
+        # Margin
         if s.kite_auth and s.kite_auth.is_authenticated():
             try:
                 cap = s.capital
-                lines.append(f"Margin: ₹{cap:,.0f}")
+                lines.append(f"\n💰 <b>Margin</b>  <code>₹{cap:,.0f}</code>")
             except Exception:
-                lines.append("Margin: ❌ fetch failed")
+                lines.append(f"\n💰 Margin  \U0001f534 fetch failed")
         else:
-            lines.append("Margin: ❌ Kite not authenticated (/login)")
+            lines.append(f"\n💰 Margin  \U0001f534 not authenticated — /login")
 
         # Positions
         executor = s.executor_ref
         if executor and hasattr(executor, "states"):
             open_pos = [st for st in executor.states if st.filled_quantity > 0]
             if open_pos:
-                lines.append(f"\n<b>{len(open_pos)} position(s):</b>")
+                lines.append(f"\n📊 <b>Positions ({len(open_pos)})</b>")
                 for st in open_pos:
+                    d_emoji = "📉" if st.leg.direction.value == "short" else "📈"
                     try:
                         price = executor.broker.get_ltp(st.leg.symbol)
                         delta = price - st.entry_fill_price
                         if st.leg.direction.value == "short":
                             delta = -delta
                         pnl = delta * st.filled_quantity
-                        sign = "+" if pnl >= 0 else ""
                         lines.append(
-                            f"  {st.leg.symbol} {st.leg.direction.value.upper()} "
+                            f"  {d_emoji} <b>{st.leg.symbol}</b> {st.leg.direction.value.upper()} "
                             f"{st.filled_quantity} @ {st.entry_fill_price:.2f}\n"
-                            f"  LTP: {price:.2f} | P&L: {sign}₹{pnl:.0f}"
+                            f"     LTP <code>₹{price:.2f}</code>  •  {_pnl(pnl)}"
                         )
                     except Exception:
-                        lines.append(f"  {st.leg.symbol} {st.leg.direction.value.upper()} {st.filled_quantity}")
+                        lines.append(f"  {d_emoji} <b>{st.leg.symbol}</b> {st.leg.direction.value.upper()} {st.filled_quantity}")
             else:
                 waiting = [st for st in executor.states if st.waiting and not st.cancelled]
                 if waiting:
-                    lines.append(f"\nNo positions | {len(waiting)} waiting for entry")
+                    lines.append(f"\n📊 No positions  •  {len(waiting)} waiting")
                 else:
-                    lines.append("\nNo open positions")
+                    lines.append(f"\n📊 No open positions")
 
-        # Ticker health
+        # Ticker
         intel = getattr(executor, "_intelligence", None) if executor else None
         if intel:
             h = intel.health
-            lines.append(f"\nTicker: {h.status} | Reconnects: {h.reconnect_count}")
+            t_dot = _status_dot(h.status == "healthy")
+            lines.append(f"\n⚡ Ticker  {t_dot} {h.status}  •  {h.reconnect_count} reconnects")
 
         return "\n".join(lines)
 
     async def _cmd_plan(self, args: list[str]) -> str:
-        from tradingbot.core.models import now_ist
-        today = now_ist().strftime("%Y-%m-%d")
-
         try:
             plan = self._state.plan_store.load_latest()
         except Exception:
-            return "❌ No plan found"
+            return "\U0001f534 No plan found"
 
-        lines = [f"\U0001f4dd <b>Plan for {plan.trade_date}</b>"]
-        lines.append(f"Regime: {getattr(plan.market_regime, 'value', 'unknown')}")
-        lines.append(f"Legs: {len(plan.legs)}\n")
+        regime = getattr(plan.market_regime, "value", "unknown")
+        lines = [
+            f"{_sep()}",
+            f"\U0001f4dd <b>PLAN — {plan.trade_date}</b>",
+            f"{_sep()}",
+            f"",
+            f"<code>Regime  {regime}\nLegs    {len(plan.legs)}</code>",
+        ]
 
         for leg in plan.legs:
-            conf_bar = "█" * int(leg.confidence * 10)
+            d_emoji = "📉" if leg.direction.value == "short" else "📈"
+            conf_bar = "█" * int(leg.confidence * 10) + "░" * (10 - int(leg.confidence * 10))
             lines.append(
-                f"<b>{leg.symbol}</b> {leg.direction.value.upper()} ({leg.strategy.value})\n"
-                f"  Entry: {leg.entry_price:.2f} | SL: {leg.stop_loss:.2f}\n"
-                f"  T1: {leg.target_1:.2f} | T2: {leg.target_2:.2f}\n"
-                f"  Qty: {leg.quantity} | Conf: {leg.confidence:.0%} {conf_bar}"
+                f"\n{d_emoji} <b>{leg.symbol}</b>  •  {leg.direction.value.upper()}\n"
+                f"<code>"
+                f"Entry  ₹{leg.entry_price:,.2f}   SL  ₹{leg.stop_loss:,.2f}\n"
+                f"T1     ₹{leg.target_1:,.2f}   T2  ₹{leg.target_2:,.2f}\n"
+                f"Qty    {leg.quantity}         Conf {leg.confidence:.0%}\n"
+                f"{conf_bar}"
+                f"</code>"
             )
 
-        # Review status
         try:
             reviewed = self._state.database.is_plan_reviewed(plan.trade_date)
-            lines.append(f"\n{'✅ Reviewed' if reviewed else '⚠️ NOT reviewed — /approve to review'}")
+            lines.append(f"\n{'✅ <i>Reviewed</i>' if reviewed else '⚠️ <i>Not reviewed — /approve</i>'}")
         except Exception:
             pass
 
@@ -210,118 +239,136 @@ class TelegramCommandHandler:
     async def _cmd_scout(self, args: list[str]) -> str:
         db = self._state.database
         if db is None:
-            return "No database available"
+            return "\U0001f534 No database available"
 
         stats = db.scout_alert_stats()
         from tradingbot.core.models import now_ist
         today = now_ist().strftime("%Y-%m-%d")
         recent = db.get_scout_alerts(trade_date=today, limit=5)
 
-        lines = ["\U0001f52d <b>Scout Signals</b>\n"]
+        lines = [
+            f"{_sep()}",
+            f"\U0001f52d <b>SCOUT SIGNALS</b>",
+            f"{_sep()}",
+        ]
 
         if stats["total"] > 0:
+            wr = stats["win_rate"]
+            wr_dot = _status_dot(wr >= 50)
             lines.append(
-                f"All time: {stats['total']} alerts | "
-                f"Win: {stats['win_rate']:.0f}% | "
-                f"Avg: {stats['avg_pnl_pct']:+.2f}%"
+                f"\n<code>"
+                f"Total    {stats['total']} alerts\n"
+                f"Win rate {wr_dot} {wr:.0f}%\n"
+                f"Avg P&amp;L  {stats['avg_pnl_pct']:+.2f}%"
+                f"</code>"
             )
         else:
-            lines.append("No graded alerts yet")
+            lines.append("\n<i>No graded alerts yet</i>")
 
         if recent:
-            lines.append(f"\n<b>Today ({len(recent)}):</b>")
+            lines.append(f"\n<b>Today ({len(recent)})</b>")
             for a in recent[:5]:
                 ts = a.get("timestamp", "")[-8:-3]
                 outcome = a.get("outcome", "pending")
                 emoji = "\U0001f3af" if outcome == "target_hit" else "\U0001f6d1" if outcome == "stop_hit" else "⏳"
                 lines.append(
-                    f"  {emoji} {ts} {a['symbol']} {a['direction'].upper()} "
-                    f"({a['signal']}) — {outcome}"
+                    f"  {emoji} <code>{ts}</code>  {a['symbol']} {a['direction'].upper()}"
+                    f"  •  <i>{outcome}</i>"
                 )
         else:
-            lines.append("\nNo alerts today")
+            lines.append(f"\n<i>No alerts today</i>")
 
         return "\n".join(lines)
 
     async def _cmd_stats(self, args: list[str]) -> str:
         db = self._state.database
         if db is None:
-            return "No database available"
+            return "\U0001f534 No database available"
 
-        # Strategy breakdown
         strats = db.strategy_stats()
         if not strats:
-            return "\U0001f4ca No trades recorded yet"
+            return "📊 <i>No trades recorded yet</i>"
 
         total_pnl = sum(s["total_pnl"] for s in strats)
         total_trades = sum(s["total"] for s in strats)
         total_wins = sum(s["wins"] for s in strats)
         wr = total_wins / total_trades * 100 if total_trades > 0 else 0
-        sign = "+" if total_pnl >= 0 else ""
 
         lines = [
-            f"\U0001f4ca <b>Trading Stats</b>\n",
-            f"Total P&L: {sign}₹{total_pnl:,.0f}",
-            f"Trades: {total_trades} | Win rate: {wr:.0f}%\n",
-            "<b>By strategy:</b>",
+            f"{_sep()}",
+            f"📊 <b>TRADING STATS</b>",
+            f"{_sep()}",
+            f"",
+            f"<code>"
+            f"P&amp;L       {_pnl(total_pnl)}\n"
+            f"Trades    {total_trades}\n"
+            f"Win rate  {wr:.0f}%"
+            f"</code>",
+            f"",
+            f"<b>By Strategy</b>",
         ]
 
         for s in strats:
             swr = s["wins"] / s["total"] * 100 if s["total"] > 0 else 0
+            dot = _status_dot(s["total_pnl"] > 0)
             sign = "+" if s["total_pnl"] >= 0 else ""
-            emoji = "\U0001f7e2" if s["total_pnl"] > 0 else "\U0001f534"
             lines.append(
-                f"  {emoji} {s['strategy']}: {s['total']} trades | "
-                f"{swr:.0f}% WR | {sign}₹{s['total_pnl']:,.0f}"
+                f"  {dot} {s['strategy']}  •  {s['total']} trades  •  "
+                f"{swr:.0f}% WR  •  {sign}₹{s['total_pnl']:,.0f}"
             )
 
         return "\n".join(lines)
 
     async def _cmd_health(self, args: list[str]) -> str:
         s = self._state
-        lines = ["\U0001f3e5 <b>System Health</b>\n"]
 
-        # Server
-        lines.append(f"Server: \U0001f7e2 running")
-        lines.append(f"Executor: {s.executor_status}")
-
-        # Kite auth
+        # Kite
+        kite_ok = False
         if s.kite_auth:
-            authed = s.kite_auth.is_authenticated()
-            lines.append(f"Kite: {'✅ authenticated' if authed else '❌ not authenticated'}")
-        else:
-            lines.append("Kite: not configured")
+            kite_ok = s.kite_auth.is_authenticated()
+        kite_label = "authenticated" if kite_ok else "not authenticated"
 
-        # Margin (live from Kite only)
+        # Margin
+        margin_str = "—"
         if s.kite_auth and s.kite_auth.is_authenticated():
             try:
                 cap = s.capital
-                lines.append(f"Margin: ✅ ₹{cap:,.0f}")
+                margin_str = f"₹{cap:,.0f}"
             except Exception:
-                lines.append("Margin: ❌ fetch failed")
-        else:
-            lines.append("Margin: ❌ not authenticated (/login)")
+                margin_str = "fetch failed"
 
         # Ticker
         executor = s.executor_ref
         intel = getattr(executor, "_intelligence", None) if executor else None
+        ticker_ok = False
+        ticker_label = "not active"
         if intel:
             h = intel.health
+            ticker_ok = h.status == "healthy"
             tick_ago = ""
             if h.last_tick_at:
                 secs = (datetime.now() - h.last_tick_at).total_seconds()
                 tick_ago = f" ({secs:.0f}s ago)"
-            lines.append(f"Ticker: {h.status}{tick_ago} | Reconnects: {h.reconnect_count}")
-        else:
-            lines.append("Ticker: not active")
+            ticker_label = f"{h.status}{tick_ago}"
 
-        # Database
-        lines.append(f"Database: \U0001f7e2 ok" if s.database else "Database: ❌ unavailable")
+        db_ok = s.database is not None
 
-        # Sync freshness
+        lines = [
+            f"┌─ <b>SYSTEM HEALTH</b> ─────────┐",
+            f"│                              │",
+            f"│  Server    {_status_dot(True)} running         │",
+            f"│  Executor  🟡 {s.executor_status:<14}│",
+            f"│  Kite      {_status_dot(kite_ok)} {kite_label:<14}│",
+            f"│  Margin    {margin_str:<18}│",
+            f"│  Ticker    {_status_dot(ticker_ok)} {ticker_label:<14}│",
+            f"│  Database  {_status_dot(db_ok)} {'ok' if db_ok else 'unavailable':<14}│",
+            f"│                              │",
+            f"└──────────────────────────────┘",
+        ]
+
         sync = s.sync_status or {}
         if sync.get("freshness"):
-            lines.append(f"Data freshness: {sync['freshness'].get('day', 'unknown')}")
+            lines.append(f"\n<code>Data freshness  {sync['freshness'].get('day', '—')}</code>")
 
         return "\n".join(lines)
 
@@ -330,7 +377,12 @@ class TelegramCommandHandler:
             executor = self._state.executor_ref
             if executor:
                 executor.kill_switch_tripped = True
-                return "\U0001f6d1 <b>KILL SWITCH TRIGGERED</b>\nAll positions being squared off."
+                return (
+                    f"{_sep()}\n"
+                    f"\U0001f6d1 <b>KILL SWITCH TRIGGERED</b>\n"
+                    f"{_sep()}\n\n"
+                    f"All positions being squared off."
+                )
             elif self._state.executor_task and not self._state.executor_task.done():
                 self._state.executor_task.cancel()
                 self._state.executor_status = "idle"
@@ -339,22 +391,29 @@ class TelegramCommandHandler:
                 return "No execution running."
 
         return (
-            "⚠️ <b>Emergency Stop</b>\n\n"
-            "This will trigger the kill switch and square off ALL open positions.\n\n"
-            "Send <code>/stop confirm</code> to proceed."
+            f"⚠️ <b>EMERGENCY STOP</b>\n\n"
+            f"This will trigger the kill switch and\n"
+            f"square off <b>ALL</b> open positions.\n\n"
+            f"Send <code>/stop confirm</code> to proceed."
         )
 
     async def _cmd_approve(self, args: list[str]) -> str:
         db = self._state.database
         if db is None:
-            return "No database available"
+            return "\U0001f534 No database available"
 
         try:
             plan = self._state.plan_store.load_latest()
             db.approve_plan(plan.trade_date)
-            return f"✅ Plan for {plan.trade_date} approved ({len(plan.legs)} legs)"
+            return (
+                f"✅ <b>Plan Approved</b>\n\n"
+                f"<code>"
+                f"Date   {plan.trade_date}\n"
+                f"Legs   {len(plan.legs)}"
+                f"</code>"
+            )
         except Exception as exc:
-            return f"❌ Failed to approve: {type(exc).__name__}"
+            return f"\U0001f534 Failed to approve: {type(exc).__name__}"
 
     async def _cmd_deploy(self, args: list[str]) -> str:
         import subprocess
@@ -365,7 +424,7 @@ class TelegramCommandHandler:
                 cwd="/home/ubuntu/trading-bot",
             )
             if result.returncode != 0:
-                return f"❌ Git pull failed:\n<code>{result.stderr[:200]}</code>"
+                return f"\U0001f534 Git pull failed:\n<code>{result.stderr[:200]}</code>"
 
             if "Already up to date" in result.stdout:
                 return "✅ Already up to date. No restart needed."
@@ -376,7 +435,6 @@ class TelegramCommandHandler:
                 cwd="/home/ubuntu/trading-bot",
             ).stdout.strip()
 
-            # Schedule restart in background after response is sent
             subprocess.Popen(
                 ["bash", "-c", "sleep 3 && sudo systemctl restart tradingbot"],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -384,17 +442,21 @@ class TelegramCommandHandler:
 
             return (
                 f"✅ <b>Deployed</b>\n\n"
-                f"<code>{commit}</code>\n"
-                f"Service restarting in 3s..."
+                f"<code>{commit}</code>\n\n"
+                f"<i>Service restarting in 3s...</i>"
             )
         except subprocess.TimeoutExpired:
-            return "❌ Deploy timed out"
+            return "\U0001f534 Deploy timed out"
         except Exception as exc:
-            return f"❌ Deploy failed: {type(exc).__name__}"
+            return f"\U0001f534 Deploy failed: {type(exc).__name__}"
 
     async def _cmd_token(self, args: list[str]) -> str:
         if not args:
-            return "Usage: <code>/token YOUR_REQUEST_TOKEN</code>\n\nGet the token from the URL bar after Kite login."
+            return (
+                f"<b>Usage</b>\n"
+                f"<code>/token YOUR_REQUEST_TOKEN</code>\n\n"
+                f"<i>Copy the token from the URL bar after Kite login.</i>"
+            )
 
         request_token = args[0].strip()
         s = self._state
@@ -410,7 +472,6 @@ class TelegramCommandHandler:
             data = s.kite_auth.generate_session(request_token)
             user_id = data.get("user_id", "unknown")
 
-            # Save token to disk so executor can read it
             from pathlib import Path
             token_path = Path.home() / ".tradingbot" / "kite_token"
             token_path.parent.mkdir(parents=True, exist_ok=True)
@@ -419,7 +480,6 @@ class TelegramCommandHandler:
                 token_path.write_text(access_token)
                 token_path.chmod(0o600)
 
-            # Verify it works
             try:
                 profile = s.kite_auth.kite.profile()
                 name = profile.get("user_name", user_id)
@@ -427,18 +487,23 @@ class TelegramCommandHandler:
                 name = user_id
 
             return (
-                f"✅ <b>Kite Authenticated</b>\n\n"
-                f"User: {name}\n"
-                f"Token saved to disk. Bot ready for trading.\n\n"
-                f"Send /health to verify."
+                f"✅ <b>KITE AUTHENTICATED</b>\n\n"
+                f"<code>"
+                f"User    {name}\n"
+                f"Status  Token saved to disk"
+                f"</code>\n\n"
+                f"<i>Bot ready for trading. Send /health to verify.</i>"
             )
         except Exception as exc:
-            return f"❌ Token exchange failed: {type(exc).__name__}\n\nMake sure you copied the full request_token from the URL."
+            return (
+                f"\U0001f534 <b>Token exchange failed</b>\n\n"
+                f"<code>{type(exc).__name__}</code>\n\n"
+                f"<i>Make sure you copied the full request_token from the URL.</i>"
+            )
 
     async def _cmd_login(self, args: list[str]) -> str:
         s = self._state
 
-        # Check if already authenticated
         if s.kite_auth and s.kite_auth.is_authenticated():
             try:
                 s.kite_auth.kite.profile()
@@ -446,7 +511,6 @@ class TelegramCommandHandler:
             except Exception:
                 pass
 
-        # Generate login URL
         try:
             from tradingbot.execution.kite_auth import KiteAuth
             if s.kite_auth is None:
@@ -456,14 +520,13 @@ class TelegramCommandHandler:
                 )
             login_url = s.kite_auth.get_login_url()
             return (
-                "\U0001f511 <b>Kite Login</b>\n\n"
-                f"1. <a href=\"{login_url}\">Tap here to login</a>\n"
-                "2. Login with your Kite credentials\n"
-                "3. Browser shows 'site can't be reached' — that's OK\n"
-                "4. Copy the <b>request_token</b> from the URL bar\n"
-                "   (everything after <code>request_token=</code>)\n"
-                "5. Send: <code>/token PASTE_TOKEN_HERE</code>\n\n"
-                "Example: <code>/token abc123xyz</code>"
+                f"\U0001f511 <b>KITE LOGIN</b>\n\n"
+                f"<b>1.</b> <a href=\"{login_url}\">Tap here to login</a>\n"
+                f"<b>2.</b> Login with your credentials\n"
+                f"<b>3.</b> Browser shows 'can't be reached' — OK\n"
+                f"<b>4.</b> Copy <code>request_token</code> from URL bar\n"
+                f"<b>5.</b> Send:\n\n"
+                f"<code>/token PASTE_TOKEN_HERE</code>"
             )
         except Exception as exc:
-            return f"❌ Failed to generate login URL: {type(exc).__name__}"
+            return f"\U0001f534 Failed to generate login URL: {type(exc).__name__}"

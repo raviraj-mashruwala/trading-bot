@@ -444,16 +444,22 @@ class Executor:
         # Skip stale check if: ticker has recent ticks OR executor just started (< 90s)
         ticker_fresh = False
         if intel.health.last_tick_at is not None:
-            tick_ts = intel.health.last_tick_at
-            if now.tzinfo is not None and tick_ts.tzinfo is None:
-                tick_ts = tick_ts.replace(tzinfo=now.tzinfo)
-            ticker_fresh = (now - tick_ts).total_seconds() < 30
+            try:
+                tick_ts = intel.health.last_tick_at
+                if now.tzinfo is not None and getattr(tick_ts, 'tzinfo', None) is None:
+                    tick_ts = tick_ts.replace(tzinfo=now.tzinfo)
+                ticker_fresh = (now - tick_ts).total_seconds() < 30
+            except (TypeError, AttributeError):
+                pass
         just_started = False
         if state.entered_at is None and hasattr(self, '_exec_start_time'):
-            start_ts = self._exec_start_time
-            if now.tzinfo is not None and start_ts.tzinfo is None:
-                start_ts = start_ts.replace(tzinfo=now.tzinfo)
-            just_started = (now - start_ts).total_seconds() < 90
+            try:
+                start_ts = self._exec_start_time
+                if now.tzinfo is not None and getattr(start_ts, 'tzinfo', None) is None:
+                    start_ts = start_ts.replace(tzinfo=now.tzinfo)
+                just_started = (now - start_ts).total_seconds() < 90
+            except (TypeError, AttributeError):
+                pass
         if stale_seconds > 120 and not ticker_fresh and not just_started:
             state.waiting = True
             self._emit_decision(state.leg.symbol, "ENTRY_WAIT", f"Stale data ({stale_seconds:.0f}s)")

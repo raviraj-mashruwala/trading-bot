@@ -9,16 +9,16 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-_LEVEL_EMOJI = {
-    "critical": "\U0001f6a8",   # 🚨
-    "trade": "✅",          # ✅
-    "target": "\U0001f3af",     # 🎯
-    "stop": "\U0001f6d1",       # 🛑
-    "info": "ℹ️",     # ℹ️
-    "scout": "\U0001f52d",      # 🔭
-    "session": "▶️",  # ▶️
-    "review": "\U0001f4cb",     # 📋
-}
+
+def _pnl_str(pnl: float) -> str:
+    """Format P&L with sign and emoji."""
+    emoji = "\U0001f7e2" if pnl >= 0 else "\U0001f534"
+    sign = "+" if pnl >= 0 else ""
+    return f"{emoji} {sign}₹{pnl:,.0f}"
+
+
+def _sep() -> str:
+    return "━━━━━━━━━━━━━━━━━━━━"
 
 
 class TelegramNotifier:
@@ -74,112 +74,192 @@ class TelegramNotifier:
     # ----- Formatted alert methods -------------------------------------------
 
     def notify_critical(self, message: str) -> None:
-        self.send_sync(f"\U0001f6a8 <b>CRITICAL</b>\n{message}")
+        self.send_sync(
+            f"{_sep()}\n"
+            f"\U0001f6a8 <b>CRITICAL ALERT</b>\n"
+            f"{_sep()}\n\n"
+            f"{message}"
+        )
 
     def notify_entry_filled(self, symbol: str, direction: str, qty: int, price: float) -> None:
+        d_emoji = "📉" if direction.lower() == "short" else "📈"
         self.send_sync(
-            f"✅ <b>ENTERED</b>: {symbol} {direction.upper()} {qty} @ {price:.2f}"
+            f"{_sep()}\n"
+            f"✅ <b>ENTRY FILLED</b>\n"
+            f"{_sep()}\n\n"
+            f"{d_emoji} <b>{symbol}</b>  •  {direction.upper()}\n\n"
+            f"<code>"
+            f"Entry    ₹{price:,.2f}\n"
+            f"Qty      {qty} shares"
+            f"</code>"
         )
 
     def notify_target_hit(self, symbol: str, target: int, pnl: float, price: float, qty: int) -> None:
-        sign = "+" if pnl >= 0 else ""
         self.send_sync(
-            f"\U0001f3af <b>T{target} HIT</b>: {symbol} {sign}₹{pnl:.0f} ({qty} shares @ {price:.2f})"
+            f"{_sep()}\n"
+            f"\U0001f3af <b>TARGET {target} HIT</b>\n"
+            f"{_sep()}\n\n"
+            f"<b>{symbol}</b>  •  {qty} shares @ ₹{price:,.2f}\n\n"
+            f"P&amp;L  {_pnl_str(pnl)}"
         )
 
     def notify_stop_hit(self, symbol: str, pnl: float, price: float) -> None:
         self.send_sync(
-            f"\U0001f6d1 <b>STOPPED</b>: {symbol} ₹{pnl:.0f} @ {price:.2f}"
+            f"{_sep()}\n"
+            f"\U0001f6d1 <b>STOP LOSS HIT</b>\n"
+            f"{_sep()}\n\n"
+            f"<b>{symbol}</b>  •  Exit @ ₹{price:,.2f}\n\n"
+            f"P&amp;L  {_pnl_str(pnl)}"
         )
 
     def notify_kill_switch(self, reason: str, realised_pnl: float) -> None:
         self.send_sync(
-            f"\U0001f6a8 <b>KILL SWITCH</b>\n{reason}\nRealised P&L: ₹{realised_pnl:.0f}"
+            f"{_sep()}\n"
+            f"\U0001f6a8 <b>KILL SWITCH ACTIVATED</b>\n"
+            f"{_sep()}\n\n"
+            f"{reason}\n\n"
+            f"<code>Realised P&amp;L  ₹{realised_pnl:,.0f}</code>"
         )
 
     def notify_session_started(self, mode: str, legs: list[dict]) -> None:
         leg_lines = "\n".join(
-            f"  {l.get('symbol', '?')} {l.get('direction', '?').upper()}"
+            f"  {'📉' if l.get('direction', '?').lower() == 'short' else '📈'} "
+            f"{l.get('symbol', '?')}  •  {l.get('direction', '?').upper()}"
             for l in legs[:6]
         )
         self.send_sync(
-            f"▶️ <b>Execution started</b>: {mode.upper()} mode\n"
-            f"{len(legs)} legs:\n{leg_lines}"
+            f"▶️ <b>EXECUTION STARTED</b>\n\n"
+            f"<code>Mode   {mode.upper()}\n"
+            f"Legs   {len(legs)}</code>\n\n"
+            f"{leg_lines}"
         )
 
     def notify_session_done(self, total_pnl: float, trades: int, mode: str) -> None:
-        sign = "+" if total_pnl >= 0 else ""
         self.send_sync(
-            f"\U0001f4ca <b>Session done</b> ({mode})\n"
-            f"P&L: {sign}₹{total_pnl:.0f} | Trades: {trades}"
+            f"{_sep()}\n"
+            f"📊 <b>SESSION COMPLETE</b>\n"
+            f"{_sep()}\n\n"
+            f"<code>"
+            f"Mode     {mode.upper()}\n"
+            f"Trades   {trades}\n"
+            f"P&amp;L      {'+'  if total_pnl >= 0 else ''}₹{total_pnl:,.0f}"
+            f"</code>"
         )
 
     def notify_regime_shift(self, old: str, new: str, confidence: float) -> None:
         self.send_sync(
-            f"⚠️ <b>Regime shift</b>: {old} → {new} (conf={confidence:.2f})"
+            f"⚠️ <b>REGIME SHIFT</b>\n\n"
+            f"<code>"
+            f"{old}  →  {new}\n"
+            f"Confidence  {confidence:.0%}"
+            f"</code>"
         )
 
     def notify_ticker_reconnect(self, stale_seconds: float) -> None:
         self.send_sync(
-            f"\U0001f6a8 <b>Ticker stale {stale_seconds:.0f}s</b> — force reconnecting"
+            f"\U0001f6a8 <b>TICKER STALE</b>\n\n"
+            f"<code>Stale for {stale_seconds:.0f}s — force reconnecting</code>"
         )
 
     def notify_margin_warning(self, available: float, net: float) -> None:
         self.send_sync(
-            f"\U0001f6a8 <b>Margin critical</b>\n"
-            f"Available: ₹{available:,.0f} | Net: ₹{net:,.0f}"
+            f"\U0001f6a8 <b>MARGIN WARNING</b>\n\n"
+            f"<code>"
+            f"Available  ₹{available:,.0f}\n"
+            f"Net        ₹{net:,.0f}"
+            f"</code>"
         )
 
     def notify_entry_vetoed(self, symbol: str, reason: str) -> None:
-        self.send_sync(f"⏭️ <b>SKIPPED</b>: {symbol} — {reason}")
+        self.send_sync(
+            f"⏭️ <b>{symbol}</b> — Skipped\n"
+            f"<i>{reason}</i>"
+        )
 
     def notify_jev_exit(self, symbol: str, reasoning: str) -> None:
-        self.send_sync(f"\U0001f916 <b>JEV EXIT</b>: {symbol} — {reasoning}")
+        self.send_sync(
+            f"\U0001f916 <b>AI EXIT — {symbol}</b>\n\n"
+            f"<i>{reasoning}</i>"
+        )
 
     def notify_market_fallback(self, symbol: str, reason: str) -> None:
-        self.send_sync(f"\U0001f504 <b>MARKET ORDER</b>: {symbol} — {reason}")
+        self.send_sync(
+            f"\U0001f504 <b>MARKET ORDER — {symbol}</b>\n\n"
+            f"<i>{reason}</i>"
+        )
 
     def notify_scout_alert(self, symbol: str, direction: str, signal: str,
                            entry: float, target: float, stop: float, reasoning: str) -> None:
+        d_emoji = "📉" if direction.lower() == "short" else "📈"
         self.send_sync(
-            f"\U0001f52d <b>SCOUT</b>: {symbol} {direction.upper()}\n"
-            f"Signal: {signal}\n"
-            f"Entry: {entry:.2f} | T: {target:.2f} | S: {stop:.2f}\n"
-            f"{reasoning}"
+            f"\U0001f52d <b>SCOUT SIGNAL</b>\n\n"
+            f"{d_emoji} <b>{symbol}</b>  •  {direction.upper()}\n"
+            f"<i>{signal.replace('_', ' ')}</i>\n\n"
+            f"<code>"
+            f"Entry   ₹{entry:,.2f}\n"
+            f"Target  ₹{target:,.2f}\n"
+            f"Stop    ₹{stop:,.2f}"
+            f"</code>\n\n"
+            f"<i>{reasoning}</i>"
         )
 
     def notify_scout_outcome(self, symbol: str, outcome: str, pnl_pct: float) -> None:
         emoji = "\U0001f3af" if outcome == "target_hit" else "\U0001f6d1" if outcome == "stop_hit" else "⏰"
-        self.send_sync(f"\U0001f52d {emoji} SCOUT {symbol}: {outcome} ({pnl_pct:+.2f}%)")
+        result = outcome.replace("_", " ").title()
+        self.send_sync(
+            f"\U0001f52d {emoji} <b>{symbol}</b>  •  {result}\n"
+            f"<code>P&amp;L  {pnl_pct:+.2f}%</code>"
+        )
 
     def notify_nightly_review(self, grade: str, total_pnl: float, summary: str) -> None:
-        sign = "+" if total_pnl >= 0 else ""
+        grade_emoji = {"A": "🏆", "B": "\U0001f7e2", "C": "🟡", "D": "\U0001f534", "F": "⛔"}.get(grade, "📋")
         self.send_sync(
-            f"\U0001f4cb <b>Nightly Review</b>: Grade {grade}\n"
-            f"P&L: {sign}₹{total_pnl:.0f}\n"
-            f"{summary[:300]}"
+            f"{_sep()}\n"
+            f"📋 <b>NIGHTLY REVIEW</b>\n"
+            f"{_sep()}\n\n"
+            f"<code>"
+            f"Grade   {grade_emoji} {grade}\n"
+            f"P&amp;L     {'+'  if total_pnl >= 0 else ''}₹{total_pnl:,.0f}"
+            f"</code>\n\n"
+            f"<i>{summary[:300]}</i>"
         )
 
     def notify_plan_generated(self, trade_date: str, legs: list[dict]) -> None:
         leg_lines = "\n".join(
-            f"  {l.get('symbol', '?')} {l.get('direction', '?').upper()} @ {l.get('entry_price', 0):.2f}"
+            f"  {'📉' if l.get('direction', '?').lower() == 'short' else '📈'} "
+            f"{l.get('symbol', '?')}  •  {l.get('direction', '?').upper()}"
+            f"  @ ₹{l.get('entry_price', 0):,.2f}"
             for l in legs[:6]
         )
         self.send_sync(
-            f"\U0001f4dd <b>Plan for {trade_date}</b>\n{len(legs)} legs:\n{leg_lines}"
+            f"\U0001f4dd <b>NEW PLAN — {trade_date}</b>\n\n"
+            f"<code>Legs  {len(legs)}</code>\n\n"
+            f"{leg_lines}"
         )
 
     def notify_sync_complete(self, stocks: int, rows: int) -> None:
-        self.send_sync(f"\U0001f504 Sync complete: {stocks} stocks, {rows:,} rows")
+        self.send_sync(
+            f"\U0001f504 <b>DATA SYNC COMPLETE</b>\n\n"
+            f"<code>"
+            f"Stocks  {stocks}\n"
+            f"Rows    {rows:,}"
+            f"</code>"
+        )
 
     def notify_squareoff_failed(self, symbol: str) -> None:
         self.send_sync(
-            f"\U0001f6a8 <b>SQUARE-OFF FAILED</b>: {symbol} still open at 15:15!\n"
-            f"Manual intervention required."
+            f"{_sep()}\n"
+            f"\U0001f6a8 <b>SQUARE-OFF FAILED</b>\n"
+            f"{_sep()}\n\n"
+            f"<b>{symbol}</b> still open at 15:15\n\n"
+            f"⚠️ <i>Manual intervention required</i>"
         )
 
     def notify_auto_start_failed(self, reason: str) -> None:
-        self.send_sync(f"\U0001f6a8 <b>Auto-start failed</b>: {reason}")
+        self.send_sync(
+            f"\U0001f6a8 <b>AUTO-START FAILED</b>\n\n"
+            f"<i>{reason}</i>"
+        )
 
 
 def build_notifier() -> TelegramNotifier:
