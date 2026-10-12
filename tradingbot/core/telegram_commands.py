@@ -91,6 +91,7 @@ class TelegramCommandHandler:
             "/stats": self._cmd_stats,
             "/health": self._cmd_health,
             "/stop": self._cmd_stop,
+            "/execute": self._cmd_execute,
             "/approve": self._cmd_approve,
             "/login": self._cmd_login,
             "/token": self._cmd_token,
@@ -132,6 +133,7 @@ class TelegramCommandHandler:
             f"/scout     Scout signals\n"
             f"/stats     Strategy stats\n"
             f"/health    System health\n"
+            f"/execute   Start execution\n"
             f"/deploy    Deploy updates\n"
             f"/login     Kite login URL\n"
             f"/token     Complete login\n"
@@ -371,6 +373,44 @@ class TelegramCommandHandler:
             lines.append(f"\n<code>Data freshness  {sync['freshness'].get('day', '—')}</code>")
 
         return "\n".join(lines)
+
+    async def _cmd_execute(self, args: list[str]) -> str:
+        s = self._state
+        if s.executor_status == "running":
+            return "⚠️ Executor already running. Send /status to check."
+
+        mode = args[0] if args else "live"
+        if mode not in ("live", "paper"):
+            return "Usage: <code>/execute [live|paper]</code>\nDefault: live"
+
+        try:
+            plan = s.plan_store.load_latest()
+            if not plan.legs:
+                return "❌ No legs in plan. Run analysis first."
+        except Exception:
+            return "❌ No plan found. Run analysis first."
+
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    "http://localhost:8000/api/execute",
+                    json={"mode": mode},
+                )
+                data = resp.json()
+                if resp.status_code == 409:
+                    return "⚠️ Executor already running."
+                if resp.status_code != 200:
+                    return f"❌ Failed: {data.get('detail', 'unknown error')}"
+                return (
+                    f"━━━ EXECUTION STARTED ━━━\n\n"
+                    f"<b>Mode</b>  {mode.upper()}\n"
+                    f"<b>Date</b>  {data.get('trade_date', '?')}\n"
+                    f"<b>Legs</b>  {len(plan.legs)}\n\n"
+                    f"Send /status to monitor."
+                )
+        except Exception as exc:
+            return f"❌ Failed to start: {type(exc).__name__}"
 
     async def _cmd_stop(self, args: list[str]) -> str:
         if args and args[0].lower() == "confirm":
