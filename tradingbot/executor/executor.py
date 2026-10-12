@@ -126,7 +126,7 @@ class Executor:
     def start(self) -> None:
         """Vet the plan, adopt anything already open, then submit entries."""
         now = self.clock()
-        self._exec_start_time = datetime.now()
+        self._exec_start_time = now
         blockers = self.risk_manager.vet_plan_for_execution(
             self.plan, now=now, available_capital=self.broker.available_margin()
         )
