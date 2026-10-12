@@ -30,11 +30,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_candles_pk
 
 
 class CandleStore:
-    """Read/write OHLCV candles in DuckDB. Thread-safe for concurrent reads."""
+    """Read/write OHLCV candles in DuckDB or MotherDuck (via md: URL)."""
 
-    def __init__(self, db_path: Path) -> None:
-        self._path = str(db_path)
-        self._conn = duckdb.connect(self._path)
+    def __init__(self, db_url: str | Path) -> None:
+        self._url = str(db_url)
+        self._conn = duckdb.connect(self._url)
         self._conn.execute(_SCHEMA)
 
     def read(
