@@ -35,11 +35,11 @@ class RegimeMonitor:
             return True
         return (now - self._last_check).total_seconds() >= self._interval
 
-    def check(self, market_data: dict[str, Any], current_regime: str) -> RegimeCheckResult:
+    def check(self, market_data: dict[str, Any], current_regime: str, now: datetime | None = None) -> RegimeCheckResult:
         questions = _build_regime_check_questions(current_regime)
 
         answers = self._jev.evaluate(state=market_data, questions=questions)
-        self._last_check = datetime.now()
+        self._last_check = now or datetime.now()
 
         if answers is None:
             return _NO_CHANGE

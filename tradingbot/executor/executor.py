@@ -215,7 +215,7 @@ class Executor:
         if self._regime_monitor and self._regime_monitor.should_check(now):
             market_data = self._build_regime_context()
             regime = self._current_regime or getattr(self.plan.market_regime, "value", "unknown")
-            result = self._regime_monitor.check(market_data, regime)
+            result = self._regime_monitor.check(market_data, regime, now=now)
             if result.changed:
                 old_regime = self._current_regime
                 self._current_regime = result.new_regime
