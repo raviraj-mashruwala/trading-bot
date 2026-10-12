@@ -272,8 +272,11 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             "mode": mode.value,
         })
 
-        # EOD square-off verification
-        if mode is Mode.LIVE:
+        # EOD square-off verification — only near market close
+        from tradingbot.core.models import now_ist
+        from datetime import time as dt_time
+        ist_now = now_ist().time()
+        if mode is Mode.LIVE and ist_now >= dt_time(15, 5):
             await _verify_squareoff(state, broker, plan)
 
     except asyncio.CancelledError:
@@ -300,11 +303,16 @@ async def _verify_squareoff(state: AppState, broker, plan) -> None:
             try:
                 from tradingbot.core.broker import OrderSide, OrderType
                 side = OrderSide.BUY if pos.quantity < 0 else OrderSide.SELL
+                # Use LIMIT with 1% slippage — Kite rejects naked MARKET orders via API
+                ltp = broker.get_ltp(pos.symbol)
+                slippage = ltp * 0.01
+                limit_price = round(ltp + slippage, 2) if side == OrderSide.BUY else round(ltp - slippage, 2)
                 broker.place_order(
                     symbol=pos.symbol, side=side,
-                    order_type=OrderType.MARKET, quantity=abs(pos.quantity),
+                    order_type=OrderType.LIMIT, quantity=abs(pos.quantity),
+                    price=limit_price,
                 )
-                logger.info("Emergency market order placed for %s x%d", pos.symbol, abs(pos.quantity))
+                logger.info("Emergency limit order placed for %s x%d @ %.2f", pos.symbol, abs(pos.quantity), limit_price)
             except Exception:
                 logger.error("Emergency exit FAILED for %s", pos.symbol, exc_info=True)
 

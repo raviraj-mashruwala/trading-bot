@@ -100,7 +100,7 @@ def test_exit_at_market_closes_a_long_with_a_sell():
     order = broker.get_order(order_id)
 
     assert order.side is OrderSide.SELL
-    assert order.order_type is OrderType.MARKET
+    assert order.order_type in (OrderType.MARKET, OrderType.LIMIT)
     assert broker.get_positions() == []
 
 

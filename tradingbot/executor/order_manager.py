@@ -55,17 +55,24 @@ class OrderManager:
         return order_id
 
     def submit_entry_market(self, leg: TradeLeg) -> str:
-        """Place a market entry order (used when limit would sit unfilled)."""
+        """Place a market-like entry (LIMIT with 1% slippage)."""
         side = entry_side(leg.direction)
+        ltp = self.broker.get_ltp(leg.symbol)
+        slippage = ltp * 0.01
+        if side == OrderSide.BUY:
+            price = round(ltp + slippage, 2)
+        else:
+            price = round(ltp - slippage, 2)
         order_id = self.broker.place_order(
             symbol=leg.symbol,
             side=side,
-            order_type=OrderType.MARKET,
+            order_type=OrderType.LIMIT,
             quantity=leg.quantity,
+            price=price,
         )
         logger.info(
-            "submitted %s MARKET entry for %s x%d (order %s)",
-            side.value, leg.symbol, leg.quantity, order_id,
+            "submitted %s market-like entry for %s x%d @ %.2f (order %s)",
+            side.value, leg.symbol, leg.quantity, price, order_id,
         )
         return order_id
 
@@ -82,13 +89,22 @@ class OrderManager:
         return order_id
 
     def exit_at_market(self, leg: TradeLeg, quantity: int) -> str:
+        # Use LIMIT with 1% slippage — Kite rejects naked MARKET orders via API
+        ltp = self.broker.get_ltp(leg.symbol)
+        side = exit_side(leg.direction)
+        slippage = ltp * 0.01
+        if side == OrderSide.BUY:
+            price = round(ltp + slippage, 2)
+        else:
+            price = round(ltp - slippage, 2)
         order_id = self.broker.place_order(
             symbol=leg.symbol,
-            side=exit_side(leg.direction),
-            order_type=OrderType.MARKET,
+            side=side,
+            order_type=OrderType.LIMIT,
             quantity=quantity,
+            price=price,
         )
-        logger.info("market exit for %s x%d (order %s)", leg.symbol, quantity, order_id)
+        logger.info("market-like exit for %s x%d @ %.2f (order %s)", leg.symbol, quantity, price, order_id)
         return order_id
 
     def cancel(self, order_id: str) -> None:
