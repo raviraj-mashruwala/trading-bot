@@ -212,6 +212,47 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
                 except Exception:
                     pass
 
+            # Periodic Telegram summary every 5 minutes
+            tg = getattr(state, "_telegram", None)
+            if tg and tg.enabled and hasattr(executor, "states"):
+                if not hasattr(executor, "_last_tg_summary"):
+                    executor._last_tg_summary = 0
+                import time as _time
+                now_mono = _time.monotonic()
+                if now_mono - executor._last_tg_summary >= 300:
+                    executor._last_tg_summary = now_mono
+                    from tradingbot.core.models import now_ist
+                    ist_now = now_ist()
+                    lines = [f"\U0001f4ca <b>{ist_now.strftime('%H:%M')} IST Update</b>\n"]
+                    for st in executor.states:
+                        sym = st.leg.symbol
+                        direction = st.leg.direction.value.upper()
+                        if st.filled_quantity > 0:
+                            try:
+                                price = executor.broker.get_ltp(sym)
+                                delta = price - st.entry_fill_price
+                                if st.leg.direction.value == "short":
+                                    delta = -delta
+                                pnl = delta * st.filled_quantity
+                                sign = "+" if pnl >= 0 else ""
+                                lines.append(f"{sym} {direction}: IN @ {st.entry_fill_price:.2f} | LTP {price:.2f} | {sign}₹{pnl:.0f}")
+                            except Exception:
+                                lines.append(f"{sym} {direction}: IN @ {st.entry_fill_price:.2f}")
+                        elif st.cancelled or st.skipped_reason:
+                            reason = st.skipped_reason or "cancelled"
+                            lines.append(f"{sym}: ⏭️ {reason[:50]}")
+                        elif st.waiting:
+                            lines.append(f"{sym} {direction}: ⏳ waiting for entry")
+                        else:
+                            lines.append(f"{sym} {direction}: evaluating")
+                    if intelligence:
+                        h = intelligence.health
+                        lines.append(f"\nTicker: {h.status} | Reconnects: {h.reconnect_count}")
+                    try:
+                        tg.send_sync("\n".join(lines))
+                    except Exception:
+                        pass
+
             await asyncio.sleep(_tick_interval())
 
         state.executor_status = "done"
