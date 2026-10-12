@@ -67,7 +67,10 @@ class RiskManager:
                 if margin > 0:
                     return margin
             except Exception:
-                pass
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Margin fetch failed for %s, using full price", setup.symbol, exc_info=True
+                )
         return setup.entry_price
 
     def risk_amount_for(self, setup: TradeSetup, quantity: int) -> float:
