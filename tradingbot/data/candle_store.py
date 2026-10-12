@@ -30,12 +30,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_candles_pk
 
 
 class CandleStore:
-    """Read/write OHLCV candles in DuckDB. Thread-safe for concurrent reads."""
+    """Read/write OHLCV candles in DuckDB or MotherDuck (via md: URL)."""
 
-    def __init__(self, db_path: Path) -> None:
-        self._path = str(db_path)
-        self._conn = duckdb.connect(self._path)
+    def __init__(self, db_url: str | Path) -> None:
+        self._url = str(db_url)
+        self._conn = duckdb.connect(self._url)
         self._conn.execute(_SCHEMA)
+
+    def _ensure_connected(self) -> duckdb.DuckDBPyConnection:
+        try:
+            self._conn.execute("SELECT 1")
+        except Exception:
+            log.warning("DuckDB connection lost, reconnecting to %s",
+                        "md:***" if self._url.startswith("md:") else self._url)
+            self._conn = duckdb.connect(self._url)
+            self._conn.execute(_SCHEMA)
+        return self._conn
 
     def read(
         self,
@@ -60,7 +70,7 @@ class CandleStore:
 
         where = " AND ".join(conditions)
         query = f"SELECT timestamp, open, high, low, close, volume FROM candles WHERE {where} ORDER BY timestamp"
-        df = self._conn.execute(query, params).fetchdf()
+        df = self._ensure_connected().execute(query, params).fetchdf()
 
         if days is not None and not df.empty:
             if interval == "day":
@@ -88,7 +98,7 @@ class CandleStore:
               AND timestamp >= $3
             ORDER BY symbol, timestamp
         """
-        df = self._conn.execute(query, [symbols, interval, cutoff]).fetchdf()
+        df = self._ensure_connected().execute(query, [symbols, interval, cutoff]).fetchdf()
         if df.empty:
             return {}
         result = {}
@@ -109,7 +119,7 @@ class CandleStore:
                 float(row["low"]), float(row["close"]),
                 int(row["volume"]),
             ))
-        self._conn.executemany(
+        self._ensure_connected().executemany(
             "INSERT OR IGNORE INTO candles (symbol, interval, timestamp, open, high, low, close, volume) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
             records,
         )
@@ -123,7 +133,7 @@ class CandleStore:
         return total
 
     def last_date(self, symbol: str, interval: str) -> date | None:
-        row = self._conn.execute(
+        row = self._ensure_connected().execute(
             "SELECT MAX(timestamp) as last_ts FROM candles WHERE symbol = $1 AND interval = $2",
             [symbol, interval],
         ).fetchone()
@@ -133,14 +143,14 @@ class CandleStore:
         return None
 
     def symbols_with_data(self, interval: str) -> list[str]:
-        rows = self._conn.execute(
+        rows = self._ensure_connected().execute(
             "SELECT DISTINCT symbol FROM candles WHERE interval = $1 ORDER BY symbol",
             [interval],
         ).fetchall()
         return [r[0] for r in rows]
 
     def freshness(self) -> dict[str, date]:
-        rows = self._conn.execute(
+        rows = self._ensure_connected().execute(
             "SELECT interval, MAX(timestamp) as latest FROM candles GROUP BY interval"
         ).fetchall()
         result = {}
@@ -150,7 +160,7 @@ class CandleStore:
         return result
 
     def row_count(self) -> dict[str, int]:
-        rows = self._conn.execute(
+        rows = self._ensure_connected().execute(
             "SELECT interval, COUNT(*) as cnt FROM candles GROUP BY interval"
         ).fetchall()
         return {r[0]: r[1] for r in rows}
@@ -172,7 +182,7 @@ class CandleStore:
         """
         expected = self._EXPECTED_PER_DAY.get(interval, 25)
         min_count = int(expected * threshold)
-        rows = self._conn.execute(
+        rows = self._ensure_connected().execute(
             """
             SELECT CAST(timestamp AS DATE) AS day, COUNT(*) AS cnt
             FROM candles
@@ -187,7 +197,7 @@ class CandleStore:
 
     def date_range(self, symbol: str, interval: str) -> tuple[date | None, date | None]:
         """Return (first_date, last_date) for a symbol/interval."""
-        row = self._conn.execute(
+        row = self._ensure_connected().execute(
             "SELECT MIN(CAST(timestamp AS DATE)), MAX(CAST(timestamp AS DATE)) "
             "FROM candles WHERE symbol = $1 AND interval = $2",
             [symbol, interval],
@@ -210,15 +220,15 @@ class CandleStore:
         """Delete all rows for given intervals. Returns {interval: rows_deleted}."""
         result = {}
         for iv in intervals:
-            before = self._conn.execute(
+            before = self._ensure_connected().execute(
                 "SELECT COUNT(*) FROM candles WHERE interval = $1", [iv]
             ).fetchone()[0]
-            self._conn.execute("DELETE FROM candles WHERE interval = $1", [iv])
+            self._ensure_connected().execute("DELETE FROM candles WHERE interval = $1", [iv])
             result[iv] = before
         return result
 
     def _count(self, symbol: str, interval: str) -> int:
-        row = self._conn.execute(
+        row = self._ensure_connected().execute(
             "SELECT COUNT(*) FROM candles WHERE symbol = $1 AND interval = $2",
             [symbol, interval],
         ).fetchone()
