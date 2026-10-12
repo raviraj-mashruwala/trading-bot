@@ -18,11 +18,11 @@ fi
 
 echo "Uploading $DB_PATH to MotherDuck database 'candles'..."
 
-python3 -c "
+python3 -I - "$DB_PATH" <<'PYEOF'
 import duckdb
-import os
+import sys
 
-db_path = '$DB_PATH'
+db_path = sys.argv[1]
 
 local = duckdb.connect(db_path, read_only=True)
 count = local.execute('SELECT COUNT(*) FROM candles').fetchone()[0]
@@ -48,7 +48,7 @@ existing = md.execute('SELECT COUNT(*) FROM candles').fetchone()[0]
 print(f'MotherDuck before: {existing:,} rows')
 
 print('Copying data (this may take several minutes for large databases)...')
-local.execute(\"ATTACH 'md:candles' AS remote\")
+local.execute("ATTACH 'md:candles' AS remote")
 local.execute('INSERT OR IGNORE INTO remote.candles SELECT * FROM candles')
 
 md_count = md.execute('SELECT COUNT(*) FROM candles').fetchone()[0]
@@ -56,9 +56,9 @@ new_rows = md_count - existing
 print(f'MotherDuck after: {md_count:,} rows ({new_rows:,} new)')
 print()
 print('Done! Add these to your .env:')
-print(f'  MOTHERDUCK_TOKEN={os.environ[\"MOTHERDUCK_TOKEN\"]}')
+print('  MOTHERDUCK_TOKEN=<your-token>')
 print('  CANDLE_STORE_URL=md:candles')
 
 local.close()
 md.close()
-"
+PYEOF
