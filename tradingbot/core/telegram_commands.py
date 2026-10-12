@@ -16,7 +16,7 @@ import httpx
 log = logging.getLogger(__name__)
 
 POLL_INTERVAL = 2
-ALLOWED_COMMANDS = {"/status", "/plan", "/scout", "/stats", "/health", "/stop", "/approve", "/login", "/help", "/start"}
+ALLOWED_COMMANDS = {"/status", "/plan", "/scout", "/stats", "/health", "/stop", "/approve", "/login", "/help", "/start", "/analyze"}
 
 
 def _sep() -> str:
@@ -92,6 +92,7 @@ class TelegramCommandHandler:
             "/health": self._cmd_health,
             "/stop": self._cmd_stop,
             "/execute": self._cmd_execute,
+            "/analyze": self._cmd_analyze,
             "/approve": self._cmd_approve,
             "/login": self._cmd_login,
             "/token": self._cmd_token,
@@ -128,18 +129,20 @@ class TelegramCommandHandler:
             f"\U0001f916 <b>TRADING BOT</b>\n"
             f"{_sep()}\n\n"
             f"<code>"
-            f"/status    Positions &amp; P&amp;L\n"
-            f"/plan      Trading plan\n"
-            f"/scout     Scout signals\n"
-            f"/stats     Strategy stats\n"
-            f"/health    System health\n"
-            f"/execute   Start execution\n"
-            f"/deploy    Deploy updates\n"
-            f"/login     Kite login URL\n"
-            f"/token     Complete login\n"
-            f"/stop      Emergency stop\n"
-            f"/approve   Approve plan\n"
-            f"/help      This message"
+            f"/status       Positions &amp; P&amp;L\n"
+            f"/plan         Trading plan\n"
+            f"/scout        Scout signals\n"
+            f"/stats        Strategy stats\n"
+            f"/health       System health\n"
+            f"/analyze      Run analysis\n"
+            f"/analyze stop Cancel analysis\n"
+            f"/execute      Start execution\n"
+            f"/stop confirm Emergency stop\n"
+            f"/approve      Approve plan\n"
+            f"/deploy       Deploy updates\n"
+            f"/login        Kite login URL\n"
+            f"/token        Complete login\n"
+            f"/help         This message"
             f"</code>"
         )
 
@@ -373,6 +376,63 @@ class TelegramCommandHandler:
             lines.append(f"\n<code>Data freshness  {sync['freshness'].get('day', '—')}</code>")
 
         return "\n".join(lines)
+
+    async def _cmd_analyze(self, args: list[str]) -> str:
+        s = self._state
+
+        if args and args[0].lower() == "stop":
+            if s.analysis_status != "running":
+                return "No analysis running."
+            try:
+                import httpx
+                async with httpx.AsyncClient(timeout=10) as client:
+                    resp = await client.post("http://localhost:8000/api/analyze/cancel")
+                    data = resp.json()
+                    return f"\U0001f6d1 Analysis {data.get('status', 'cancelled')}."
+            except Exception as exc:
+                return f"❌ Cancel failed: {type(exc).__name__}"
+
+        if args and args[0].lower() == "status":
+            if s.analysis_status != "running":
+                return f"Analysis status: {s.analysis_status or 'idle'}"
+            try:
+                import httpx
+                async with httpx.AsyncClient(timeout=10) as client:
+                    resp = await client.get("http://localhost:8000/api/analyze/status")
+                    data = resp.json()
+                    step = data.get("current_step", "?")
+                    elapsed = data.get("elapsed_sec", 0)
+                    return (
+                        f"\U0001f50d <b>Analysis Running</b>\n\n"
+                        f"<code>Step     {step}\n"
+                        f"Elapsed  {elapsed}s</code>"
+                    )
+            except Exception as exc:
+                return f"❌ Status check failed: {type(exc).__name__}"
+
+        if s.analysis_status == "running":
+            return "⚠️ Analysis already running. Send /analyze status to check."
+
+        try:
+            import httpx
+            trade_date_arg = args[0] if args else None
+            body = {"trade_date": trade_date_arg} if trade_date_arg else {}
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(
+                    "http://localhost:8000/api/analyze",
+                    json=body,
+                )
+                data = resp.json()
+                if resp.status_code != 200:
+                    return f"❌ {data.get('detail', 'Failed to start analysis')}"
+                return (
+                    f"\U0001f50d <b>Analysis Started</b>\n\n"
+                    f"<code>Date  {data.get('trade_date', '?')}</code>\n\n"
+                    f"Progress updates will follow.\n"
+                    f"Send <code>/analyze stop</code> to cancel."
+                )
+        except Exception as exc:
+            return f"❌ Failed to start: {type(exc).__name__}"
 
     async def _cmd_execute(self, args: list[str]) -> str:
         s = self._state
