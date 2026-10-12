@@ -410,6 +410,15 @@ class TelegramCommandHandler:
             data = s.kite_auth.generate_session(request_token)
             user_id = data.get("user_id", "unknown")
 
+            # Save token to disk so executor can read it
+            from pathlib import Path
+            token_path = Path.home() / ".tradingbot" / "kite_token"
+            token_path.parent.mkdir(parents=True, exist_ok=True)
+            access_token = s.kite_auth.kite.access_token
+            if access_token:
+                token_path.write_text(access_token)
+                token_path.chmod(0o600)
+
             # Verify it works
             try:
                 profile = s.kite_auth.kite.profile()
@@ -420,7 +429,7 @@ class TelegramCommandHandler:
             return (
                 f"✅ <b>Kite Authenticated</b>\n\n"
                 f"User: {name}\n"
-                f"Token saved. Bot ready for trading.\n\n"
+                f"Token saved to disk. Bot ready for trading.\n\n"
                 f"Send /health to verify."
             )
         except Exception as exc:
