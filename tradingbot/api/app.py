@@ -81,6 +81,48 @@ def create_app(
                         telegram.notify_plan_generated(
                             data.get("trade_date", "?"), data.get("legs", []),
                         )
+                    elif etype == "analysis.started":
+                        telegram.notify_analysis_progress(
+                            "Started", f"Run: {data.get('run_id', '?')[:12]}",
+                        )
+                    elif etype == "scan.context":
+                        telegram.notify_analysis_progress(
+                            "Market Context", f"Regime: {data.get('regime', '?')}",
+                        )
+                    elif etype == "scan.universe":
+                        if data.get("status") != "fetching":
+                            telegram.notify_analysis_progress(
+                                "Universe Screened", f"Stocks: {data.get('total', 0)}",
+                            )
+                    elif etype == "scan.filtered":
+                        telegram.notify_analysis_progress(
+                            "Tier 1 Complete", f"Candidates: {data.get('candidates', 0)}",
+                        )
+                    elif etype == "scan.shortlist":
+                        telegram.notify_analysis_progress(
+                            "Tier 2 Complete", f"Shortlisted: {data.get('shortlisted', 0)}",
+                        )
+                    elif etype == "strategy.deep_analysis":
+                        if data.get("status") == "done":
+                            telegram.notify_analysis_progress(
+                                "Deep Analysis Done",
+                                data.get("message", f"Setups: {data.get('setups_found', 0)}"),
+                            )
+                    elif etype == "strategy.setups":
+                        telegram.notify_analysis_progress(
+                            "Strategy Complete",
+                            f"Setups: {data.get('total_setups', 0)} from {data.get('symbols_analyzed', 0)} stocks",
+                        )
+                    elif etype == "strategy.backtest":
+                        if data.get("status") in ("done", "skipped"):
+                            telegram.notify_analysis_progress(
+                                "Backtest", data.get("message", data.get("reason", "done")),
+                            )
+                    elif etype == "strategy.sized":
+                        telegram.notify_analysis_progress(
+                            "Portfolio Validated",
+                            f"Proposed: {data.get('proposed', 0)}  Approved: {data.get('approved', 0)}",
+                        )
                 except Exception:
                     pass
 

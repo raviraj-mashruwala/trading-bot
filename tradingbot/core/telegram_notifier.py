@@ -273,6 +273,31 @@ class TelegramNotifier:
             f"<i>{reason}</i>"
         )
 
+    def notify_analysis_progress(self, phase: str, detail: str) -> None:
+        self.send_sync(
+            f"\U0001f50d <b>ANALYSIS</b>  •  {phase}\n\n"
+            f"<code>{detail}</code>"
+        )
+
+    def notify_analysis_complete(
+        self, trade_date: str, scanned: int, tier1: int,
+        shortlisted: int, proposed: int, approved: int,
+        duration: float, regime: str,
+    ) -> None:
+        self.send_sync(
+            f"✅ <b>ANALYSIS COMPLETE</b>\n\n"
+            f"<code>"
+            f"Date        {trade_date}\n"
+            f"Regime      {regime}\n"
+            f"Scanned     {scanned}\n"
+            f"Tier 1      {tier1}\n"
+            f"Shortlisted {shortlisted}\n"
+            f"Proposed    {proposed}\n"
+            f"Approved    {approved}\n"
+            f"Duration    {duration:.0f}s"
+            f"</code>"
+        )
+
 
 def build_notifier() -> TelegramNotifier:
     """Build from environment variables."""
