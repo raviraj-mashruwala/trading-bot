@@ -261,6 +261,18 @@ class TelegramNotifier:
             f"<i>{reason}</i>"
         )
 
+    def notify_sync_failed(self, reason: str) -> None:
+        self.send_sync(
+            f"\U0001f6a8 <b>SYNC FAILED</b>\n\n"
+            f"<i>{reason}</i>"
+        )
+
+    def notify_analysis_failed(self, reason: str) -> None:
+        self.send_sync(
+            f"\U0001f6a8 <b>ANALYSIS FAILED</b>\n\n"
+            f"<i>{reason}</i>"
+        )
+
 
 def build_notifier() -> TelegramNotifier:
     """Build from environment variables."""

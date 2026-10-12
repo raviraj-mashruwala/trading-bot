@@ -70,9 +70,13 @@ def create_app(
                             data.get("summary", ""),
                         )
                     elif etype == "sync.complete":
-                        telegram.notify_sync_complete(
-                            data.get("stocks_synced", 0), data.get("rows_written", 0),
-                        )
+                        sync_status = data.get("status", "unknown")
+                        if sync_status == "error":
+                            telegram.notify_sync_failed(data.get("error", "unknown error"))
+                        else:
+                            telegram.notify_sync_complete(
+                                data.get("stocks_synced", 0), data.get("rows_written", 0),
+                            )
                     elif etype == "analysis.plan_generated":
                         telegram.notify_plan_generated(
                             data.get("trade_date", "?"), data.get("legs", []),
@@ -96,19 +100,25 @@ def create_app(
         )
         app.state.app_state._telegram = telegram
 
-        # Start Telegram command handler (polls for incoming commands)
-        # Use module-level flag because uvicorn factory=True creates multiple app objects
+        # Start Telegram command handler (polls for incoming commands).
+        # Use a module-level Lock to prevent duplicate polling loops when
+        # uvicorn factory=True creates multiple app objects concurrently.
         import tradingbot.core.telegram_commands as _tg_cmd_mod
+        if not hasattr(_tg_cmd_mod, "_singleton_lock"):
+            _tg_cmd_mod._singleton_lock = asyncio.Lock()
         telegram_cmd_task = None
-        if telegram.enabled and not getattr(_tg_cmd_mod, "_singleton_started", False):
-            _tg_cmd_mod._singleton_started = True
-            from tradingbot.core.telegram_commands import TelegramCommandHandler
-            cmd_handler = TelegramCommandHandler(
-                bot_token=telegram._token,
-                chat_id=telegram._chat_id,
-                app_state=app.state.app_state,
-            )
-            telegram_cmd_task = asyncio.create_task(cmd_handler.start())
+        cmd_handler = None
+        if telegram.enabled:
+            async with _tg_cmd_mod._singleton_lock:
+                if not getattr(_tg_cmd_mod, "_singleton_started", False):
+                    _tg_cmd_mod._singleton_started = True
+                    from tradingbot.core.telegram_commands import TelegramCommandHandler
+                    cmd_handler = TelegramCommandHandler(
+                        bot_token=telegram._token,
+                        chat_id=telegram._chat_id,
+                        app_state=app.state.app_state,
+                    )
+                    telegram_cmd_task = asyncio.create_task(cmd_handler.start())
 
         # Scheduled jobs: sync at 4 PM, review at 8:30 PM (trading days only)
         from tradingbot.api.sync_routes import _run_sync
@@ -244,9 +254,12 @@ def create_app(
                 await state_ref.event_bus.emit("analysis.auto_start", {"trade_date": str(target)})
                 from tradingbot.api.analysis_routes import _run_analysis
                 await _run_analysis(state_ref, target)
-            except Exception:
+            except Exception as exc:
                 import logging
                 logging.getLogger(__name__).warning("Auto-analysis failed", exc_info=True)
+                tg = getattr(state_ref, "_telegram", None)
+                if tg:
+                    tg.notify_analysis_failed(f"{type(exc).__name__}: {exc}")
 
         async def _daily_scheduler():
             from tradingbot.scheduler import (
@@ -284,6 +297,7 @@ def create_app(
                                     "stocks_synced": status.get("stocks_synced", 0),
                                     "rows_written": status.get("rows_written", 0),
                                     "status": status.get("status", "unknown"),
+                                    "error": status.get("error", ""),
                                 })
                             state.sync_task = asyncio.create_task(_sync_with_events(state))
                         last_sync_date = today
@@ -316,11 +330,14 @@ def create_app(
         yield
 
         if telegram_cmd_task is not None:
+            if cmd_handler is not None:
+                cmd_handler.stop()
             telegram_cmd_task.cancel()
             try:
                 await telegram_cmd_task
             except asyncio.CancelledError:
                 pass
+            _tg_cmd_mod._singleton_started = False
         scheduler_task.cancel()
         try:
             await scheduler_task
