@@ -56,17 +56,9 @@ Write-Host "`n[4/8] Creating .env file..." -ForegroundColor Yellow
 if (Test-Path ".env") {
     Write-Host "  .env already exists — skipping (delete it first to regenerate)" -ForegroundColor DarkYellow
 } else {
-    @"
-ANTHROPIC_API_KEY=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
-KITE_API_KEY=ucttyylbmrek9mps
-KITE_API_SECRET=8gfo54fkhd2nbtmyeqwy8cp4skdfnm1c
-TYPESAFE_API_KEY=apikey_2379fa853c910e24af1ad32a2fc51cc9c1a_1166d081e8e804df4c15e62141a54641a356e343a2f3ef9b2fe748cee8f79638
-TELEGRAM_BOT_TOKEN=8761934291:AAGdHm1u3uCMWZ1gKJ9Dgv7gNkU3-1qZkRs
-TELEGRAM_CHAT_ID=798621495
-MOTHERDUCK_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InJhdmlyYWoubWFzaHJ1d2FsYUBvdXRsb29rLmNvbSIsIm1kUmVnaW9uIjoiYXdzLWFwLXNvdXRoZWFzdC0yIiwic2Vzc2lvbiI6InJhdmlyYWoubWFzaHJ1d2FsYS5vdXRsb29rLmNvbSIsInBhdCI6ImlNSXFXaUJwR0dqMjk1N2dUUkpIdm1NNEVFYW4xSzVtdHZtWlBSVmprejgiLCJ1c2VySWQiOiI1OThlMWYwZC0xZGM2LTQwNDktYTMxNi05ZDUzNWE2MTA1NjkiLCJpc3MiOiJtZF9wYXQiLCJyZWFkT25seSI6ZmFsc2UsInRva2VuVHlwZSI6InJlYWRfd3JpdGUiLCJpYXQiOjE3OTE4MzQ3NTd9.ebvsQwhBJAjrH0hGzJ-VWeKxnN2xEh5uCE4xkvqTST8
-CANDLE_STORE_URL=md:candles
-"@ | Out-File -FilePath .env -Encoding UTF8NoBOM -NoNewline
-    Write-Host "  .env created" -ForegroundColor Green
+    Copy-Item .env.example .env
+    Write-Host "  .env created from .env.example" -ForegroundColor Green
+    Write-Host "  ACTION REQUIRED: Edit .env and fill in your API keys before starting!" -ForegroundColor Red
 }
 
 # --- Step 5: Create directories ---
