@@ -303,16 +303,25 @@ class KiteDataSync:
         Returns {symbol: rows_written}.
         """
         results = {}
+        total = len(symbols)
         for i, symbol in enumerate(symbols):
             if self._cancelled:
                 break
             last = self._store.last_date(symbol, "15m")
             action = "updating" if last else "fetching 7yr"
-            msg = f"Intraday data: {action} {symbol} ({i+1}/{len(symbols)})"
+            prefix = f"[{i+1}/{total}] "
+            msg = f"{prefix}Intraday data: {action} {symbol}"
             log.info(msg)
             if progress_callback:
                 progress_callback(msg)
-            rows = await self.fetch_on_demand(symbol, progress_callback=progress_callback)
+
+            def _prefixed_progress(m, _p=prefix):
+                progress_callback(f"{_p}{m}")
+
+            rows = await self.fetch_on_demand(
+                symbol,
+                progress_callback=_prefixed_progress if progress_callback else None,
+            )
             log.info("Intraday data: %s done, %d rows written", symbol, rows)
             results[symbol] = rows
         total = sum(results.values())
