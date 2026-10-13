@@ -51,8 +51,12 @@ def _risk_response(risk: RiskConfig, capital: float) -> dict[str, Any]:
 
 def _config_to_dict(state: AppState) -> dict[str, Any]:
     config = state.config
-    capital = state.capital
-    capital_source = "kite" if (state.kite_auth and state.kite_auth.is_authenticated() and capital != config.general.capital) else "config"
+    try:
+        capital = state.capital
+        capital_source = "kite" if (state.kite_auth and state.kite_auth.is_authenticated() and capital != config.general.capital) else "config"
+    except Exception:
+        capital = config.general.capital
+        capital_source = "config (Kite unavailable)"
     return {
         "general": {"mode": config.general.mode.value, "capital": capital, "capital_source": capital_source, "log_level": config.general.log_level},
         "screening": _screening_response(config.screening, capital),
