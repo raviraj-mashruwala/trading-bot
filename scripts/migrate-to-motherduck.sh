@@ -18,7 +18,9 @@ fi
 
 echo "Uploading $DB_PATH to MotherDuck database 'candles'..."
 
-python3 -I - "$DB_PATH" <<'PYEOF'
+PYTHON="${PYTHON:-python3}"
+if [ -f ".venv/bin/python" ]; then PYTHON=".venv/bin/python"; fi
+$PYTHON -I - "$DB_PATH" <<'PYEOF'
 import duckdb
 import sys
 
