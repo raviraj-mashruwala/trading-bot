@@ -56,17 +56,9 @@ Write-Host "`n[4/8] Creating .env file..." -ForegroundColor Yellow
 if (Test-Path ".env") {
     Write-Host "  .env already exists — skipping (delete it first to regenerate)" -ForegroundColor DarkYellow
 } else {
-    @"
-ANTHROPIC_API_KEY=sREDACTED_LEAKED_SECRET
-KITE_API_KEY=REDACTED_LEAKED_SECRET
-KITE_API_SECRET=REDACTED_LEAKED_SECRET
-TYPESAFE_API_KEY=REDACTED_LEAKED_SECRET
-TELEGRAM_BOT_TOKEN=REDACTED_LEAKED_SECRET
-TELEGRAM_CHAT_ID=798621495
-MOTHERDUCK_TOKEN=REDACTED_LEAKED_SECRET
-CANDLE_STORE_URL=md:candles
-"@ | Out-File -FilePath .env -Encoding UTF8NoBOM -NoNewline
-    Write-Host "  .env created" -ForegroundColor Green
+    Copy-Item .env.example .env
+    Write-Host "  .env created from .env.example" -ForegroundColor Green
+    Write-Host "  ACTION REQUIRED: Edit .env and fill in your API keys before starting!" -ForegroundColor Red
 }
 
 # --- Step 5: Create directories ---
