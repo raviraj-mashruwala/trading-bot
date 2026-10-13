@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Full Stack — Backend + Frontend" type="CompoundRunConfigurationType">
+    <toRun name="Backend — API Server" type="ShConfigurationType" />
+    <toRun name="Frontend — Next.js Dev" type="ShConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>
