@@ -123,7 +123,13 @@ class LiveTickManager:
 
     # -- Internal callbacks --------------------------------------------------
 
+    _tick_log_count: int = 0
+
     def _on_ticks(self, ws: Any, ticks: list[dict]) -> None:
+        self._tick_log_count += 1
+        if self._tick_log_count <= 3 or self._tick_log_count % 100 == 0:
+            log.info("Tick received: %d ticks, first=%s", len(ticks),
+                     {k: ticks[0].get(k) for k in ("instrument_token", "last_price")} if ticks else "empty")
         # Forward full tick list to ExecutionIntelligence-style callback
         if self._full_tick_callback is not None:
             try:
@@ -143,10 +149,11 @@ class LiveTickManager:
 
     def _on_connect(self, ws: Any, response: Any) -> None:
         tokens = list(self._subscribed)
-        if tokens:
-            ws.subscribe(tokens)
-            ws.set_mode(ws.MODE_LTP, tokens)
-        log.info("KiteTicker connected, subscribed to %d tokens", len(tokens))
+        int_tokens = [t for t in tokens if isinstance(t, int)]
+        if int_tokens:
+            ws.subscribe(int_tokens)
+            ws.set_mode(ws.MODE_LTP, int_tokens)
+        log.info("KiteTicker connected, subscribed to %d tokens: %s", len(int_tokens), int_tokens)
 
     def _on_close(self, ws: Any, code: int, reason: str) -> None:
         log.warning("KiteTicker closed: %s %s", code, reason)

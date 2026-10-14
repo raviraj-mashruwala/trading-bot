@@ -186,11 +186,16 @@ class ExecutionIntelligence:
         self.health.status = "healthy"
         logger.info("Ticker reconnected")
 
+    _last_reconnect_at: float = 0.0
+    _RECONNECT_COOLDOWN = 60.0
+
     def check_and_reconnect(self) -> bool:
         """If ticks are stale during market hours, force-reconnect the ticker.
 
-        Returns True if a reconnect was triggered.
+        Returns True if a reconnect was triggered. Enforces 60s cooldown
+        between reconnects to prevent connection storms.
         """
+        import time as _time
         now = datetime.now()
         if now.hour < MARKET_OPEN_HOUR or (now.hour == MARKET_OPEN_HOUR and now.minute < MARKET_OPEN_MINUTE):
             return False
@@ -199,6 +204,8 @@ class ExecutionIntelligence:
         else:
             stale = (now - self.health.last_tick_at).total_seconds()
         if stale > STALE_TICK_THRESHOLD_SECONDS:
+            if _time.monotonic() - self._last_reconnect_at < self._RECONNECT_COOLDOWN:
+                return False
             logger.warning(
                 "Ticks stale for %.0fs (threshold %ds) — forcing reconnect",
                 stale, STALE_TICK_THRESHOLD_SECONDS,
@@ -207,6 +214,7 @@ class ExecutionIntelligence:
             if hasattr(self._ticker, "force_reconnect"):
                 self._ticker.force_reconnect()
                 self.health.reconnect_count += 1
+                self._last_reconnect_at = _time.monotonic()
                 return True
         return False
 
