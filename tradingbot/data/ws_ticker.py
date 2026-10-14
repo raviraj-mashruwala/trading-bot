@@ -22,55 +22,57 @@ MODE_LTP = "ltp"
 MODE_QUOTE = "quote"
 MODE_FULL = "full"
 
-# Kite binary packet parsing (LTP mode: 8 bytes per instrument)
-# Full packet: 2 bytes count + N * (4 bytes token + 4 bytes LTP)
+# Reuse KiteTicker's proven binary parser
+_EXCHANGE_MAP = {
+    "nse": 1, "nfo": 2, "cds": 3, "bse": 4, "bfo": 5,
+    "bcd": 6, "mcx": 7, "mcxsx": 8, "indices": 9, "nco": 10,
+}
 
 
-def _parse_ltp_packet(data: bytes) -> list[dict]:
-    """Parse Kite's binary LTP packet into tick dicts."""
+def _unpack(data: bytes, start: int, end: int, fmt: str = "I") -> int:
+    return struct.unpack(">" + fmt, data[start:end])[0]
+
+
+def _parse_binary(data: bytes) -> list[dict]:
+    """Parse Kite's binary WebSocket packet. Handles LTP, quote, and full modes."""
     if len(data) < 2:
         return []
-    n_packets = struct.unpack(">H", data[:2])[0]
-    ticks = []
-    offset = 2
+
+    n_packets = _unpack(data, 0, 2, "H")
+    packets = []
+    j = 2
     for _ in range(n_packets):
-        if offset + 8 > len(data):
+        if j + 2 > len(data):
             break
-        token, ltp_raw = struct.unpack(">Ii", data[offset:offset + 8])
-        ltp = ltp_raw / 100.0
-        ticks.append({
+        plen = _unpack(data, j, j + 2, "H")
+        packets.append(data[j + 2:j + 2 + plen])
+        j += 2 + plen
+
+    ticks = []
+    for packet in packets:
+        if len(packet) < 8:
+            continue
+        token = _unpack(packet, 0, 4)
+        segment = token & 0xff
+
+        if segment == _EXCHANGE_MAP["cds"]:
+            divisor = 10000000.0
+        elif segment in (_EXCHANGE_MAP["bcd"], _EXCHANGE_MAP.get("nco", 10)):
+            divisor = 10000.0
+        else:
+            divisor = 100.0
+
+        tick = {
             "instrument_token": token,
-            "last_price": ltp,
+            "last_price": _unpack(packet, 4, 8) / divisor,
             "exchange_timestamp": datetime.now(),
-        })
-        offset += 8
-    return ticks
+        }
 
+        if len(packet) >= 44:
+            tick["volume_traded"] = _unpack(packet, 16, 20)
 
-def _parse_full_packet(data: bytes) -> list[dict]:
-    """Parse Kite's binary packets — handles LTP (8 bytes) and quote (28+ bytes) per instrument."""
-    if len(data) < 2:
-        return []
-    n_packets = struct.unpack(">H", data[:2])[0]
-    ticks = []
-    offset = 2
-    for _ in range(n_packets):
-        if offset + 4 > len(data):
-            break
-        packet_len = struct.unpack(">H", data[offset:offset + 2])[0]
-        packet = data[offset + 2:offset + 2 + packet_len]
-        if len(packet) >= 8:
-            token = struct.unpack(">I", packet[:4])[0]
-            ltp_raw = struct.unpack(">i", packet[4:8])[0]
-            tick = {
-                "instrument_token": token,
-                "last_price": ltp_raw / 100.0,
-                "exchange_timestamp": datetime.now(),
-            }
-            if len(packet) >= 28:
-                tick["volume_traded"] = struct.unpack(">I", packet[16:20])[0]
-            ticks.append(tick)
-        offset += 2 + packet_len
+        ticks.append(tick)
+
     return ticks
 
 
@@ -191,7 +193,7 @@ class AsyncKiteTicker:
 
                     async for message in ws:
                         if isinstance(message, bytes) and len(message) > 2:
-                            ticks = _parse_ltp_packet(message)
+                            ticks = _parse_binary(message)
                             if ticks:
                                 self._tick_count += 1
                                 if self._tick_count <= 3 or self._tick_count % 100 == 0:
