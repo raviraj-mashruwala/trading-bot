@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-10-06",
+  "generated_at": "2026-10-06T11:20:04.031068+05:30",
+  "capital": 0,
+  "max_risk_per_trade_pct": 0,
+  "max_daily_loss_pct": 0,
+  "market_regime": "trending_down",
+  "market_summary": "Auto-generated after run_20261006_104753_544f4e",
+  "legs": []
+}

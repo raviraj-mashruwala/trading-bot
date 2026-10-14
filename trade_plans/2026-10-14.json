@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-10-14",
+  "generated_at": "2026-10-14T06:18:46.297969+05:30",
+  "capital": 88083.3,
+  "max_risk_per_trade_pct": 0.01,
+  "max_daily_loss_pct": 0.025,
+  "market_regime": "range_bound",
+  "market_summary": "Auto-generated after run_20261014_020337_c48662",
+  "legs": [
+    {
+      "symbol": "GOODLUCK",
+      "exchange": "NSE",
+      "strategy": "breakout",
+      "direction": "long",
+      "entry_price": 148.4,
+      "entry_type": "limit",
+      "stop_loss": 147.6,
+      "target_1": 151.19,
+      "target_2": 152.38,
+      "quantity": 288,
+      "risk_amount": 230.40000000000327,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.65,
+      "reasoning": "Price found precise support at the 147.71 structural level (tested to 147.8 on highest volume of 59,835) and has since recovered in staircase fashion. A pullback to 148.40 \u2014 which aligns with the candle -3/-2 consolidation base and sits above SMA-50 (148.21) \u2014 offers a low-risk entry point ahead of a BB squeeze expansion. BB bandwidth at 2.42 is extremely compressed, historically preceding a volatility expansion. Price is above VWAP (146.71), above SMA-50, above SMA-200, and Supertrend is bullish. Target 1 is BB upper band (151.19), a well-defined technical ceiling in range-bound regimes. R:R = 2.79 / 0.80 = 3.49:1 to T1.",
+      "setup_id": 24
+    },
+    {
+      "symbol": "INDIAGLYCO",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "long",
+      "entry_price": 354.18,
+      "entry_type": "limit",
+      "stop_loss": 351.4,
+      "target_1": 360.38,
+      "target_2": 372.33,
+      "quantity": 115,
+      "risk_amount": 319.7000000000034,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.62,
+      "reasoning": "In a range-bound regime (ADX 28.4, not yet trending), price has broken below BB lower (354.38) and is sitting just below pivot (354.18). RSI at 37.4 is near but not at oversold extreme. Statistical mean-reversion logic applies: BB lower breach in range-bound markets historically reverts to BB middle (359.13). Four independent signals align: (1) RSI approaching oversold in range regime, (2) price below BB lower \u2014 statistical reversion trigger, (3) pivot 354.18 acts as magnet/reclaim level, (4) recent candle low 351.80 provides a tight, data-anchored stop. R:R to first resistance 360.38 is 2.23:1 on 2.78pt risk.",
+      "setup_id": 23
+    }
+  ]
+}

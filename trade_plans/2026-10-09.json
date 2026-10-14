@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-10-09",
+  "generated_at": "2026-10-09T09:04:53.610866+05:30",
+  "capital": 88921.3,
+  "max_risk_per_trade_pct": 0.01,
+  "max_daily_loss_pct": 0.025,
+  "market_regime": "range_bound",
+  "market_summary": "Auto-generated plan for 2026-10-09",
+  "legs": [
+    {
+      "symbol": "ADANIENT",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "short",
+      "entry_price": 2580.0,
+      "entry_type": "limit",
+      "stop_loss": 2592.43,
+      "target_1": 2531.89,
+      "target_2": 2516.0,
+      "quantity": 71,
+      "risk_amount": 882.5299999999884,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.72,
+      "reasoning": "This is the higher-conviction setup. A clean break below the daily pivot (2587.0) and SMA-9 (2566.46) / EMA-9 (2574.57) zone after failing at resistance confirms the intraday bounce is exhausted. In a strong downtrend (ADX 56.25), failed bounces that break back below pivot levels offer the cleanest continuation entries. The entry at 2580.0 gives a tight stop of only 12.43 points to resistance (2592.43), while the target at BB lower (2531.89) provides 48.11 points profit \u2014 R:R of 3.87:1 to T1. Supporting signals: (1) VWAP at 3011.96 is massively overhead \u2014 no institutional demand anywhere near current price, (2) RSI 38.87 in downtrend territory with no oversold floor yet, (3) Empty support levels below pivot means air pocket to BB lower, (4) Full bearish MA stack, (5) Price deeply below entire Volume Profile Value Area. T2 at 2516.0 extrapolates ATR-based extension below BB lower.",
+      "setup_id": 14
+    },
+    {
+      "symbol": "INDIAGLYCO",
+      "exchange": "NSE",
+      "strategy": "breakout",
+      "direction": "short",
+      "entry_price": 354.18,
+      "entry_type": "limit",
+      "stop_loss": 356.95,
+      "target_1": 346.76,
+      "target_2": 341.36,
+      "quantity": 229,
+      "risk_amount": 634.3299999999958,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.68,
+      "reasoning": "Price has broken decisively below BB lower band (353.80 vs 354.38), all short-term MAs (EMA9 358.24, SMA9 358.42, SMA20 359.14, SMA50 362.36) are stacked above as resistance. The bearish candle 2 periods ago had 190,000 volume \u2014 2.3x recent average \u2014 confirming institutional distribution. MACD (-1.30) is below signal (-0.73) and widening in negative territory. ADX at 28.4 confirms the downtrend has genuine strength. The pivot at 354.18 has already been breached on close; any retest from below offers a high-probability short with tight stop above the last candle high (356.95).",
+      "setup_id": 8
+    }
+  ]
+}
