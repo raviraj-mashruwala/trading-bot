@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-10-08",
+  "generated_at": "2026-10-08T10:42:53.820706+05:30",
+  "capital": 1946.3800000000047,
+  "max_risk_per_trade_pct": 0.015,
+  "max_daily_loss_pct": 0.03,
+  "market_regime": "range_bound",
+  "market_summary": "Auto-generated plan for 2026-10-08",
+  "legs": [
+    {
+      "symbol": "NELCAST",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "short",
+      "entry_price": 149.37,
+      "entry_type": "limit",
+      "stop_loss": 151.948,
+      "target_1": 144.378,
+      "target_2": 142.618,
+      "quantity": 11,
+      "risk_amount": 28.358000000000033,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.68,
+      "reasoning": "Six independent confluence signals support a fade: (1) RSI 71.9 overbought on 15m; (2) MACD line (3.44) has crossed below signal (4.11) \u2014 bearish momentum divergence at the peak; (3) Price closed above BB Upper (148.87) \u2014 statistically mean-reverting zone; (4) Price is above VWAP Upper Band 1 (148.14), extreme deviation from VWAP (135.44) of ~10%; (5) Trending_down market regime increases fade probability; (6) The volume spike (462K, ~3x average) on the last candle is a classic 'exhaustion volume' pattern at resistance. Target 1 is the POC (144.378) \u2014 the highest volume node and a magnetic gravity level. Target 2 is BB Lower (142.618).",
+      "setup_id": 1
+    },
+    {
+      "symbol": "GLAND",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "short",
+      "entry_price": 3154.2,
+      "entry_type": "limit",
+      "stop_loss": 3172.5,
+      "target_1": 3122.32,
+      "target_2": 3093.8,
+      "quantity": 1,
+      "risk_amount": 18.300000000000182,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.67,
+      "reasoning": "5-signal confluence short: (1) MACD bearish cross (32.08 < Signal 35.85) \u2014 momentum already rolling over. (2) RSI 69.35 pressing into overbought zone \u2014 historically a fade zone. (3) Price is ~18% above VWAP (3154 vs 2673) \u2014 extreme mean-reversion setup. (4) Pivot at 3155.73 acting as intraday resistance with last close below it. (5) BB upper rejection \u2014 recent high 3171.0 tagged near BB upper 3174.73 and reversed. Market regime is trending_down, adding macro tailwind for the short. R:R to T1 = 1.74:1, to T2 = 3.3:1.",
+      "setup_id": 4
+    }
+  ]
+}

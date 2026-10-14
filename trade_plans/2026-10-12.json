@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-10-12",
+  "generated_at": "2026-10-09T21:57:31.294395+05:30",
+  "capital": 86934.1,
+  "max_risk_per_trade_pct": 0.01,
+  "max_daily_loss_pct": 0.025,
+  "market_regime": "range_bound",
+  "market_summary": "Auto-generated after run_20261012_191217_694719",
+  "legs": [
+    {
+      "symbol": "KEC",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "short",
+      "entry_price": 370.75,
+      "entry_type": "limit",
+      "stop_loss": 374.86,
+      "target_1": 362.64,
+      "target_2": 357.82,
+      "quantity": 211,
+      "risk_amount": 867.2100000000029,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.72,
+      "reasoning": "SMA-200 (370.79) and resistance level (370.80) create an almost exact price confluence acting as a ceiling. Price broke below the daily pivot (367.23) and the last bounce attempt (371.45 intraday high candle 5) was already rejected at this zone. EMA-9 (369.99) and EMA-12 (368.62) both sit in this resistance band, forming a dense MA cluster. ADX at 42.3 confirms a trending move is in progress (not just noise). High-volume distribution candles (3.08M and 2.94M) on the sell-off confirm institutional supply overhead. A retest of 370.80 with rejection provides a high-probability short entry with defined risk above the swing structure.",
+      "setup_id": 18
+    },
+    {
+      "symbol": "SHANTIGOLD",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "long",
+      "entry_price": 380.23,
+      "entry_type": "limit",
+      "stop_loss": 376.05,
+      "target_1": 387.7,
+      "target_2": 392.31,
+      "quantity": 207,
+      "risk_amount": 865.2600000000014,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.68,
+      "reasoning": "Price is sitting on a triple-stacked support zone (pivot 380.02 + named support 380.23 + SMA9 380.23) after a high-volume spike to 389.9 and orderly pullback. ADX at 54.3 confirms strong underlying trend momentum despite the regime label. MACD is positive with histogram expanding above signal line. Supertrend is pointing up. The full SMA stack (price > SMA9 > EMA9 > SMA20 > SMA50 > SMA200) signals unambiguous bullish structure. BB upper at 392.31 provides a clean measured target. Entry at support gives 1.79:1 R:R to first target.",
+      "setup_id": 16
+    }
+  ]
+}
