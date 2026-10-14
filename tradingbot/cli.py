@@ -350,10 +350,17 @@ def serve(obj: dict, port: int, use_reload: bool) -> None:
     click.echo(f"Starting API server on http://0.0.0.0:{port}")
     click.echo("Press Ctrl+C to stop.")
 
+    # Suppress noisy access logs and Telegram polling logs
+    import logging
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpx2").setLevel(logging.WARNING)
+
     uvicorn.run(
         "tradingbot.api.app:create_app",
         factory=True,
         host="0.0.0.0",
         port=port,
         reload=use_reload,
+        log_level="warning",
     )
