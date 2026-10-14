@@ -203,7 +203,7 @@ class AsyncKiteTicker:
             except asyncio.CancelledError:
                 break
             except Exception as exc:
-                log.warning("WebSocket error: %s, reconnecting in 5s", exc)
+                log.warning("WebSocket error: %s, reconnecting in 5s", type(exc).__name__)
                 if self._on_disconnect_cb:
                     try:
                         self._on_disconnect_cb()
