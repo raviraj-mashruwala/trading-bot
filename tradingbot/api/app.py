@@ -38,11 +38,7 @@ def create_app(
         plan_store = PlanStore(resolved_data_dir / "trade_plans")
 
         from tradingbot.data.candle_store import CandleStore
-        candle_store_url = os.environ.get(
-            "CANDLE_STORE_URL",
-            str(resolved_data_dir / "candles.duckdb"),
-        )
-        candle_store = CandleStore(candle_store_url)
+        candle_store = CandleStore(resolved_data_dir / "candles.duckdb")
 
         event_bus.subscribe(lambda event: asyncio.ensure_future(manager.broadcast(event)))
 
