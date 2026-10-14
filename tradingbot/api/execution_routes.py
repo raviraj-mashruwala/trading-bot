@@ -169,6 +169,31 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
         executor.start()
 
+        # Late-start catch-up: if market open > 15 min, fetch morning context
+        from tradingbot.executor.session_catchup import SessionCatchup, apply_catchup_decisions
+        from tradingbot.core.models import now_ist
+        catchup = SessionCatchup(
+            kite_client=data_kite_client,
+            instrument_cache=instrument_cache,
+        )
+        current_time = now_ist().time()
+        if catchup.should_run(current_time):
+            log.info("Late start detected (%s) — running morning catch-up", current_time.strftime("%H:%M"))
+            symbols = [leg.symbol for leg in plan.legs]
+            contexts = catchup.fetch_morning_context(symbols)
+            decisions = catchup.evaluate(contexts, plan.legs)
+            apply_catchup_decisions(executor.states, decisions)
+
+            telegram = getattr(state, "_telegram", None)
+            if telegram:
+                telegram.notify_catchup_summary(decisions)
+
+            await state.event_bus.emit("exec.catchup", {
+                "decisions": {s: d.action for s, d in decisions.items()},
+            })
+        else:
+            log.info("On-time start (%s) — skipping catch-up", current_time.strftime("%H:%M"))
+
         ws_mgr: ConnectionManager | None = getattr(state, "ws_manager", None)
         last_decision_count = 0
 
@@ -476,6 +501,18 @@ async def execution_status(request: Request):
         "decision_log": decision_log,
         "scout_alerts": scout_alerts,
     }
+
+
+@router.get("/decisions")
+async def get_decisions(request: Request, date: str | None = None):
+    state: AppState = request.app.state.app_state
+    if state.database is None:
+        return []
+    if date:
+        return state.database.get_decisions_for_date(date)
+    from tradingbot.core.models import now_ist
+    today = now_ist().strftime("%Y-%m-%d")
+    return state.database.get_decisions_for_date(today)
 
 
 @router.get("/scout/stats")
