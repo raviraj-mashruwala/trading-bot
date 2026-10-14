@@ -723,6 +723,16 @@ class AnalysisPipeline:
             df = None
             if getattr(self, '_duckdb', None) is not None:
                 df = self._duckdb.read(symbol, "15m", days=60)
+
+                # Staleness check: if latest 15m candle is older than 5 trading days,
+                # force re-fetch from Kite before proceeding.
+                if df is not None and not df.empty:
+                    latest_ts = df["timestamp"].max()
+                    days_old = (datetime.now(tz=IST) - latest_ts.to_pydatetime().replace(tzinfo=IST)).days
+                    if days_old > 7:
+                        log.warning("%s: 15m data is %d days stale, re-fetching from Kite", symbol, days_old)
+                        df = self._force_refetch_intraday(symbol)
+
             if (df is None or df.empty) and self._candles is not None:
                 from_dt = datetime.now(tz=IST) - timedelta(days=self._lookback_days)
                 df = self._candles.read(symbol, "15minute", from_dt, datetime.now(tz=IST))
@@ -742,6 +752,44 @@ class AnalysisPipeline:
         except Exception as exc:
             log.warning("Indicator fetch failed for %s: %s", symbol, exc)
             return {}, f"{symbol}: indicator computation failed"
+
+    def _force_refetch_intraday(self, symbol: str) -> Any:
+        """Force re-fetch 15m data from Kite for a single stock. Returns DataFrame or None."""
+        try:
+            from tradingbot.data.kite_data_sync import _kite_rows_to_df, INTERVAL_MAP, KITE_LIMITS, _date_chunks
+            from tradingbot.data.kite_client import KiteClient
+            from kiteconnect import KiteConnect
+            from pathlib import Path
+            from datetime import date
+            import os
+
+            token_path = Path.home() / ".tradingbot" / "kite_token"
+            kite_api_key = os.environ.get("KITE_API_KEY", "")
+            if not token_path.exists() or not kite_api_key:
+                log.warning("%s: cannot re-fetch — Kite auth unavailable", symbol)
+                return None
+
+            kite = KiteConnect(api_key=kite_api_key)
+            kite.set_access_token(token_path.read_text().strip())
+            kite_client = KiteClient(kite, rate_limit_per_sec=3)
+
+            today = date.today()
+            from_date = date(today.year - 1, today.month, today.day)
+            kite_interval = INTERVAL_MAP["15m"]
+            max_days = KITE_LIMITS[kite_interval]
+            token = self._instrument_cache.get_token(symbol)
+            total_written = 0
+
+            for chunk_from, chunk_to in _date_chunks(from_date, today, max_days):
+                raw = kite_client.fetch_historical(token, kite_interval, chunk_from, chunk_to)
+                df = _kite_rows_to_df(raw)
+                total_written += self._duckdb.write(symbol, "15m", df)
+
+            log.info("%s: re-fetched %d rows of 15m data (1yr)", symbol, total_written)
+            return self._duckdb.read(symbol, "15m", days=60)
+        except Exception as exc:
+            log.warning("%s: intraday re-fetch failed: %s", symbol, exc)
+            return None
 
     def _build_price_action_summary(self, symbol: str, df: Any, snap: Any) -> str:
         """Build compact price action narrative for Claude's deep analysis context."""
