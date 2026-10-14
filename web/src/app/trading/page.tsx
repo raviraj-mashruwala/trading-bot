@@ -34,9 +34,7 @@ export default function TradingPage() {
     }
   }, [statusData, execStatus, reset]);
 
-  const decisions = isRunning && recentDecisions.length > 0
-    ? recentDecisions
-    : statusData?.decision_log ?? [];
+  const liveDecisions = isRunning && recentDecisions.length > 0 ? recentDecisions : undefined;
 
   const positions = statusData?.positions ?? [];
   const totalUnrealisedPnl = positions.reduce((sum, p) => sum + (p.unrealised_pnl ?? 0), 0);
@@ -91,7 +89,7 @@ export default function TradingPage() {
       <ScoutAlerts alerts={statusData?.scout_alerts ?? []} />
       <ScoutStats />
 
-      <DecisionTimeline decisions={decisions} />
+      <DecisionTimeline decisions={liveDecisions} />
 
       {execStatus === "done" && sessionResult && (
         <SessionSummary result={sessionResult} />

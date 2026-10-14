@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/lib/api";
 import type { ExecutionDecision } from "@/types";
 import { getExplanation } from "@/lib/decision-explanations";
 
@@ -18,6 +20,21 @@ const typeColor: Record<string, string> = {
   LLM_ESCALATION: "text-purple-500",
   KILL_SWITCH: "text-[#f85149]",
   SQUARE_OFF: "text-[#d4a015]",
+};
+
+const typeBgColor: Record<string, string> = {
+  ENTRY_ENTER: "bg-[#2da44e]/15",
+  ENTRY_VETO: "bg-[#f85149]/15",
+  ENTRY_WAIT: "bg-[#d4a015]/15",
+  MOMENTUM_EXIT: "bg-orange-500/15",
+  PATTERN_EXIT: "bg-orange-500/15",
+  TRAIL_STOP: "bg-blue-500/15",
+  STOP_HIT: "bg-[#f85149]/15",
+  BOOK_TARGET_1: "bg-[#2da44e]/15",
+  BOOK_TARGET_2: "bg-[#2da44e]/15",
+  LLM_ESCALATION: "bg-purple-500/15",
+  KILL_SWITCH: "bg-[#f85149]/15",
+  SQUARE_OFF: "bg-[#d4a015]/15",
 };
 
 const typeLabel: Record<string, string> = {
@@ -42,6 +59,27 @@ function formatTime(timestamp: string): string {
   } catch {
     return timestamp.slice(11, 19);
   }
+}
+
+function formatDateLabel(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  } catch {
+    return dateStr;
+  }
+}
+
+function todayIST(): string {
+  const now = new Date();
+  const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  return ist.toISOString().slice(0, 10);
+}
+
+function shiftDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 interface MomentumSnapshot {
@@ -70,7 +108,7 @@ function MomentumPills({ m }: { m: MomentumSnapshot }) {
   const vwapColor = m.vwap_position > 0.3 ? "text-[#2da44e]" : m.vwap_position < -0.3 ? "text-[#f85149]" : "text-[#5a6a7f]";
 
   return (
-    <div className="flex items-center gap-2 mt-1 ml-[4.5rem]">
+    <div className="flex items-center gap-3">
       <span className={`font-mono text-[10px] ${m1Color}`} title="1-min momentum">
         1m:{m.momentum_1m > 0 ? "+" : ""}{m.momentum_1m.toFixed(0)}
       </span>
@@ -98,7 +136,7 @@ function OutcomeBadge({ outcome }: { outcome: string }) {
   const exitReason = outcome.split("|")[0];
   return (
     <span
-      className={`rounded px-1 py-0.5 text-[10px] font-mono font-semibold shrink-0 ${color}`}
+      className={`rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold shrink-0 ${color}`}
       title={`Exit: ${exitReason}`}
     >
       {pnl >= 0 ? "+" : ""}{pnl.toFixed(0)}
@@ -110,38 +148,45 @@ function DecisionRow({ d }: { d: ExecutionDecision }) {
   const [expanded, setExpanded] = useState(false);
   const momentum = parseMomentum(d.momentum_snapshot);
   const explanation = getExplanation(d.decision_type, d.reason);
+  const hasDetail = momentum || explanation;
 
   return (
-    <div>
+    <div className="border-b border-[rgba(28,39,54,0.3)] last:border-b-0">
       <button
         type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-start gap-2 text-xs w-full text-left hover:bg-[rgba(212,160,21,0.05)] rounded px-1 -mx-1 py-0.5 transition-colors"
+        onClick={() => hasDetail && setExpanded(!expanded)}
+        className={`grid grid-cols-[4.5rem_5rem_4.5rem_1fr_auto] gap-2 items-center w-full text-left text-xs px-3 py-1.5 transition-colors ${hasDetail ? "hover:bg-[rgba(212,160,21,0.05)] cursor-pointer" : "cursor-default"}`}
       >
-        <span className="text-[#5a6a7f] font-mono w-[4.5rem] shrink-0">
+        <span className="text-[#5a6a7f] font-mono text-[11px]">
           {formatTime(d.timestamp)}
         </span>
-        <span className="font-medium w-16 shrink-0 text-[#e6edf3]">{d.symbol}</span>
-        <span className={`font-semibold w-14 shrink-0 ${typeColor[d.decision_type] ?? "text-[#c9d1d9]"}`}>
+        <span className="font-medium text-[#e6edf3] font-mono text-[11px] truncate">
+          {d.symbol}
+        </span>
+        <span className={`inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-semibold ${typeColor[d.decision_type] ?? "text-[#c9d1d9]"} ${typeBgColor[d.decision_type] ?? "bg-[#c9d1d9]/10"}`}>
           {typeLabel[d.decision_type] ?? d.decision_type}
         </span>
-        {d.escalated === 1 && (
-          <span className="rounded bg-purple-500/15 px-1 py-0.5 text-[10px] font-semibold text-purple-500 shrink-0">
-            AI
-          </span>
-        )}
-        <span className="text-[#5a6a7f] truncate">{d.reason}</span>
-        {d.outcome && <OutcomeBadge outcome={d.outcome} />}
-        {(momentum || explanation) && (
-          <span className="text-[#5a6a7f] shrink-0 ml-auto">{expanded ? "▾" : "▸"}</span>
-        )}
+        <span className="text-[#5a6a7f] text-[11px] truncate">
+          {d.reason}
+          {d.escalated === 1 && (
+            <span className="ml-1.5 rounded bg-purple-500/15 px-1 py-0.5 text-[10px] font-semibold text-purple-500">
+              AI
+            </span>
+          )}
+        </span>
+        <div className="flex items-center gap-1.5">
+          {d.outcome && <OutcomeBadge outcome={d.outcome} />}
+          {hasDetail && (
+            <span className="text-[#5a6a7f] text-[10px]">{expanded ? "▾" : "▸"}</span>
+          )}
+        </div>
       </button>
 
       {expanded && (
-        <div className="ml-[4.5rem] mb-1.5 space-y-1">
+        <div className="px-3 pb-2 pt-0.5 ml-[4.5rem] space-y-1">
           {momentum && <MomentumPills m={momentum} />}
           {explanation && (
-            <div className="mt-1 ml-0 rounded bg-[rgba(22,29,38,0.6)] border border-[rgba(28,39,54,0.5)] px-2 py-1.5">
+            <div className="rounded bg-[rgba(22,29,38,0.6)] border border-[rgba(28,39,54,0.5)] px-2 py-1.5">
               <p className="text-[11px] font-medium text-[#d4a015]">{explanation.short}</p>
               <p className="text-[10px] text-[#5a6a7f] leading-relaxed mt-0.5">{explanation.detail}</p>
             </div>
@@ -152,34 +197,93 @@ function DecisionRow({ d }: { d: ExecutionDecision }) {
   );
 }
 
-export function DecisionTimeline({ decisions }: { decisions: ExecutionDecision[] }) {
-  if (!decisions?.length) {
-    return (
-      <Card className="border-[rgba(28,39,54,0.5)] bg-[#0f1419]/80">
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm text-[#e6edf3]">Decision Log</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 pt-0">
-          <p className="text-xs text-[#5a6a7f]">No decisions yet</p>
-        </CardContent>
-      </Card>
-    );
-  }
+interface DecisionTimelineProps {
+  decisions?: ExecutionDecision[];
+  showDatePicker?: boolean;
+}
+
+export function DecisionTimeline({ decisions: externalDecisions, showDatePicker = true }: DecisionTimelineProps) {
+  const [selectedDate, setSelectedDate] = useState(todayIST);
+  const isToday = selectedDate === todayIST();
+
+  const { data: fetchedDecisions } = useQuery({
+    queryKey: ["decisions", selectedDate],
+    queryFn: () => api.getDecisions(selectedDate),
+    refetchInterval: isToday ? 5_000 : false,
+    enabled: showDatePicker && !externalDecisions,
+  });
+
+  const decisions = externalDecisions ?? fetchedDecisions ?? [];
+
+  const symbolGroups = decisions.reduce<Record<string, number>>((acc, d) => {
+    acc[d.symbol] = (acc[d.symbol] ?? 0) + 1;
+    return acc;
+  }, {});
+  const symbolCount = Object.keys(symbolGroups).length;
 
   return (
     <Card className="border-[rgba(28,39,54,0.5)] bg-[#0f1419]/80">
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-[#e6edf3]">Decision Log</CardTitle>
-          <span className="text-[10px] text-[#5a6a7f] font-mono">{decisions.length} decisions</span>
+          <div className="flex items-center gap-3">
+            {decisions.length > 0 && (
+              <span className="text-[10px] text-[#5a6a7f] font-mono">
+                {decisions.length} decisions · {symbolCount} symbol{symbolCount !== 1 ? "s" : ""}
+              </span>
+            )}
+            {showDatePicker && !externalDecisions && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
+                  className="text-[#5a6a7f] hover:text-[#e6edf3] px-1.5 py-0.5 rounded hover:bg-[rgba(212,160,21,0.05)] transition-colors text-xs"
+                  title="Previous day"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(todayIST())}
+                  className={`text-[11px] font-mono px-2 py-0.5 rounded transition-colors ${isToday ? "text-[#d4a015] bg-[rgba(212,160,21,0.1)]" : "text-[#5a6a7f] hover:text-[#e6edf3] hover:bg-[rgba(212,160,21,0.05)]"}`}
+                  title="Jump to today"
+                >
+                  {formatDateLabel(selectedDate)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}
+                  disabled={isToday}
+                  className="text-[#5a6a7f] hover:text-[#e6edf3] px-1.5 py-0.5 rounded hover:bg-[rgba(212,160,21,0.05)] transition-colors text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Next day"
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-4 pt-0">
-        <div className="space-y-0 max-h-80 overflow-y-auto">
-          {decisions.map((d) => (
-            <DecisionRow key={d.id} d={d} />
-          ))}
-        </div>
+      <CardContent className="px-0 pb-2 pt-0">
+        {decisions.length === 0 ? (
+          <p className="text-xs text-[#5a6a7f] px-4 py-3">No decisions{isToday ? " yet" : ` on ${formatDateLabel(selectedDate)}`}</p>
+        ) : (
+          <>
+            {/* Table header */}
+            <div className="grid grid-cols-[4.5rem_5rem_4.5rem_1fr_auto] gap-2 items-center px-3 py-1 border-b border-[rgba(28,39,54,0.5)]">
+              <span className="text-[10px] text-[#5a6a7f]">Time</span>
+              <span className="text-[10px] text-[#5a6a7f]">Symbol</span>
+              <span className="text-[10px] text-[#5a6a7f]">Type</span>
+              <span className="text-[10px] text-[#5a6a7f]">Reason</span>
+              <span className="text-[10px] text-[#5a6a7f]">P&L</span>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {decisions.map((d) => (
+                <DecisionRow key={d.id} d={d} />
+              ))}
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -3,7 +3,7 @@ import type {
   Trade, TradeStats, AnalysisStatus, ExecutionStatusResponse,
   KiteAuthStatus, AnalysisRun, Setup, DailyPlan,
   TradeScorecard, PerformanceStatsData, GeneratePlanResponse,
-  MarketCalendarResponse, NightlyReview,
+  MarketCalendarResponse, NightlyReview, ExecutionDecision,
 } from "@/types";
 
 const API_BASE = "";
@@ -120,6 +120,10 @@ export const api = {
   // Market Calendar
   getMarketCalendar: () => get<MarketCalendarResponse>("/api/market-calendar"),
   refreshMarketCalendar: () => post<MarketCalendarResponse>("/api/market-calendar/refresh"),
+
+  // Decisions
+  getDecisions: (date?: string) =>
+    get<ExecutionDecision[]>(date ? `/api/decisions?date=${date}` : "/api/decisions"),
 
   // Scout
   getScoutStats: () => get<Record<string, unknown>>("/api/scout/stats"),

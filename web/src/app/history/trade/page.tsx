@@ -144,7 +144,7 @@ export default function TradeDetailPage() {
       )}
 
       {decisions.length > 0 && (
-        <DecisionTimeline decisions={decisions} />
+        <DecisionTimeline decisions={decisions} showDatePicker={false} />
       )}
     </div>
   );
