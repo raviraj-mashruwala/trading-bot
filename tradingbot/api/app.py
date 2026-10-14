@@ -146,6 +146,7 @@ def create_app(
         )
         app.state.app_state._telegram = telegram
 
+
         # Start Telegram command handler (polls for incoming commands).
         # Use a module-level Lock to prevent duplicate polling loops when
         # uvicorn factory=True creates multiple app objects concurrently.
