@@ -12,7 +12,7 @@ from tradingbot.api.state import AppState
 from tradingbot.api.websocket import ConnectionManager
 from tradingbot.core.models import Direction, Mode
 from tradingbot.core.plan_store import PlanNotFoundError
-from tradingbot.data.kite_ticker import LiveTickManager
+from tradingbot.data.ws_ticker import AsyncKiteTicker as LiveTickManager
 from tradingbot.executor.decision_logger import DecisionLogger
 from tradingbot.executor.execution_intelligence import ExecutionIntelligence
 

@@ -17,7 +17,7 @@ from tradingbot.core.database import Database
 from tradingbot.core.models import Mode, now_ist
 from tradingbot.core.plan_store import PlanCorruptError, PlanNotFoundError, PlanStore
 from tradingbot.core.risk_manager import RiskManager
-from tradingbot.data.kite_ticker import LiveTickManager
+from tradingbot.data.ws_ticker import AsyncKiteTicker as LiveTickManager
 from tradingbot.executor.execution_intelligence import ExecutionIntelligence
 from tradingbot.executor.executor import Executor
 from tradingbot.paper.virtual_broker import VirtualBroker
