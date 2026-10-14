@@ -42,32 +42,6 @@ class TelegramCommandHandler:
         self._state = app_state
         self._offset = 0
         self._running = False
-        self._ensure_kite_auth()
-
-    def _ensure_kite_auth(self) -> None:
-        """Load saved Kite token from disk if not already authenticated."""
-        s = self._state
-        if s.kite_auth and s.kite_auth.is_authenticated():
-            return
-        try:
-            from tradingbot.execution.kite_auth import KiteAuth
-            saved_token = KiteAuth.load_saved_token()
-            if not saved_token:
-                return
-            from kiteconnect import KiteConnect
-            kite = KiteConnect(api_key=s.config.secrets.kite_api_key)
-            kite.set_access_token(saved_token)
-            kite.profile()
-            if s.kite_auth is None:
-                s.kite_auth = KiteAuth(
-                    api_key=s.config.secrets.kite_api_key,
-                    api_secret=s.config.secrets.kite_api_secret,
-                )
-            s.kite_auth._access_token = saved_token
-            s.kite_auth._kite = kite
-            log.info("Loaded saved Kite token on startup")
-        except Exception:
-            log.info("No valid saved Kite token")
 
     async def start(self) -> None:
         self._running = True
