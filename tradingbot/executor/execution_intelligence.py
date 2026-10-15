@@ -16,7 +16,7 @@ from tradingbot.executor.llm_escalator import LLMEscalator
 logger = logging.getLogger(__name__)
 
 SEED_CANDLE_COUNT = 50
-STALE_TICK_THRESHOLD_SECONDS = 30
+STALE_TICK_THRESHOLD_SECONDS = 120
 MARKET_OPEN_HOUR = 9
 MARKET_OPEN_MINUTE = 15
 
@@ -187,7 +187,7 @@ class ExecutionIntelligence:
         logger.info("Ticker reconnected")
 
     _last_reconnect_at: float = 0.0
-    _RECONNECT_COOLDOWN = 60.0
+    _RECONNECT_COOLDOWN = 120.0
 
     def check_and_reconnect(self) -> bool:
         """If ticks are stale during market hours, force-reconnect the ticker.
