@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 TICK_SECONDS_NORMAL = 5
-TICK_SECONDS_FAST = 1
+TICK_SECONDS_FAST = 3
 FAST_TICK_START = (9, 10)
 FAST_TICK_END = (9, 25)
 

@@ -199,6 +199,11 @@ class ExecutionIntelligence:
         now = datetime.now()
         if now.hour < MARKET_OPEN_HOUR or (now.hour == MARKET_OPEN_HOUR and now.minute < MARKET_OPEN_MINUTE):
             return False
+        # Check ticker's own timestamp first (set in ticker thread, no callback dependency)
+        ticker_last = getattr(self._ticker, "last_tick_time", None)
+        if ticker_last is not None:
+            self.health.last_tick_at = ticker_last
+
         if self.health.last_tick_at is None:
             stale = (now - now.replace(hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0)).total_seconds()
         else:

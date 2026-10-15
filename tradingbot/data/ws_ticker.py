@@ -234,7 +234,14 @@ class AsyncKiteTicker:
             msg = json.dumps({"a": "mode", "v": [MODE_LTP, tokens]})
             await self._ws.send(msg)
 
+    @property
+    def last_tick_time(self) -> datetime | None:
+        return self._last_tick_time
+
+    _last_tick_time: datetime | None = None
+
     def _dispatch_ticks(self, ticks: list[dict]) -> None:
+        self._last_tick_time = datetime.now()
         if self._full_tick_callback is not None:
             try:
                 self._full_tick_callback(None, ticks)
