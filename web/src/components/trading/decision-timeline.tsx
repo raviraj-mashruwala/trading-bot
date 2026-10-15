@@ -278,7 +278,7 @@ export function DecisionTimeline({ decisions: externalDecisions, showDatePicker 
               <span className="text-[10px] text-[#5a6a7f]">P&L</span>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              {decisions.map((d) => (
+              {[...decisions].reverse().map((d) => (
                 <DecisionRow key={d.id} d={d} />
               ))}
             </div>
