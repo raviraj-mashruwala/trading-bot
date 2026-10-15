@@ -142,10 +142,16 @@ class AsyncKiteTicker:
 
     def stop(self) -> None:
         self._running = False
-        if self._ws and self._loop:
-            asyncio.run_coroutine_threadsafe(self._close_ws(), self._loop)
-        if self._loop:
+        if self._ws and self._loop and self._loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(self._close_ws(), self._loop)
+            try:
+                future.result(timeout=3)
+            except Exception:
+                pass
+        if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=3)
         log.info("AsyncKiteTicker stopped")
 
     def _run_loop(self) -> None:
