@@ -219,22 +219,23 @@ class Database:
         return bool(row and row["reviewed"]) if row else False
 
     def log_execution_decision(self, **kwargs) -> None:
+        params = (
+            str(kwargs["trade_date"]),
+            str(kwargs["timestamp"]),
+            str(kwargs["symbol"]),
+            str(kwargs["decision_type"]),
+            str(kwargs["reason"]) if kwargs["reason"] is not None else None,
+            str(kwargs["momentum_snapshot"]) if kwargs.get("momentum_snapshot") is not None else None,
+            str(kwargs["candle_snapshot"]) if kwargs.get("candle_snapshot") is not None else None,
+            int(kwargs.get("escalated", False)),
+            str(kwargs["llm_response"]) if kwargs.get("llm_response") is not None else None,
+        )
         self.connection.execute(
             """INSERT INTO execution_decisions
                (trade_date, timestamp, symbol, decision_type, reason,
                 momentum_snapshot, candle_snapshot, escalated, llm_response)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                kwargs["trade_date"],
-                kwargs["timestamp"],
-                kwargs["symbol"],
-                kwargs["decision_type"],
-                kwargs["reason"],
-                kwargs.get("momentum_snapshot"),
-                kwargs.get("candle_snapshot"),
-                int(kwargs.get("escalated", False)),
-                kwargs.get("llm_response"),
-            ),
+            params,
         )
         self.connection.commit()
 
