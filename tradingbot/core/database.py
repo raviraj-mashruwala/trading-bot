@@ -232,7 +232,7 @@ class Database:
                 kwargs["reason"],
                 kwargs.get("momentum_snapshot"),
                 kwargs.get("candle_snapshot"),
-                kwargs.get("escalated", False),
+                int(kwargs.get("escalated", False)),
                 kwargs.get("llm_response"),
             ),
         )
