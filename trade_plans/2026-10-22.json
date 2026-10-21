@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-10-22",
+  "generated_at": "2026-10-21T21:06:18.514528+05:30",
+  "capital": 73772,
+  "max_risk_per_trade_pct": 0.01,
+  "max_daily_loss_pct": 0.025,
+  "market_regime": "range_bound",
+  "market_summary": "Auto-generated after run_20261022_190620_015071",
+  "legs": [
+    {
+      "symbol": "JUSTDIAL",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "long",
+      "entry_price": 759.5,
+      "entry_type": "limit",
+      "stop_loss": 743.76,
+      "target_1": 790.0,
+      "target_2": 804.28,
+      "quantity": 46,
+      "risk_amount": 724.0400000000004,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.68,
+      "reasoning": "Five independent confluence signals: (1) POC at 758.97 is the highest volume price node \u2014 strong magnetic support. (2) VWAP at 749.42 provides dynamic intraday support floor below. (3) MACD histogram strongly positive (10.49 vs signal 4.15) \u2014 bullish trend intact. (4) Supertrend direction = 1 (UP) on the computed timeframe. (5) ADX at 37.4 confirms genuine trend strength, not a fakeout. Price pulled back from 790 intraday high to 770 close \u2014 a controlled retracement. In range regime, POC acts as value area re-entry magnet. Reward:Risk to T1 = (790.0 - 759.5)/(759.5 - 743.76) = 30.5/15.74 = 1.94:1.",
+      "setup_id": 32
+    },
+    {
+      "symbol": "HINDZINC",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "long",
+      "entry_price": 523.95,
+      "entry_type": "limit",
+      "stop_loss": 520.6,
+      "target_1": 530.23,
+      "target_2": 541.48,
+      "quantity": 220,
+      "risk_amount": 737.000000000005,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.63,
+      "reasoning": "5-signal confluence: (1) RSI-14 at 26.2 \u2014 statistically oversold extreme rarely sustained in range-bound regimes; (2) Price near/at BB lower band (517.34) in a range-bound market where BB bands act as mean-reversion anchors; (3) Pivot support at 522.52 holding \u2014 price has closed above pivot in last 5 candles; (4) VAL at 524.50 \u2014 price re-entering the value area activates responsive buyers from volume profile; (5) Last 15m candle volume spiked to 855,973 (3.1x the prior candle) with a lower shadow to 520.6 and close near the high at 523.0 \u2014 classic selling exhaustion / absorption pattern. Range-bound regime specifically favors BB lower-to-middle mean reversion trades. Target 1 (BB middle/SMA-20 at 530.23) gives 2.16:1 R:R; Target 2 (VWAP -1\u03c3 at 541.48) gives 5.8:1 R:R.",
+      "setup_id": 31
+    }
+  ]
+}
