@@ -1,0 +1,6333 @@
+[
+  {
+    "date": "2026-06-01",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 23548.0,
+      "nifty_5d_change_pct": -0.45,
+      "vix": 16.2,
+      "banknifty_level": 54239.0
+    },
+    "candidates": [
+      {
+        "symbol": "PRAJIND",
+        "last_price": 352.3,
+        "composite_score": 83.0,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 96.6,
+          "atr_expansion": 72.4,
+          "price_structure": 98.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -6.46,
+        "signed_rs_excess": -9.32,
+        "signed_pct_above_sma20": -9.65
+      },
+      {
+        "symbol": "SKYGOLD",
+        "last_price": 521.0,
+        "composite_score": 82.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 91.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 65.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 6.85,
+        "signed_rs_excess": 12.41,
+        "signed_pct_above_sma20": 10.11
+      },
+      {
+        "symbol": "VIDYAWIRES",
+        "last_price": 108.65,
+        "composite_score": 82.4,
+        "factor_scores": {
+          "gap_analysis": 73.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.22,
+        "signed_rs_excess": 22.39,
+        "signed_pct_above_sma20": 15.62
+      },
+      {
+        "symbol": "MARINE",
+        "last_price": 268.94,
+        "composite_score": 81.5,
+        "factor_scores": {
+          "gap_analysis": 95.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 84.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.86,
+        "signed_rs_excess": 16.19,
+        "signed_pct_above_sma20": 15.54
+      },
+      {
+        "symbol": "TIMEX",
+        "last_price": 449.35,
+        "composite_score": 81.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 78.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.41,
+        "signed_rs_excess": 23.88,
+        "signed_pct_above_sma20": 22.95
+      },
+      {
+        "symbol": "ASHAPURMIN",
+        "last_price": 739.5,
+        "composite_score": 80.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 71.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.43,
+        "signed_rs_excess": 16.65,
+        "signed_pct_above_sma20": 12.22
+      },
+      {
+        "symbol": "WOCKPHARMA",
+        "last_price": 2031.4,
+        "composite_score": 80.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 69.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 8.7,
+        "signed_rs_excess": 27.43,
+        "signed_pct_above_sma20": 25.82
+      },
+      {
+        "symbol": "SUPRIYA",
+        "last_price": 968.7,
+        "composite_score": 80.2,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 67.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 9.92,
+        "signed_rs_excess": 32.45,
+        "signed_pct_above_sma20": 32.69
+      },
+      {
+        "symbol": "BAJEL",
+        "last_price": 195.47,
+        "composite_score": 78.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 88.6,
+          "atr_expansion": 80.0,
+          "price_structure": 92.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.78,
+        "signed_rs_excess": 7.72,
+        "signed_pct_above_sma20": 8.49
+      },
+      {
+        "symbol": "INDSWFTLAB",
+        "last_price": 152.11,
+        "composite_score": 78.4,
+        "factor_scores": {
+          "gap_analysis": 78.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 69.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.35,
+        "signed_rs_excess": 12.83,
+        "signed_pct_above_sma20": 10.74
+      },
+      {
+        "symbol": "BDL",
+        "last_price": 1204.6,
+        "composite_score": 77.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 85.8,
+          "atr_expansion": 63.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -5.86,
+        "signed_rs_excess": -7.16,
+        "signed_pct_above_sma20": -10.47
+      },
+      {
+        "symbol": "RELAXO",
+        "last_price": 345.3,
+        "composite_score": 77.4,
+        "factor_scores": {
+          "gap_analysis": 88.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 60.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.65,
+        "signed_rs_excess": 17.98,
+        "signed_pct_above_sma20": 15.38
+      },
+      {
+        "symbol": "OMNI",
+        "last_price": 497.65,
+        "composite_score": 77.4,
+        "factor_scores": {
+          "gap_analysis": 38.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.16,
+        "signed_rs_excess": 18.11,
+        "signed_pct_above_sma20": 18.06
+      },
+      {
+        "symbol": "EXICOM",
+        "last_price": 159.4,
+        "composite_score": 77.4,
+        "factor_scores": {
+          "gap_analysis": 17.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.54,
+        "signed_rs_excess": 16.03,
+        "signed_pct_above_sma20": 26.02
+      },
+      {
+        "symbol": "TECHNOE",
+        "last_price": 1079.2,
+        "composite_score": 77.4,
+        "factor_scores": {
+          "gap_analysis": 38.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.16,
+        "signed_rs_excess": -16.17,
+        "signed_pct_above_sma20": -12.57
+      },
+      {
+        "symbol": "JAGRAN",
+        "last_price": 65.35,
+        "composite_score": 76.9,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 95.8,
+          "atr_expansion": 39.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 7.43,
+        "signed_rs_excess": 9.17,
+        "signed_pct_above_sma20": 10.4
+      },
+      {
+        "symbol": "ATGL",
+        "last_price": 773.3,
+        "composite_score": 76.8,
+        "factor_scores": {
+          "gap_analysis": 55.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 86.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 53.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.65,
+        "signed_rs_excess": 21.64,
+        "signed_pct_above_sma20": 19.07
+      },
+      {
+        "symbol": "HARIOMPIPE",
+        "last_price": 394.0,
+        "composite_score": 76.1,
+        "factor_scores": {
+          "gap_analysis": 32.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 55.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.99,
+        "signed_rs_excess": 18.49,
+        "signed_pct_above_sma20": 16.37
+      },
+      {
+        "symbol": "NATCOPHARM",
+        "last_price": 1007.65,
+        "composite_score": 75.9,
+        "factor_scores": {
+          "gap_analysis": 41.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -1.23,
+        "signed_rs_excess": -13.04,
+        "signed_pct_above_sma20": -12.14
+      },
+      {
+        "symbol": "SANSTAR",
+        "last_price": 118.26,
+        "composite_score": 75.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 51.0,
+          "atr_expansion": 96.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.26,
+        "signed_rs_excess": 0.19,
+        "signed_pct_above_sma20": 14.63
+      },
+      {
+        "symbol": "RAIN",
+        "last_price": 188.07,
+        "composite_score": 75.4,
+        "factor_scores": {
+          "gap_analysis": 26.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 92.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.8,
+        "signed_rs_excess": 23.17,
+        "signed_pct_above_sma20": 22.47
+      },
+      {
+        "symbol": "DELTACORP",
+        "last_price": 69.6,
+        "composite_score": 75.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 72.1,
+          "atr_expansion": 100.0,
+          "price_structure": 73.8,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 69.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -14.86,
+        "signed_rs_excess": -4.41,
+        "signed_pct_above_sma20": -4.75
+      },
+      {
+        "symbol": "KOPRAN",
+        "last_price": 206.27,
+        "composite_score": 75.0,
+        "factor_scores": {
+          "gap_analysis": 15.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 98.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.48,
+        "signed_rs_excess": 23.78,
+        "signed_pct_above_sma20": 22.22
+      },
+      {
+        "symbol": "REFEX",
+        "last_price": 328.3,
+        "composite_score": 74.9,
+        "factor_scores": {
+          "gap_analysis": 29.9,
+          "volume_surge": 93.7,
+          "relative_strength": 100.0,
+          "atr_expansion": 92.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.9,
+        "signed_rs_excess": 18.31,
+        "signed_pct_above_sma20": 19.68
+      },
+      {
+        "symbol": "CONFIPET",
+        "last_price": 67.77,
+        "composite_score": 74.8,
+        "factor_scores": {
+          "gap_analysis": 3.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 88.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.11,
+        "signed_rs_excess": 16.1,
+        "signed_pct_above_sma20": 13.72
+      }
+    ]
+  },
+  {
+    "date": "2026-06-10",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 23242.0,
+      "nifty_5d_change_pct": -1.03,
+      "vix": 15.6,
+      "banknifty_level": 55194.0
+    },
+    "candidates": [
+      {
+        "symbol": "JNKINDIA",
+        "last_price": 484.05,
+        "composite_score": 85.6,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 7.6,
+        "signed_rs_excess": 34.97,
+        "signed_pct_above_sma20": 27.7
+      },
+      {
+        "symbol": "PANACEABIO",
+        "last_price": 607.75,
+        "composite_score": 83.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 97.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.15,
+        "signed_rs_excess": 42.17,
+        "signed_pct_above_sma20": 38.7
+      },
+      {
+        "symbol": "MASTERTR",
+        "last_price": 75.04,
+        "composite_score": 83.0,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 83.2,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.48,
+        "signed_rs_excess": -6.65,
+        "signed_pct_above_sma20": -13.08
+      },
+      {
+        "symbol": "CEMPRO",
+        "last_price": 1203.8,
+        "composite_score": 82.6,
+        "factor_scores": {
+          "gap_analysis": 66.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 83.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.0,
+        "signed_rs_excess": 16.59,
+        "signed_pct_above_sma20": 23.39
+      },
+      {
+        "symbol": "WELSPLSOL",
+        "last_price": 59.25,
+        "composite_score": 79.9,
+        "factor_scores": {
+          "gap_analysis": 74.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 88.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.23,
+        "signed_rs_excess": 41.36,
+        "signed_pct_above_sma20": 33.16
+      },
+      {
+        "symbol": "BELRISE",
+        "last_price": 234.73,
+        "composite_score": 78.9,
+        "factor_scores": {
+          "gap_analysis": 85.8,
+          "volume_surge": 100.0,
+          "relative_strength": 93.8,
+          "atr_expansion": 55.9,
+          "price_structure": 97.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.58,
+        "signed_rs_excess": 8.76,
+        "signed_pct_above_sma20": 9.5
+      },
+      {
+        "symbol": "MARSONS",
+        "last_price": 123.16,
+        "composite_score": 78.6,
+        "factor_scores": {
+          "gap_analysis": 36.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 70.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.08,
+        "signed_rs_excess": -12.0,
+        "signed_pct_above_sma20": -12.69
+      },
+      {
+        "symbol": "GRMOVER",
+        "last_price": 98.33,
+        "composite_score": 78.2,
+        "factor_scores": {
+          "gap_analysis": 46.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.4,
+        "signed_rs_excess": -35.81,
+        "signed_pct_above_sma20": -36.72
+      },
+      {
+        "symbol": "MSTCLTD",
+        "last_price": 544.95,
+        "composite_score": 77.8,
+        "factor_scores": {
+          "gap_analysis": 65.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 74.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 77.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.97,
+        "signed_rs_excess": 21.78,
+        "signed_pct_above_sma20": 21.32
+      },
+      {
+        "symbol": "GKENERGY",
+        "last_price": 141.27,
+        "composite_score": 77.2,
+        "factor_scores": {
+          "gap_analysis": 63.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 73.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.89,
+        "signed_rs_excess": 14.35,
+        "signed_pct_above_sma20": 10.47
+      },
+      {
+        "symbol": "NRBBEARING",
+        "last_price": 438.95,
+        "composite_score": 76.0,
+        "factor_scores": {
+          "gap_analysis": 51.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 73.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.54,
+        "signed_rs_excess": 24.17,
+        "signed_pct_above_sma20": 18.8
+      },
+      {
+        "symbol": "APTECHT",
+        "last_price": 110.18,
+        "composite_score": 75.2,
+        "factor_scores": {
+          "gap_analysis": 50.1,
+          "volume_surge": 100.0,
+          "relative_strength": 83.9,
+          "atr_expansion": 89.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.5,
+        "signed_rs_excess": 6.79,
+        "signed_pct_above_sma20": 10.19
+      },
+      {
+        "symbol": "GULPOLY",
+        "last_price": 214.95,
+        "composite_score": 74.7,
+        "factor_scores": {
+          "gap_analysis": 25.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 86.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.76,
+        "signed_rs_excess": 18.47,
+        "signed_pct_above_sma20": 12.67
+      },
+      {
+        "symbol": "KITEX",
+        "last_price": 146.17,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 18.9,
+          "volume_surge": 100.0,
+          "relative_strength": 90.6,
+          "atr_expansion": 71.3,
+          "price_structure": 91.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 95.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.57,
+        "signed_rs_excess": -8.12,
+        "signed_pct_above_sma20": -8.29
+      },
+      {
+        "symbol": "MIDHANI",
+        "last_price": 450.35,
+        "composite_score": 74.3,
+        "factor_scores": {
+          "gap_analysis": 40.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 77.2,
+          "price_structure": 93.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.22,
+        "signed_rs_excess": 10.67,
+        "signed_pct_above_sma20": 8.61
+      },
+      {
+        "symbol": "ONEPOINT",
+        "last_price": 53.99,
+        "composite_score": 74.3,
+        "factor_scores": {
+          "gap_analysis": 24.4,
+          "volume_surge": 100.0,
+          "relative_strength": 85.6,
+          "atr_expansion": 93.5,
+          "price_structure": 99.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 95.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.73,
+        "signed_rs_excess": -7.12,
+        "signed_pct_above_sma20": -9.9
+      },
+      {
+        "symbol": "MAYURUNIQ",
+        "last_price": 798.85,
+        "composite_score": 74.1,
+        "factor_scores": {
+          "gap_analysis": 1.9,
+          "volume_surge": 100.0,
+          "relative_strength": 91.1,
+          "atr_expansion": 97.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.06,
+        "signed_rs_excess": 8.22,
+        "signed_pct_above_sma20": 14.4
+      },
+      {
+        "symbol": "THOMASCOOK",
+        "last_price": 112.84,
+        "composite_score": 74.1,
+        "factor_scores": {
+          "gap_analysis": 34.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 70.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.04,
+        "signed_rs_excess": 23.72,
+        "signed_pct_above_sma20": 19.36
+      },
+      {
+        "symbol": "CUPID",
+        "last_price": 145.86,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 23.0,
+          "volume_surge": 91.2,
+          "relative_strength": 100.0,
+          "atr_expansion": 49.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 98.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.69,
+        "signed_rs_excess": 14.67,
+        "signed_pct_above_sma20": 15.1
+      },
+      {
+        "symbol": "PARAS",
+        "last_price": 1039.15,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 11.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.34,
+        "signed_rs_excess": 22.75,
+        "signed_pct_above_sma20": 24.09
+      },
+      {
+        "symbol": "DATAPATTNS",
+        "last_price": 4558.5,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 19.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 73.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.58,
+        "signed_rs_excess": 14.28,
+        "signed_pct_above_sma20": 13.1
+      },
+      {
+        "symbol": "HINDOILEXP",
+        "last_price": 183.03,
+        "composite_score": 72.7,
+        "factor_scores": {
+          "gap_analysis": 55.9,
+          "volume_surge": 100.0,
+          "relative_strength": 87.9,
+          "atr_expansion": 65.4,
+          "price_structure": 92.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.68,
+        "signed_rs_excess": 7.57,
+        "signed_pct_above_sma20": 8.49
+      },
+      {
+        "symbol": "J&KBANK",
+        "last_price": 156.98,
+        "composite_score": 72.3,
+        "factor_scores": {
+          "gap_analysis": 3.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 51.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 86.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.09,
+        "signed_rs_excess": 11.64,
+        "signed_pct_above_sma20": 12.13
+      },
+      {
+        "symbol": "TRUALT",
+        "last_price": 531.95,
+        "composite_score": 71.7,
+        "factor_scores": {
+          "gap_analysis": 32.9,
+          "volume_surge": 98.4,
+          "relative_strength": 80.2,
+          "atr_expansion": 75.7,
+          "price_structure": 98.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 85.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.99,
+        "signed_rs_excess": 6.04,
+        "signed_pct_above_sma20": 9.68
+      },
+      {
+        "symbol": "NLCINDIA",
+        "last_price": 327.75,
+        "composite_score": 71.0,
+        "factor_scores": {
+          "gap_analysis": 84.8,
+          "volume_surge": 100.0,
+          "relative_strength": 75.4,
+          "atr_expansion": 68.0,
+          "price_structure": 72.7,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.55,
+        "signed_rs_excess": -5.09,
+        "signed_pct_above_sma20": -4.54
+      }
+    ]
+  },
+  {
+    "date": "2026-06-19",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 24168.0,
+      "nifty_5d_change_pct": 4.35,
+      "vix": 12.7,
+      "banknifty_level": 57964.0
+    },
+    "candidates": [
+      {
+        "symbol": "NITCO",
+        "last_price": 106.92,
+        "composite_score": 84.5,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 98.5,
+          "atr_expansion": 91.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.06,
+        "signed_rs_excess": 9.7,
+        "signed_pct_above_sma20": 10.87
+      },
+      {
+        "symbol": "ICIL",
+        "last_price": 405.85,
+        "composite_score": 84.0,
+        "factor_scores": {
+          "gap_analysis": 99.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 84.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.0,
+        "signed_rs_excess": 20.88,
+        "signed_pct_above_sma20": 22.33
+      },
+      {
+        "symbol": "BLUSPRING",
+        "last_price": 114.29,
+        "composite_score": 82.8,
+        "factor_scores": {
+          "gap_analysis": 77.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.32,
+        "signed_rs_excess": 32.09,
+        "signed_pct_above_sma20": 35.36
+      },
+      {
+        "symbol": "AEROENTER",
+        "last_price": 124.42,
+        "composite_score": 82.2,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 86.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.76,
+        "signed_rs_excess": 16.64,
+        "signed_pct_above_sma20": 20.9
+      },
+      {
+        "symbol": "NIBE",
+        "last_price": 1748.4,
+        "composite_score": 80.2,
+        "factor_scores": {
+          "gap_analysis": 81.3,
+          "volume_surge": 73.9,
+          "relative_strength": 100.0,
+          "atr_expansion": 94.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 89.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.44,
+        "signed_rs_excess": 17.49,
+        "signed_pct_above_sma20": 15.55
+      },
+      {
+        "symbol": "WELSPLSOL",
+        "last_price": 60.43,
+        "composite_score": 78.9,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 69.5,
+          "relative_strength": 99.2,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.29,
+        "signed_rs_excess": 9.85,
+        "signed_pct_above_sma20": 22.87
+      },
+      {
+        "symbol": "GOKEX",
+        "last_price": 784.1,
+        "composite_score": 78.7,
+        "factor_scores": {
+          "gap_analysis": 91.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.76,
+        "signed_rs_excess": 15.26,
+        "signed_pct_above_sma20": 12.15
+      },
+      {
+        "symbol": "RPTECH",
+        "last_price": 730.0,
+        "composite_score": 78.1,
+        "factor_scores": {
+          "gap_analysis": 64.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 80.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.93,
+        "signed_rs_excess": 33.09,
+        "signed_pct_above_sma20": 28.76
+      },
+      {
+        "symbol": "PARACABLES",
+        "last_price": 69.82,
+        "composite_score": 76.7,
+        "factor_scores": {
+          "gap_analysis": 46.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 89.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.41,
+        "signed_rs_excess": 10.4,
+        "signed_pct_above_sma20": 7.91
+      },
+      {
+        "symbol": "WALCHANNAG",
+        "last_price": 301.35,
+        "composite_score": 76.6,
+        "factor_scores": {
+          "gap_analysis": 35.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 95.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.05,
+        "signed_rs_excess": 19.67,
+        "signed_pct_above_sma20": 19.29
+      },
+      {
+        "symbol": "IFCI",
+        "last_price": 82.31,
+        "composite_score": 76.5,
+        "factor_scores": {
+          "gap_analysis": 15.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 58.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.48,
+        "signed_rs_excess": 12.44,
+        "signed_pct_above_sma20": 10.17
+      },
+      {
+        "symbol": "DECNGOLD",
+        "last_price": 215.78,
+        "composite_score": 76.4,
+        "factor_scores": {
+          "gap_analysis": 28.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.86,
+        "signed_rs_excess": 36.6,
+        "signed_pct_above_sma20": 27.04
+      },
+      {
+        "symbol": "REDINGTON",
+        "last_price": 266.1,
+        "composite_score": 76.2,
+        "factor_scores": {
+          "gap_analysis": 58.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.75,
+        "signed_rs_excess": 13.37,
+        "signed_pct_above_sma20": 15.45
+      },
+      {
+        "symbol": "SETL",
+        "last_price": 180.17,
+        "composite_score": 75.8,
+        "factor_scores": {
+          "gap_analysis": 45.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 77.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.35,
+        "signed_rs_excess": 12.76,
+        "signed_pct_above_sma20": 20.37
+      },
+      {
+        "symbol": "SONATSOFTW",
+        "last_price": 309.0,
+        "composite_score": 75.0,
+        "factor_scores": {
+          "gap_analysis": 28.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 76.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 50.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.85,
+        "signed_rs_excess": 16.9,
+        "signed_pct_above_sma20": 13.7
+      },
+      {
+        "symbol": "KPRMILL",
+        "last_price": 1186.4,
+        "composite_score": 75.0,
+        "factor_scores": {
+          "gap_analysis": 57.8,
+          "volume_surge": 100.0,
+          "relative_strength": 90.7,
+          "atr_expansion": 70.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.73,
+        "signed_rs_excess": 8.14,
+        "signed_pct_above_sma20": 15.55
+      },
+      {
+        "symbol": "RAYMONDREL",
+        "last_price": 621.85,
+        "composite_score": 74.8,
+        "factor_scores": {
+          "gap_analysis": 81.9,
+          "volume_surge": 100.0,
+          "relative_strength": 80.9,
+          "atr_expansion": 88.6,
+          "price_structure": 80.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.46,
+        "signed_rs_excess": 6.19,
+        "signed_pct_above_sma20": 6.0
+      },
+      {
+        "symbol": "FINOPB",
+        "last_price": 157.27,
+        "composite_score": 74.7,
+        "factor_scores": {
+          "gap_analysis": 25.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 85.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.78,
+        "signed_rs_excess": 15.42,
+        "signed_pct_above_sma20": 18.79
+      },
+      {
+        "symbol": "LLOYDSENT",
+        "last_price": 76.88,
+        "composite_score": 74.6,
+        "factor_scores": {
+          "gap_analysis": 39.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 71.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.18,
+        "signed_rs_excess": 14.92,
+        "signed_pct_above_sma20": 10.81
+      },
+      {
+        "symbol": "IDBI",
+        "last_price": 84.62,
+        "composite_score": 74.6,
+        "factor_scores": {
+          "gap_analysis": 20.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 71.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 56.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.62,
+        "signed_rs_excess": 12.68,
+        "signed_pct_above_sma20": 12.65
+      },
+      {
+        "symbol": "PARAS",
+        "last_price": 1310.3,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 11.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 97.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.34,
+        "signed_rs_excess": 28.13,
+        "signed_pct_above_sma20": 36.01
+      },
+      {
+        "symbol": "ASTRAMICRO",
+        "last_price": 1670.0,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 33.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 75.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.99,
+        "signed_rs_excess": 15.26,
+        "signed_pct_above_sma20": 20.02
+      },
+      {
+        "symbol": "WELSPUNLIV",
+        "last_price": 163.0,
+        "composite_score": 74.3,
+        "factor_scores": {
+          "gap_analysis": 53.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 54.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.6,
+        "signed_rs_excess": 15.91,
+        "signed_pct_above_sma20": 13.95
+      },
+      {
+        "symbol": "NIACL",
+        "last_price": 178.67,
+        "composite_score": 74.0,
+        "factor_scores": {
+          "gap_analysis": 51.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 63.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.54,
+        "signed_rs_excess": 17.26,
+        "signed_pct_above_sma20": 13.41
+      },
+      {
+        "symbol": "AVANTIFEED",
+        "last_price": 980.9,
+        "composite_score": 73.8,
+        "factor_scores": {
+          "gap_analysis": 25.1,
+          "volume_surge": 100.0,
+          "relative_strength": 97.4,
+          "atr_expansion": 81.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.75,
+        "signed_rs_excess": -9.49,
+        "signed_pct_above_sma20": -13.64
+      }
+    ]
+  },
+  {
+    "date": "2026-07-01",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 23866.0,
+      "nifty_5d_change_pct": -0.98,
+      "vix": 13.6,
+      "banknifty_level": 57543.0
+    },
+    "candidates": [
+      {
+        "symbol": "RAMCOSYS",
+        "last_price": 836.05,
+        "composite_score": 82.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 92.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.02,
+        "signed_rs_excess": 50.64,
+        "signed_pct_above_sma20": 43.57
+      },
+      {
+        "symbol": "SAKSOFT",
+        "last_price": 206.71,
+        "composite_score": 80.9,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 72.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.11,
+        "signed_rs_excess": 47.24,
+        "signed_pct_above_sma20": 39.74
+      },
+      {
+        "symbol": "EBGNG",
+        "last_price": 625.45,
+        "composite_score": 80.3,
+        "factor_scores": {
+          "gap_analysis": 80.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 87.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.43,
+        "signed_rs_excess": 14.96,
+        "signed_pct_above_sma20": 31.91
+      },
+      {
+        "symbol": "GUFICBIO",
+        "last_price": 407.05,
+        "composite_score": 80.0,
+        "factor_scores": {
+          "gap_analysis": 66.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.99,
+        "signed_rs_excess": 13.93,
+        "signed_pct_above_sma20": 10.74
+      },
+      {
+        "symbol": "JAGSNPHARM",
+        "last_price": 238.1,
+        "composite_score": 78.3,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 89.5,
+          "atr_expansion": 73.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.78,
+        "signed_rs_excess": 7.89,
+        "signed_pct_above_sma20": 11.6
+      },
+      {
+        "symbol": "PPL",
+        "last_price": 323.58,
+        "composite_score": 77.1,
+        "factor_scores": {
+          "gap_analysis": 57.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 78.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.72,
+        "signed_rs_excess": 23.37,
+        "signed_pct_above_sma20": 29.58
+      },
+      {
+        "symbol": "GENUSPOWER",
+        "last_price": 299.4,
+        "composite_score": 76.5,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 81.8,
+          "atr_expansion": 85.0,
+          "price_structure": 81.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -7.21,
+        "signed_rs_excess": -6.35,
+        "signed_pct_above_sma20": -6.22
+      },
+      {
+        "symbol": "MOREPENLAB",
+        "last_price": 59.12,
+        "composite_score": 76.2,
+        "factor_scores": {
+          "gap_analysis": 48.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 78.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.45,
+        "signed_rs_excess": 18.92,
+        "signed_pct_above_sma20": 18.67
+      },
+      {
+        "symbol": "ARVIND",
+        "last_price": 587.1,
+        "composite_score": 75.8,
+        "factor_scores": {
+          "gap_analysis": 40.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 62.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.22,
+        "signed_rs_excess": 16.43,
+        "signed_pct_above_sma20": 14.61
+      },
+      {
+        "symbol": "IOLCP",
+        "last_price": 145.29,
+        "composite_score": 75.5,
+        "factor_scores": {
+          "gap_analysis": 39.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 80.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.17,
+        "signed_rs_excess": 12.1,
+        "signed_pct_above_sma20": 10.03
+      },
+      {
+        "symbol": "TIMEX",
+        "last_price": 528.45,
+        "composite_score": 75.1,
+        "factor_scores": {
+          "gap_analysis": 61.4,
+          "volume_surge": 100.0,
+          "relative_strength": 83.7,
+          "atr_expansion": 75.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 76.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.85,
+        "signed_rs_excess": 6.75,
+        "signed_pct_above_sma20": 10.65
+      },
+      {
+        "symbol": "BAJAJHCARE",
+        "last_price": 351.45,
+        "composite_score": 74.6,
+        "factor_scores": {
+          "gap_analysis": 46.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 74.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.4,
+        "signed_rs_excess": 11.59,
+        "signed_pct_above_sma20": 14.71
+      },
+      {
+        "symbol": "SPAL",
+        "last_price": 1138.15,
+        "composite_score": 74.1,
+        "factor_scores": {
+          "gap_analysis": 4.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.13,
+        "signed_rs_excess": 17.23,
+        "signed_pct_above_sma20": 25.33
+      },
+      {
+        "symbol": "SWSOLAR",
+        "last_price": 244.4,
+        "composite_score": 73.9,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 58.0,
+          "atr_expansion": 76.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 51.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.95,
+        "signed_rs_excess": 1.6,
+        "signed_pct_above_sma20": 11.95
+      },
+      {
+        "symbol": "SHILPAMED",
+        "last_price": 598.4,
+        "composite_score": 73.3,
+        "factor_scores": {
+          "gap_analysis": 13.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 77.4,
+          "price_structure": 91.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.42,
+        "signed_rs_excess": 10.19,
+        "signed_pct_above_sma20": 8.21
+      },
+      {
+        "symbol": "NACLIND",
+        "last_price": 220.76,
+        "composite_score": 73.3,
+        "factor_scores": {
+          "gap_analysis": 47.3,
+          "volume_surge": 100.0,
+          "relative_strength": 66.3,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.42,
+        "signed_rs_excess": 3.27,
+        "signed_pct_above_sma20": 23.63
+      },
+      {
+        "symbol": "NRBBEARING",
+        "last_price": 444.0,
+        "composite_score": 73.1,
+        "factor_scores": {
+          "gap_analysis": 79.0,
+          "volume_surge": 100.0,
+          "relative_strength": 72.9,
+          "atr_expansion": 73.3,
+          "price_structure": 82.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 92.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.37,
+        "signed_rs_excess": 4.58,
+        "signed_pct_above_sma20": 6.39
+      },
+      {
+        "symbol": "ATHERENERG",
+        "last_price": 1140.55,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 28.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 64.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.85,
+        "signed_rs_excess": 19.72,
+        "signed_pct_above_sma20": 12.51
+      },
+      {
+        "symbol": "PERSISTENT",
+        "last_price": 4326.5,
+        "composite_score": 72.7,
+        "factor_scores": {
+          "gap_analysis": 25.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 66.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.76,
+        "signed_rs_excess": -10.0,
+        "signed_pct_above_sma20": -11.92
+      },
+      {
+        "symbol": "BSOFT",
+        "last_price": 286.3,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 2.8,
+          "volume_surge": 100.0,
+          "relative_strength": 93.6,
+          "atr_expansion": 58.3,
+          "price_structure": 99.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.08,
+        "signed_rs_excess": -8.71,
+        "signed_pct_above_sma20": -9.88
+      },
+      {
+        "symbol": "ASTRAL",
+        "last_price": 1335.6,
+        "composite_score": 72.5,
+        "factor_scores": {
+          "gap_analysis": 33.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 57.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.99,
+        "signed_rs_excess": -13.28,
+        "signed_pct_above_sma20": -11.72
+      },
+      {
+        "symbol": "HIMATSEIDE",
+        "last_price": 91.83,
+        "composite_score": 72.5,
+        "factor_scores": {
+          "gap_analysis": 32.3,
+          "volume_surge": 100.0,
+          "relative_strength": 94.3,
+          "atr_expansion": 66.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.97,
+        "signed_rs_excess": 8.87,
+        "signed_pct_above_sma20": 13.76
+      },
+      {
+        "symbol": "HONASA",
+        "last_price": 457.9,
+        "composite_score": 72.4,
+        "factor_scores": {
+          "gap_analysis": 14.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.45,
+        "signed_rs_excess": 11.1,
+        "signed_pct_above_sma20": 10.1
+      },
+      {
+        "symbol": "KPITTECH",
+        "last_price": 671.55,
+        "composite_score": 72.3,
+        "factor_scores": {
+          "gap_analysis": 1.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 61.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.04,
+        "signed_rs_excess": -10.23,
+        "signed_pct_above_sma20": -10.44
+      },
+      {
+        "symbol": "SUPRIYA",
+        "last_price": 1018.05,
+        "composite_score": 72.3,
+        "factor_scores": {
+          "gap_analysis": 35.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 76.4,
+          "price_structure": 88.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 56.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.06,
+        "signed_rs_excess": 10.75,
+        "signed_pct_above_sma20": 7.7
+      }
+    ]
+  },
+  {
+    "date": "2026-07-10",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 23963.0,
+      "nifty_5d_change_pct": -0.88,
+      "vix": 13.4,
+      "banknifty_level": 57252.0
+    },
+    "candidates": [
+      {
+        "symbol": "ITDC",
+        "last_price": 728.1,
+        "composite_score": 82.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 70.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 72.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -3.1,
+        "signed_rs_excess": 23.69,
+        "signed_pct_above_sma20": 17.93
+      },
+      {
+        "symbol": "UNICHEMLAB",
+        "last_price": 650.6,
+        "composite_score": 81.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 81.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 6.54,
+        "signed_rs_excess": 40.6,
+        "signed_pct_above_sma20": 38.73
+      },
+      {
+        "symbol": "AEQUS",
+        "last_price": 258.07,
+        "composite_score": 81.2,
+        "factor_scores": {
+          "gap_analysis": 76.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.28,
+        "signed_rs_excess": 12.87,
+        "signed_pct_above_sma20": 15.2
+      },
+      {
+        "symbol": "IKIO",
+        "last_price": 206.88,
+        "composite_score": 80.4,
+        "factor_scores": {
+          "gap_analysis": 65.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 96.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 85.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.96,
+        "signed_rs_excess": 22.4,
+        "signed_pct_above_sma20": 22.89
+      },
+      {
+        "symbol": "SHAREINDIA",
+        "last_price": 179.03,
+        "composite_score": 78.5,
+        "factor_scores": {
+          "gap_analysis": 80.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 67.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.43,
+        "signed_rs_excess": 29.68,
+        "signed_pct_above_sma20": 25.57
+      },
+      {
+        "symbol": "KALYANKJIL",
+        "last_price": 443.0,
+        "composite_score": 78.1,
+        "factor_scores": {
+          "gap_analysis": 52.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.56,
+        "signed_rs_excess": 15.03,
+        "signed_pct_above_sma20": 17.14
+      },
+      {
+        "symbol": "SKYGOLD",
+        "last_price": 623.3,
+        "composite_score": 76.1,
+        "factor_scores": {
+          "gap_analysis": 54.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 71.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.62,
+        "signed_rs_excess": 10.45,
+        "signed_pct_above_sma20": 16.86
+      },
+      {
+        "symbol": "CHOICEIN",
+        "last_price": 830.45,
+        "composite_score": 75.8,
+        "factor_scores": {
+          "gap_analysis": 94.8,
+          "volume_surge": 100.0,
+          "relative_strength": 86.6,
+          "atr_expansion": 47.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.85,
+        "signed_rs_excess": 7.32,
+        "signed_pct_above_sma20": 12.47
+      },
+      {
+        "symbol": "JINDRILL",
+        "last_price": 620.75,
+        "composite_score": 75.4,
+        "factor_scores": {
+          "gap_analysis": 66.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 51.2,
+          "price_structure": 90.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 71.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.99,
+        "signed_rs_excess": 13.16,
+        "signed_pct_above_sma20": 8.11
+      },
+      {
+        "symbol": "PWL",
+        "last_price": 151.38,
+        "composite_score": 75.0,
+        "factor_scores": {
+          "gap_analysis": 25.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 89.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.78,
+        "signed_rs_excess": 14.41,
+        "signed_pct_above_sma20": 20.6
+      },
+      {
+        "symbol": "RELTD",
+        "last_price": 179.01,
+        "composite_score": 75.0,
+        "factor_scores": {
+          "gap_analysis": 25.2,
+          "volume_surge": 100.0,
+          "relative_strength": 93.3,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.76,
+        "signed_rs_excess": 8.66,
+        "signed_pct_above_sma20": 11.71
+      },
+      {
+        "symbol": "CGCL",
+        "last_price": 252.64,
+        "composite_score": 74.7,
+        "factor_scores": {
+          "gap_analysis": 32.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 53.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 81.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.99,
+        "signed_rs_excess": 11.8,
+        "signed_pct_above_sma20": 13.02
+      },
+      {
+        "symbol": "MASTERTR",
+        "last_price": 94.8,
+        "composite_score": 74.1,
+        "factor_scores": {
+          "gap_analysis": 3.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 62.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.11,
+        "signed_rs_excess": 25.32,
+        "signed_pct_above_sma20": 20.96
+      },
+      {
+        "symbol": "AZAD",
+        "last_price": 2476.1,
+        "composite_score": 73.6,
+        "factor_scores": {
+          "gap_analysis": 15.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.48,
+        "signed_rs_excess": 20.27,
+        "signed_pct_above_sma20": 16.45
+      },
+      {
+        "symbol": "MAPMYINDIA",
+        "last_price": 1069.2,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 5.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 73.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.16,
+        "signed_rs_excess": 17.82,
+        "signed_pct_above_sma20": 20.18
+      },
+      {
+        "symbol": "AETHER",
+        "last_price": 1485.8,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 27.3,
+          "volume_surge": 100.0,
+          "relative_strength": 95.7,
+          "atr_expansion": 73.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.82,
+        "signed_rs_excess": 9.14,
+        "signed_pct_above_sma20": 16.08
+      },
+      {
+        "symbol": "SYRMA",
+        "last_price": 1441.0,
+        "composite_score": 72.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 69.7,
+          "atr_expansion": 67.1,
+          "price_structure": 80.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.24,
+        "signed_rs_excess": 3.93,
+        "signed_pct_above_sma20": 6.07
+      },
+      {
+        "symbol": "CUPID",
+        "last_price": 210.01,
+        "composite_score": 72.7,
+        "factor_scores": {
+          "gap_analysis": 16.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 85.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.5,
+        "signed_rs_excess": 10.23,
+        "signed_pct_above_sma20": 13.99
+      },
+      {
+        "symbol": "SUVEN",
+        "last_price": 346.75,
+        "composite_score": 72.7,
+        "factor_scores": {
+          "gap_analysis": 30.5,
+          "volume_surge": 76.4,
+          "relative_strength": 100.0,
+          "atr_expansion": 93.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 76.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.91,
+        "signed_rs_excess": 17.26,
+        "signed_pct_above_sma20": 22.49
+      },
+      {
+        "symbol": "MOSCHIP",
+        "last_price": 238.62,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 24.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 65.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.74,
+        "signed_rs_excess": 15.32,
+        "signed_pct_above_sma20": 11.14
+      },
+      {
+        "symbol": "KAYNES",
+        "last_price": 3429.1,
+        "composite_score": 72.1,
+        "factor_scores": {
+          "gap_analysis": 31.9,
+          "volume_surge": 100.0,
+          "relative_strength": 97.2,
+          "atr_expansion": 59.3,
+          "price_structure": 82.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.96,
+        "signed_rs_excess": 9.45,
+        "signed_pct_above_sma20": 6.42
+      },
+      {
+        "symbol": "FILATEX",
+        "last_price": 61.06,
+        "composite_score": 71.9,
+        "factor_scores": {
+          "gap_analysis": 16.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 66.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.5,
+        "signed_rs_excess": 17.36,
+        "signed_pct_above_sma20": 12.65
+      },
+      {
+        "symbol": "SWIGGY",
+        "last_price": 280.95,
+        "composite_score": 71.9,
+        "factor_scores": {
+          "gap_analysis": 7.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 51.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.23,
+        "signed_rs_excess": 13.71,
+        "signed_pct_above_sma20": 11.37
+      },
+      {
+        "symbol": "LODHA",
+        "last_price": 1192.15,
+        "composite_score": 71.8,
+        "factor_scores": {
+          "gap_analysis": 21.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 56.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 79.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.65,
+        "signed_rs_excess": 19.36,
+        "signed_pct_above_sma20": 21.89
+      },
+      {
+        "symbol": "BHARATSE",
+        "last_price": 245.09,
+        "composite_score": 71.7,
+        "factor_scores": {
+          "gap_analysis": 10.0,
+          "volume_surge": 90.0,
+          "relative_strength": 63.4,
+          "atr_expansion": 97.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 90.0,
+          "volume_profile": 79.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.3,
+        "signed_rs_excess": 2.68,
+        "signed_pct_above_sma20": 20.72
+      }
+    ]
+  },
+  {
+    "date": "2026-07-21",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 24238.0,
+      "nifty_5d_change_pct": 0.11,
+      "vix": 13.0,
+      "banknifty_level": 57945.0
+    },
+    "candidates": [
+      {
+        "symbol": "ECLERX",
+        "last_price": 1877.5,
+        "composite_score": 80.2,
+        "factor_scores": {
+          "gap_analysis": 90.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 84.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 52.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.72,
+        "signed_rs_excess": 12.79,
+        "signed_pct_above_sma20": 21.59
+      },
+      {
+        "symbol": "JAYBARMARU",
+        "last_price": 168.36,
+        "composite_score": 80.1,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 74.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 50.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -3.98,
+        "signed_rs_excess": -14.72,
+        "signed_pct_above_sma20": -4.79
+      },
+      {
+        "symbol": "MBAPL",
+        "last_price": 145.55,
+        "composite_score": 79.6,
+        "factor_scores": {
+          "gap_analysis": 64.8,
+          "volume_surge": 100.0,
+          "relative_strength": 97.2,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.95,
+        "signed_rs_excess": 9.45,
+        "signed_pct_above_sma20": 18.88
+      },
+      {
+        "symbol": "BEPL",
+        "last_price": 127.77,
+        "composite_score": 77.2,
+        "factor_scores": {
+          "gap_analysis": 78.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.34,
+        "signed_rs_excess": 18.08,
+        "signed_pct_above_sma20": 22.76
+      },
+      {
+        "symbol": "BECTORFOOD",
+        "last_price": 210.08,
+        "composite_score": 76.5,
+        "factor_scores": {
+          "gap_analysis": 28.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 80.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.86,
+        "signed_rs_excess": 23.21,
+        "signed_pct_above_sma20": 16.86
+      },
+      {
+        "symbol": "RELAXO",
+        "last_price": 437.05,
+        "composite_score": 76.4,
+        "factor_scores": {
+          "gap_analysis": 63.2,
+          "volume_surge": 100.0,
+          "relative_strength": 97.3,
+          "atr_expansion": 79.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.9,
+        "signed_rs_excess": 9.46,
+        "signed_pct_above_sma20": 10.53
+      },
+      {
+        "symbol": "ORIENTHOT",
+        "last_price": 143.68,
+        "composite_score": 76.3,
+        "factor_scores": {
+          "gap_analysis": 39.7,
+          "volume_surge": 100.0,
+          "relative_strength": 87.9,
+          "atr_expansion": 92.5,
+          "price_structure": 80.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 90.0,
+          "volume_profile": 77.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -1.19,
+        "signed_rs_excess": 7.58,
+        "signed_pct_above_sma20": 6.07
+      },
+      {
+        "symbol": "ITDC",
+        "last_price": 773.9,
+        "composite_score": 76.0,
+        "factor_scores": {
+          "gap_analysis": 10.7,
+          "volume_surge": 100.0,
+          "relative_strength": 98.8,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 61.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.32,
+        "signed_rs_excess": 9.75,
+        "signed_pct_above_sma20": 16.5
+      },
+      {
+        "symbol": "GANDHAR",
+        "last_price": 228.32,
+        "composite_score": 74.8,
+        "factor_scores": {
+          "gap_analysis": 24.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 63.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.75,
+        "signed_rs_excess": 10.66,
+        "signed_pct_above_sma20": 18.22
+      },
+      {
+        "symbol": "DYCL",
+        "last_price": 445.65,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 25.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.75,
+        "signed_rs_excess": 20.45,
+        "signed_pct_above_sma20": 19.6
+      },
+      {
+        "symbol": "SGFIN",
+        "last_price": 671.9,
+        "composite_score": 74.3,
+        "factor_scores": {
+          "gap_analysis": 27.2,
+          "volume_surge": 100.0,
+          "relative_strength": 93.9,
+          "atr_expansion": 100.0,
+          "price_structure": 80.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 69.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.82,
+        "signed_rs_excess": 8.78,
+        "signed_pct_above_sma20": 6.03
+      },
+      {
+        "symbol": "SGMART",
+        "last_price": 677.85,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 22.0,
+          "volume_surge": 100.0,
+          "relative_strength": 93.7,
+          "atr_expansion": 90.2,
+          "price_structure": 96.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.66,
+        "signed_rs_excess": 8.74,
+        "signed_pct_above_sma20": 9.2
+      },
+      {
+        "symbol": "RESPONIND",
+        "last_price": 192.77,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 61.8,
+          "atr_expansion": 100.0,
+          "price_structure": 64.9,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.58,
+        "signed_rs_excess": 2.37,
+        "signed_pct_above_sma20": -2.99
+      },
+      {
+        "symbol": "JSFB",
+        "last_price": 531.6,
+        "composite_score": 71.8,
+        "factor_scores": {
+          "gap_analysis": 25.0,
+          "volume_surge": 100.0,
+          "relative_strength": 95.5,
+          "atr_expansion": 64.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.75,
+        "signed_rs_excess": 9.1,
+        "signed_pct_above_sma20": 12.51
+      },
+      {
+        "symbol": "KROSS",
+        "last_price": 208.32,
+        "composite_score": 71.8,
+        "factor_scores": {
+          "gap_analysis": 37.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 55.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.12,
+        "signed_rs_excess": 12.21,
+        "signed_pct_above_sma20": 11.37
+      },
+      {
+        "symbol": "AXISBANK",
+        "last_price": 1256.0,
+        "composite_score": 70.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 74.6,
+          "atr_expansion": 40.5,
+          "price_structure": 79.8,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -4.03,
+        "signed_rs_excess": -4.92,
+        "signed_pct_above_sma20": -5.96
+      },
+      {
+        "symbol": "GABRIEL",
+        "last_price": 1398.0,
+        "composite_score": 70.7,
+        "factor_scores": {
+          "gap_analysis": 8.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 62.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.25,
+        "signed_rs_excess": 10.4,
+        "signed_pct_above_sma20": 10.05
+      },
+      {
+        "symbol": "LXCHEM",
+        "last_price": 176.55,
+        "composite_score": 70.1,
+        "factor_scores": {
+          "gap_analysis": 24.4,
+          "volume_surge": 100.0,
+          "relative_strength": 87.0,
+          "atr_expansion": 63.3,
+          "price_structure": 98.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.73,
+        "signed_rs_excess": 7.41,
+        "signed_pct_above_sma20": 9.62
+      },
+      {
+        "symbol": "SDBL",
+        "last_price": 76.88,
+        "composite_score": 70.0,
+        "factor_scores": {
+          "gap_analysis": 3.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 52.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 50.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.09,
+        "signed_rs_excess": 14.19,
+        "signed_pct_above_sma20": 12.32
+      },
+      {
+        "symbol": "JAYNECOIND",
+        "last_price": 84.03,
+        "composite_score": 69.5,
+        "factor_scores": {
+          "gap_analysis": 10.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 85.8,
+          "price_structure": 75.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.31,
+        "signed_rs_excess": -10.65,
+        "signed_pct_above_sma20": -5.07
+      },
+      {
+        "symbol": "LANDMARK",
+        "last_price": 535.35,
+        "composite_score": 69.3,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 0.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 93.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.51,
+        "signed_rs_excess": 26.48,
+        "signed_pct_above_sma20": 17.62
+      },
+      {
+        "symbol": "TIMETECHNO",
+        "last_price": 213.11,
+        "composite_score": 69.3,
+        "factor_scores": {
+          "gap_analysis": 0.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 56.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.02,
+        "signed_rs_excess": 13.79,
+        "signed_pct_above_sma20": 15.61
+      },
+      {
+        "symbol": "POONAWALLA",
+        "last_price": 467.25,
+        "composite_score": 68.5,
+        "factor_scores": {
+          "gap_analysis": 81.6,
+          "volume_surge": 100.0,
+          "relative_strength": 69.0,
+          "atr_expansion": 57.3,
+          "price_structure": 61.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 61.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.45,
+        "signed_rs_excess": -3.79,
+        "signed_pct_above_sma20": 2.22
+      },
+      {
+        "symbol": "RALLIS",
+        "last_price": 239.87,
+        "composite_score": 68.0,
+        "factor_scores": {
+          "gap_analysis": 86.3,
+          "volume_surge": 100.0,
+          "relative_strength": 69.4,
+          "atr_expansion": 46.2,
+          "price_structure": 72.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.59,
+        "signed_rs_excess": 3.88,
+        "signed_pct_above_sma20": 4.45
+      },
+      {
+        "symbol": "HDFCBANK",
+        "last_price": 777.6,
+        "composite_score": 67.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 75.2,
+          "atr_expansion": 34.5,
+          "price_structure": 67.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 57.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -3.61,
+        "signed_rs_excess": -5.05,
+        "signed_pct_above_sma20": -3.41
+      }
+    ]
+  },
+  {
+    "date": "2026-07-30",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 24250.0,
+      "nifty_5d_change_pct": 1.06,
+      "vix": 12.0,
+      "banknifty_level": 57206.0
+    },
+    "candidates": [
+      {
+        "symbol": "SKMEGGPROD",
+        "last_price": 273.5,
+        "composite_score": 83.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 68.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.12,
+        "signed_rs_excess": -13.97,
+        "signed_pct_above_sma20": -13.8
+      },
+      {
+        "symbol": "ASIANTILES",
+        "last_price": 60.71,
+        "composite_score": 83.0,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 94.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.78,
+        "signed_rs_excess": 38.76,
+        "signed_pct_above_sma20": 21.83
+      },
+      {
+        "symbol": "SHK",
+        "last_price": 163.44,
+        "composite_score": 80.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 7.31,
+        "signed_rs_excess": 16.63,
+        "signed_pct_above_sma20": 20.44
+      },
+      {
+        "symbol": "PARADEEP",
+        "last_price": 156.54,
+        "composite_score": 79.0,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 54.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.02,
+        "signed_rs_excess": 11.31,
+        "signed_pct_above_sma20": 10.93
+      },
+      {
+        "symbol": "J&KBANK",
+        "last_price": 154.63,
+        "composite_score": 78.2,
+        "factor_scores": {
+          "gap_analysis": 26.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.79,
+        "signed_rs_excess": -15.07,
+        "signed_pct_above_sma20": -11.43
+      },
+      {
+        "symbol": "BLUESTONE",
+        "last_price": 770.25,
+        "composite_score": 76.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 59.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.0,
+        "signed_rs_excess": -1.81,
+        "signed_pct_above_sma20": 18.23
+      },
+      {
+        "symbol": "PFOCUS",
+        "last_price": 308.72,
+        "composite_score": 75.9,
+        "factor_scores": {
+          "gap_analysis": 53.8,
+          "volume_surge": 100.0,
+          "relative_strength": 85.7,
+          "atr_expansion": 71.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.61,
+        "signed_rs_excess": 7.13,
+        "signed_pct_above_sma20": 14.48
+      },
+      {
+        "symbol": "COFORGE",
+        "last_price": 1714.9,
+        "composite_score": 75.8,
+        "factor_scores": {
+          "gap_analysis": 67.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 54.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.02,
+        "signed_rs_excess": 15.49,
+        "signed_pct_above_sma20": 13.21
+      },
+      {
+        "symbol": "INFY",
+        "last_price": 1155.6,
+        "composite_score": 75.5,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 93.9,
+          "atr_expansion": 46.3,
+          "price_structure": 87.9,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.74,
+        "signed_rs_excess": 8.78,
+        "signed_pct_above_sma20": 7.59
+      },
+      {
+        "symbol": "KAYNES",
+        "last_price": 3638.6,
+        "composite_score": 75.4,
+        "factor_scores": {
+          "gap_analysis": 44.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 49.7,
+          "price_structure": 99.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.34,
+        "signed_rs_excess": 10.82,
+        "signed_pct_above_sma20": 9.88
+      },
+      {
+        "symbol": "TFCILTD",
+        "last_price": 100.57,
+        "composite_score": 75.0,
+        "factor_scores": {
+          "gap_analysis": 41.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 72.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.25,
+        "signed_rs_excess": 21.87,
+        "signed_pct_above_sma20": 20.71
+      },
+      {
+        "symbol": "VSTIND",
+        "last_price": 220.0,
+        "composite_score": 73.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 81.6,
+          "atr_expansion": 43.5,
+          "price_structure": 91.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -4.91,
+        "signed_rs_excess": -6.31,
+        "signed_pct_above_sma20": -8.2
+      },
+      {
+        "symbol": "TDPOWERSYS",
+        "last_price": 518.0,
+        "composite_score": 73.6,
+        "factor_scores": {
+          "gap_analysis": 15.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 72.9,
+          "price_structure": 91.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.47,
+        "signed_rs_excess": -11.81,
+        "signed_pct_above_sma20": -8.24
+      },
+      {
+        "symbol": "FSL",
+        "last_price": 293.58,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 37.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 61.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.12,
+        "signed_rs_excess": 10.12,
+        "signed_pct_above_sma20": 13.79
+      },
+      {
+        "symbol": "LXCHEM",
+        "last_price": 200.51,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 24.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 74.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.73,
+        "signed_rs_excess": 13.83,
+        "signed_pct_above_sma20": 17.03
+      },
+      {
+        "symbol": "KPITTECH",
+        "last_price": 638.75,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 41.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 51.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.25,
+        "signed_rs_excess": 14.05,
+        "signed_pct_above_sma20": 12.76
+      },
+      {
+        "symbol": "PCBL",
+        "last_price": 365.7,
+        "composite_score": 72.8,
+        "factor_scores": {
+          "gap_analysis": 27.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 65.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.82,
+        "signed_rs_excess": 12.48,
+        "signed_pct_above_sma20": 13.91
+      },
+      {
+        "symbol": "NEWGEN",
+        "last_price": 560.5,
+        "composite_score": 72.4,
+        "factor_scores": {
+          "gap_analysis": 57.0,
+          "volume_surge": 100.0,
+          "relative_strength": 70.4,
+          "atr_expansion": 100.0,
+          "price_structure": 88.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 57.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.71,
+        "signed_rs_excess": 4.07,
+        "signed_pct_above_sma20": 7.62
+      },
+      {
+        "symbol": "BSOFT",
+        "last_price": 311.15,
+        "composite_score": 72.2,
+        "factor_scores": {
+          "gap_analysis": 45.5,
+          "volume_surge": 100.0,
+          "relative_strength": 95.3,
+          "atr_expansion": 60.9,
+          "price_structure": 92.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 69.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.37,
+        "signed_rs_excess": 9.06,
+        "signed_pct_above_sma20": 8.39
+      },
+      {
+        "symbol": "ARIS",
+        "last_price": 128.57,
+        "composite_score": 72.2,
+        "factor_scores": {
+          "gap_analysis": 33.2,
+          "volume_surge": 100.0,
+          "relative_strength": 88.6,
+          "atr_expansion": 69.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.0,
+        "signed_rs_excess": 7.72,
+        "signed_pct_above_sma20": 11.87
+      },
+      {
+        "symbol": "SWIGGY",
+        "last_price": 287.34,
+        "composite_score": 71.8,
+        "factor_scores": {
+          "gap_analysis": 43.8,
+          "volume_surge": 100.0,
+          "relative_strength": 89.2,
+          "atr_expansion": 67.6,
+          "price_structure": 91.7,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.31,
+        "signed_rs_excess": 7.84,
+        "signed_pct_above_sma20": 8.34
+      },
+      {
+        "symbol": "EQUITASBNK",
+        "last_price": 73.13,
+        "composite_score": 71.7,
+        "factor_scores": {
+          "gap_analysis": 41.5,
+          "volume_surge": 100.0,
+          "relative_strength": 92.6,
+          "atr_expansion": 75.6,
+          "price_structure": 83.9,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -1.25,
+        "signed_rs_excess": -8.51,
+        "signed_pct_above_sma20": -6.78
+      },
+      {
+        "symbol": "LLOYDSME",
+        "last_price": 2051.3,
+        "composite_score": 71.4,
+        "factor_scores": {
+          "gap_analysis": 33.3,
+          "volume_surge": 99.9,
+          "relative_strength": 92.7,
+          "atr_expansion": 54.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 74.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.0,
+        "signed_rs_excess": 8.54,
+        "signed_pct_above_sma20": 10.19
+      },
+      {
+        "symbol": "SONATSOFTW",
+        "last_price": 317.45,
+        "composite_score": 71.3,
+        "factor_scores": {
+          "gap_analysis": 43.1,
+          "volume_surge": 100.0,
+          "relative_strength": 81.7,
+          "atr_expansion": 76.9,
+          "price_structure": 90.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.29,
+        "signed_rs_excess": 6.33,
+        "signed_pct_above_sma20": 8.04
+      },
+      {
+        "symbol": "TCS",
+        "last_price": 2446.6,
+        "composite_score": 71.2,
+        "factor_scores": {
+          "gap_analysis": 58.3,
+          "volume_surge": 83.7,
+          "relative_strength": 98.7,
+          "atr_expansion": 43.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 75.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.75,
+        "signed_rs_excess": 9.73,
+        "signed_pct_above_sma20": 11.59
+      }
+    ]
+  },
+  {
+    "date": "2026-08-10",
+    "split": "tuning",
+    "market_context": {
+      "nifty_level": 24571.0,
+      "nifty_5d_change_pct": 0.77,
+      "vix": 12.2,
+      "banknifty_level": 57746.0
+    },
+    "candidates": [
+      {
+        "symbol": "MUTHOOTMF",
+        "last_price": 214.02,
+        "composite_score": 83.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 98.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.88,
+        "signed_rs_excess": -13.58,
+        "signed_pct_above_sma20": -11.76
+      },
+      {
+        "symbol": "JAYBARMARU",
+        "last_price": 139.32,
+        "composite_score": 82.2,
+        "factor_scores": {
+          "gap_analysis": 79.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 97.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 88.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.39,
+        "signed_rs_excess": -14.01,
+        "signed_pct_above_sma20": -16.26
+      },
+      {
+        "symbol": "IXIGO",
+        "last_price": 176.25,
+        "composite_score": 82.1,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 86.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -3.29,
+        "signed_rs_excess": -11.58,
+        "signed_pct_above_sma20": -10.35
+      },
+      {
+        "symbol": "SBCL",
+        "last_price": 920.9,
+        "composite_score": 79.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 61.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 10.76,
+        "signed_rs_excess": 22.11,
+        "signed_pct_above_sma20": 21.98
+      },
+      {
+        "symbol": "LLOYDSENGG",
+        "last_price": 96.88,
+        "composite_score": 79.7,
+        "factor_scores": {
+          "gap_analysis": 95.6,
+          "volume_surge": 100.0,
+          "relative_strength": 92.5,
+          "atr_expansion": 70.3,
+          "price_structure": 87.7,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.87,
+        "signed_rs_excess": 8.5,
+        "signed_pct_above_sma20": 7.55
+      },
+      {
+        "symbol": "ENRIN",
+        "last_price": 3648.8,
+        "composite_score": 78.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 54.3,
+          "price_structure": 98.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 6.08,
+        "signed_rs_excess": 12.17,
+        "signed_pct_above_sma20": 9.71
+      },
+      {
+        "symbol": "VIKRAMSOLR",
+        "last_price": 164.34,
+        "composite_score": 78.2,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 91.3,
+          "atr_expansion": 59.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -6.3,
+        "signed_rs_excess": -8.26,
+        "signed_pct_above_sma20": -10.39
+      },
+      {
+        "symbol": "VARROC",
+        "last_price": 811.2,
+        "composite_score": 76.7,
+        "factor_scores": {
+          "gap_analysis": 80.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 61.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.42,
+        "signed_rs_excess": 18.67,
+        "signed_pct_above_sma20": 20.22
+      },
+      {
+        "symbol": "DEVYANI",
+        "last_price": 134.73,
+        "composite_score": 76.5,
+        "factor_scores": {
+          "gap_analysis": 17.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 66.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 95.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.53,
+        "signed_rs_excess": 17.23,
+        "signed_pct_above_sma20": 16.43
+      },
+      {
+        "symbol": "MOREPENLAB",
+        "last_price": 80.25,
+        "composite_score": 75.5,
+        "factor_scores": {
+          "gap_analysis": 36.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.11,
+        "signed_rs_excess": 39.92,
+        "signed_pct_above_sma20": 30.8
+      },
+      {
+        "symbol": "IMAGICAA",
+        "last_price": 52.14,
+        "composite_score": 75.4,
+        "factor_scores": {
+          "gap_analysis": 58.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 64.8,
+          "price_structure": 97.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.74,
+        "signed_rs_excess": 10.19,
+        "signed_pct_above_sma20": 9.44
+      },
+      {
+        "symbol": "ORIENTELEC",
+        "last_price": 189.18,
+        "composite_score": 75.1,
+        "factor_scores": {
+          "gap_analysis": 64.8,
+          "volume_surge": 100.0,
+          "relative_strength": 87.4,
+          "atr_expansion": 70.1,
+          "price_structure": 90.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.95,
+        "signed_rs_excess": 7.48,
+        "signed_pct_above_sma20": 8.04
+      },
+      {
+        "symbol": "GULPOLY",
+        "last_price": 204.87,
+        "composite_score": 74.9,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 65.3,
+          "atr_expansion": 91.7,
+          "price_structure": 82.7,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.76,
+        "signed_rs_excess": 3.06,
+        "signed_pct_above_sma20": 6.55
+      },
+      {
+        "symbol": "DECNGOLD",
+        "last_price": 216.22,
+        "composite_score": 74.8,
+        "factor_scores": {
+          "gap_analysis": 62.9,
+          "volume_surge": 100.0,
+          "relative_strength": 92.9,
+          "atr_expansion": 74.6,
+          "price_structure": 95.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 55.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.89,
+        "signed_rs_excess": 8.58,
+        "signed_pct_above_sma20": 9.09
+      },
+      {
+        "symbol": "SOTL",
+        "last_price": 756.45,
+        "composite_score": 74.5,
+        "factor_scores": {
+          "gap_analysis": 0.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 94.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 61.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.01,
+        "signed_rs_excess": 24.94,
+        "signed_pct_above_sma20": 20.35
+      },
+      {
+        "symbol": "JUBLFOOD",
+        "last_price": 486.5,
+        "composite_score": 74.5,
+        "factor_scores": {
+          "gap_analysis": 21.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 43.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 95.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.63,
+        "signed_rs_excess": 10.24,
+        "signed_pct_above_sma20": 10.85
+      },
+      {
+        "symbol": "SAPPHIRE",
+        "last_price": 224.22,
+        "composite_score": 74.3,
+        "factor_scores": {
+          "gap_analysis": 9.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 78.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.27,
+        "signed_rs_excess": 20.36,
+        "signed_pct_above_sma20": 18.97
+      },
+      {
+        "symbol": "EMIL",
+        "last_price": 165.83,
+        "composite_score": 74.0,
+        "factor_scores": {
+          "gap_analysis": 27.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 77.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.81,
+        "signed_rs_excess": 26.64,
+        "signed_pct_above_sma20": 23.7
+      },
+      {
+        "symbol": "TFCILTD",
+        "last_price": 117.48,
+        "composite_score": 74.0,
+        "factor_scores": {
+          "gap_analysis": 50.8,
+          "volume_surge": 77.5,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 76.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.53,
+        "signed_rs_excess": 14.56,
+        "signed_pct_above_sma20": 24.95
+      },
+      {
+        "symbol": "HINDALCO",
+        "last_price": 1059.6,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 32.4,
+          "volume_surge": 100.0,
+          "relative_strength": 89.9,
+          "atr_expansion": 31.1,
+          "price_structure": 94.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 95.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.97,
+        "signed_rs_excess": 7.97,
+        "signed_pct_above_sma20": 8.8
+      },
+      {
+        "symbol": "RELIGARE",
+        "last_price": 232.35,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 21.4,
+          "volume_surge": 100.0,
+          "relative_strength": 94.9,
+          "atr_expansion": 56.6,
+          "price_structure": 97.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.64,
+        "signed_rs_excess": -8.98,
+        "signed_pct_above_sma20": -9.4
+      },
+      {
+        "symbol": "RBA",
+        "last_price": 94.92,
+        "composite_score": 72.5,
+        "factor_scores": {
+          "gap_analysis": 4.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 70.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 100.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.13,
+        "signed_rs_excess": 41.67,
+        "signed_pct_above_sma20": 31.77
+      },
+      {
+        "symbol": "BAJAJELEC",
+        "last_price": 371.15,
+        "composite_score": 72.3,
+        "factor_scores": {
+          "gap_analysis": 27.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 61.0,
+          "price_structure": 99.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.81,
+        "signed_rs_excess": 10.72,
+        "signed_pct_above_sma20": 9.91
+      },
+      {
+        "symbol": "PACEDIGITK",
+        "last_price": 181.95,
+        "composite_score": 71.9,
+        "factor_scores": {
+          "gap_analysis": 23.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 65.9,
+          "price_structure": 95.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 74.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.69,
+        "signed_rs_excess": -12.18,
+        "signed_pct_above_sma20": -8.99
+      },
+      {
+        "symbol": "FSL",
+        "last_price": 279.85,
+        "composite_score": 71.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 84.2,
+          "relative_strength": 90.7,
+          "atr_expansion": 100.0,
+          "price_structure": 51.9,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 54.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -3.04,
+        "signed_rs_excess": -8.14,
+        "signed_pct_above_sma20": -0.37
+      }
+    ]
+  },
+  {
+    "date": "2026-08-13",
+    "split": "holdout",
+    "market_context": {
+      "nifty_level": 24436.0,
+      "nifty_5d_change_pct": -0.77,
+      "vix": 11.7,
+      "banknifty_level": 57886.0
+    },
+    "candidates": [
+      {
+        "symbol": "SENCO",
+        "last_price": 345.65,
+        "composite_score": 85.3,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 66.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -6.29,
+        "signed_rs_excess": -12.62,
+        "signed_pct_above_sma20": -11.3
+      },
+      {
+        "symbol": "CAMLINFINE",
+        "last_price": 107.94,
+        "composite_score": 84.6,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 85.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -5.18,
+        "signed_rs_excess": -15.83,
+        "signed_pct_above_sma20": -13.64
+      },
+      {
+        "symbol": "TDPOWERSYS",
+        "last_price": 740.0,
+        "composite_score": 82.2,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 86.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 9.36,
+        "signed_rs_excess": 23.89,
+        "signed_pct_above_sma20": 26.81
+      },
+      {
+        "symbol": "INDSWFTLAB",
+        "last_price": 300.0,
+        "composite_score": 81.6,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 80.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 6.4,
+        "signed_rs_excess": 30.96,
+        "signed_pct_above_sma20": 26.76
+      },
+      {
+        "symbol": "GODREJCP",
+        "last_price": 910.0,
+        "composite_score": 80.5,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 54.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -10.0,
+        "signed_rs_excess": -14.11,
+        "signed_pct_above_sma20": -13.76
+      },
+      {
+        "symbol": "FINCABLES",
+        "last_price": 1280.05,
+        "composite_score": 80.1,
+        "factor_scores": {
+          "gap_analysis": 88.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 60.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 73.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.66,
+        "signed_rs_excess": 28.34,
+        "signed_pct_above_sma20": 24.3
+      },
+      {
+        "symbol": "WEBELSOLAR",
+        "last_price": 85.29,
+        "composite_score": 79.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 99.3,
+          "atr_expansion": 64.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -4.99,
+        "signed_rs_excess": -9.87,
+        "signed_pct_above_sma20": -12.31
+      },
+      {
+        "symbol": "NATIONALUM",
+        "last_price": 420.0,
+        "composite_score": 79.4,
+        "factor_scores": {
+          "gap_analysis": 90.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 43.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.71,
+        "signed_rs_excess": 11.0,
+        "signed_pct_above_sma20": 16.53
+      },
+      {
+        "symbol": "MANINDS",
+        "last_price": 598.65,
+        "composite_score": 79.0,
+        "factor_scores": {
+          "gap_analysis": 94.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.84,
+        "signed_rs_excess": 13.05,
+        "signed_pct_above_sma20": 10.92
+      },
+      {
+        "symbol": "VIKRAN",
+        "last_price": 66.12,
+        "composite_score": 78.2,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 92.5,
+          "atr_expansion": 53.0,
+          "price_structure": 89.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -9.02,
+        "signed_rs_excess": -8.51,
+        "signed_pct_above_sma20": -7.92
+      },
+      {
+        "symbol": "RICOAUTO",
+        "last_price": 127.99,
+        "composite_score": 75.4,
+        "factor_scores": {
+          "gap_analysis": 27.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 94.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.83,
+        "signed_rs_excess": -17.09,
+        "signed_pct_above_sma20": -8.81
+      },
+      {
+        "symbol": "GIPCL",
+        "last_price": 170.51,
+        "composite_score": 75.1,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 95.1,
+          "atr_expansion": 41.7,
+          "price_structure": 87.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.47,
+        "signed_rs_excess": 9.01,
+        "signed_pct_above_sma20": 7.47
+      },
+      {
+        "symbol": "PNGSREVA",
+        "last_price": 620.75,
+        "composite_score": 75.0,
+        "factor_scores": {
+          "gap_analysis": 14.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.43,
+        "signed_rs_excess": 22.26,
+        "signed_pct_above_sma20": 35.52
+      },
+      {
+        "symbol": "MCX",
+        "last_price": 2970.1,
+        "composite_score": 74.8,
+        "factor_scores": {
+          "gap_analysis": 80.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 44.5,
+          "price_structure": 91.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.42,
+        "signed_rs_excess": 15.06,
+        "signed_pct_above_sma20": 8.3
+      },
+      {
+        "symbol": "CUPID",
+        "last_price": 289.87,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 52.4,
+          "volume_surge": 92.3,
+          "relative_strength": 100.0,
+          "atr_expansion": 61.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 83.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.57,
+        "signed_rs_excess": 15.74,
+        "signed_pct_above_sma20": 23.43
+      },
+      {
+        "symbol": "SURYAROSNI",
+        "last_price": 224.55,
+        "composite_score": 74.1,
+        "factor_scores": {
+          "gap_analysis": 51.8,
+          "volume_surge": 100.0,
+          "relative_strength": 91.0,
+          "atr_expansion": 67.0,
+          "price_structure": 83.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.56,
+        "signed_rs_excess": -8.2,
+        "signed_pct_above_sma20": -6.71
+      },
+      {
+        "symbol": "AARTIPHARM",
+        "last_price": 888.7,
+        "composite_score": 73.9,
+        "factor_scores": {
+          "gap_analysis": 30.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 67.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.93,
+        "signed_rs_excess": 30.88,
+        "signed_pct_above_sma20": 24.83
+      },
+      {
+        "symbol": "PANAMAPET",
+        "last_price": 480.55,
+        "composite_score": 73.1,
+        "factor_scores": {
+          "gap_analysis": 61.7,
+          "volume_surge": 100.0,
+          "relative_strength": 81.7,
+          "atr_expansion": 100.0,
+          "price_structure": 60.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 72.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.85,
+        "signed_rs_excess": 6.34,
+        "signed_pct_above_sma20": 2.06
+      },
+      {
+        "symbol": "SETL",
+        "last_price": 300.05,
+        "composite_score": 72.7,
+        "factor_scores": {
+          "gap_analysis": 51.5,
+          "volume_surge": 100.0,
+          "relative_strength": 93.5,
+          "atr_expansion": 74.6,
+          "price_structure": 83.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.55,
+        "signed_rs_excess": 8.7,
+        "signed_pct_above_sma20": 6.7
+      },
+      {
+        "symbol": "EMIL",
+        "last_price": 193.61,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 4.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 84.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.15,
+        "signed_rs_excess": 31.97,
+        "signed_pct_above_sma20": 36.12
+      },
+      {
+        "symbol": "EPL",
+        "last_price": 243.64,
+        "composite_score": 72.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 83.8,
+          "atr_expansion": 53.6,
+          "price_structure": 72.9,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.6,
+        "signed_rs_excess": 6.76,
+        "signed_pct_above_sma20": 4.58
+      },
+      {
+        "symbol": "KPIGREEN",
+        "last_price": 337.2,
+        "composite_score": 72.0,
+        "factor_scores": {
+          "gap_analysis": 27.5,
+          "volume_surge": 100.0,
+          "relative_strength": 99.0,
+          "atr_expansion": 58.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.83,
+        "signed_rs_excess": -9.79,
+        "signed_pct_above_sma20": -12.23
+      },
+      {
+        "symbol": "ELLEN",
+        "last_price": 323.8,
+        "composite_score": 71.7,
+        "factor_scores": {
+          "gap_analysis": 6.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 74.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.2,
+        "signed_rs_excess": 16.02,
+        "signed_pct_above_sma20": 13.91
+      },
+      {
+        "symbol": "GOODLUCK",
+        "last_price": 435.2,
+        "composite_score": 71.5,
+        "factor_scores": {
+          "gap_analysis": 24.0,
+          "volume_surge": 84.6,
+          "relative_strength": 100.0,
+          "atr_expansion": 77.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.72,
+        "signed_rs_excess": -12.05,
+        "signed_pct_above_sma20": -13.17
+      },
+      {
+        "symbol": "RSL",
+        "last_price": 155.92,
+        "composite_score": 71.3,
+        "factor_scores": {
+          "gap_analysis": 58.4,
+          "volume_surge": 100.0,
+          "relative_strength": 72.0,
+          "atr_expansion": 61.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.75,
+        "signed_rs_excess": 4.4,
+        "signed_pct_above_sma20": 10.51
+      }
+    ]
+  },
+  {
+    "date": "2026-08-24",
+    "split": "holdout",
+    "market_context": {
+      "nifty_level": 24252.0,
+      "nifty_5d_change_pct": -0.47,
+      "vix": 11.2,
+      "banknifty_level": 57762.0
+    },
+    "candidates": [
+      {
+        "symbol": "DHAMPURSUG",
+        "last_price": 185.23,
+        "composite_score": 80.7,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 81.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 51.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -3.04,
+        "signed_rs_excess": 15.57,
+        "signed_pct_above_sma20": 18.44
+      },
+      {
+        "symbol": "URBANCO",
+        "last_price": 158.6,
+        "composite_score": 79.6,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 60.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 4.43,
+        "signed_rs_excess": 10.31,
+        "signed_pct_above_sma20": 12.71
+      },
+      {
+        "symbol": "BALRAMCHIN",
+        "last_price": 729.35,
+        "composite_score": 79.6,
+        "factor_scores": {
+          "gap_analysis": 85.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 75.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 68.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.57,
+        "signed_rs_excess": 17.19,
+        "signed_pct_above_sma20": 13.98
+      },
+      {
+        "symbol": "DWARKESH",
+        "last_price": 53.63,
+        "composite_score": 78.8,
+        "factor_scores": {
+          "gap_analysis": 83.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 79.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 52.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.49,
+        "signed_rs_excess": 25.33,
+        "signed_pct_above_sma20": 25.36
+      },
+      {
+        "symbol": "WELCORP",
+        "last_price": 2311.9,
+        "composite_score": 78.3,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 47.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 8.47,
+        "signed_rs_excess": 23.88,
+        "signed_pct_above_sma20": 26.52
+      },
+      {
+        "symbol": "SHANTIGOLD",
+        "last_price": 269.58,
+        "composite_score": 76.8,
+        "factor_scores": {
+          "gap_analysis": 56.9,
+          "volume_surge": 100.0,
+          "relative_strength": 96.6,
+          "atr_expansion": 80.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.71,
+        "signed_rs_excess": 9.32,
+        "signed_pct_above_sma20": 16.25
+      },
+      {
+        "symbol": "AEROENTER",
+        "last_price": 140.07,
+        "composite_score": 76.4,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 99.7,
+          "atr_expansion": 84.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 95.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 9.94,
+        "signed_pct_above_sma20": 10.08
+      },
+      {
+        "symbol": "QUADFUTURE",
+        "last_price": 405.35,
+        "composite_score": 76.3,
+        "factor_scores": {
+          "gap_analysis": 21.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 81.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.65,
+        "signed_rs_excess": 12.92,
+        "signed_pct_above_sma20": 13.54
+      },
+      {
+        "symbol": "INDOBORAX",
+        "last_price": 511.85,
+        "composite_score": 75.2,
+        "factor_scores": {
+          "gap_analysis": 27.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 88.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.82,
+        "signed_rs_excess": 20.8,
+        "signed_pct_above_sma20": 20.95
+      },
+      {
+        "symbol": "SUVEN",
+        "last_price": 373.15,
+        "composite_score": 75.1,
+        "factor_scores": {
+          "gap_analysis": 30.3,
+          "volume_surge": 100.0,
+          "relative_strength": 97.3,
+          "atr_expansion": 89.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.91,
+        "signed_rs_excess": 9.46,
+        "signed_pct_above_sma20": 14.29
+      },
+      {
+        "symbol": "BLUSPRING",
+        "last_price": 128.98,
+        "composite_score": 74.9,
+        "factor_scores": {
+          "gap_analysis": 1.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 87.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.03,
+        "signed_rs_excess": 16.59,
+        "signed_pct_above_sma20": 12.35
+      },
+      {
+        "symbol": "MANINDS",
+        "last_price": 715.4,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 34.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 73.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.05,
+        "signed_rs_excess": 19.81,
+        "signed_pct_above_sma20": 23.67
+      },
+      {
+        "symbol": "AMAGI",
+        "last_price": 599.85,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 54.9,
+          "atr_expansion": 100.0,
+          "price_structure": 74.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.13,
+        "signed_rs_excess": -0.99,
+        "signed_pct_above_sma20": -4.92
+      },
+      {
+        "symbol": "MARSONS",
+        "last_price": 119.56,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 9.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 75.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 88.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.29,
+        "signed_rs_excess": 14.86,
+        "signed_pct_above_sma20": 11.12
+      },
+      {
+        "symbol": "AEROFLEX",
+        "last_price": 503.0,
+        "composite_score": 72.5,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 99.3,
+          "atr_expansion": 71.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 9.85,
+        "signed_pct_above_sma20": 11.96
+      },
+      {
+        "symbol": "SOLARA",
+        "last_price": 616.9,
+        "composite_score": 72.0,
+        "factor_scores": {
+          "gap_analysis": 73.4,
+          "volume_surge": 70.6,
+          "relative_strength": 100.0,
+          "atr_expansion": 64.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 52.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.2,
+        "signed_rs_excess": 20.89,
+        "signed_pct_above_sma20": 17.18
+      },
+      {
+        "symbol": "KIRIINDUS",
+        "last_price": 477.9,
+        "composite_score": 72.0,
+        "factor_scores": {
+          "gap_analysis": 19.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 65.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.57,
+        "signed_rs_excess": 16.62,
+        "signed_pct_above_sma20": 12.67
+      },
+      {
+        "symbol": "HSCL",
+        "last_price": 654.4,
+        "composite_score": 71.6,
+        "factor_scores": {
+          "gap_analysis": 4.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 75.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.13,
+        "signed_rs_excess": -15.75,
+        "signed_pct_above_sma20": -13.4
+      },
+      {
+        "symbol": "DALMIASUG",
+        "last_price": 497.95,
+        "composite_score": 71.5,
+        "factor_scores": {
+          "gap_analysis": 66.2,
+          "volume_surge": 47.2,
+          "relative_strength": 100.0,
+          "atr_expansion": 93.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 68.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -1.99,
+        "signed_rs_excess": 18.35,
+        "signed_pct_above_sma20": 20.41
+      },
+      {
+        "symbol": "BALUFORGE",
+        "last_price": 555.4,
+        "composite_score": 71.2,
+        "factor_scores": {
+          "gap_analysis": 34.4,
+          "volume_surge": 82.5,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.03,
+        "signed_rs_excess": 12.95,
+        "signed_pct_above_sma20": 17.21
+      },
+      {
+        "symbol": "JAYNECOIND",
+        "last_price": 99.89,
+        "composite_score": 71.1,
+        "factor_scores": {
+          "gap_analysis": 22.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 53.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.66,
+        "signed_rs_excess": 12.79,
+        "signed_pct_above_sma20": 10.46
+      },
+      {
+        "symbol": "STYLEBAAZA",
+        "last_price": 417.65,
+        "composite_score": 71.1,
+        "factor_scores": {
+          "gap_analysis": 13.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 70.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 54.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.4,
+        "signed_rs_excess": 14.81,
+        "signed_pct_above_sma20": 25.7
+      },
+      {
+        "symbol": "AGIIL",
+        "last_price": 291.25,
+        "composite_score": 71.0,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 65.3,
+          "atr_expansion": 50.1,
+          "price_structure": 67.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.21,
+        "signed_rs_excess": -3.06,
+        "signed_pct_above_sma20": -3.52
+      },
+      {
+        "symbol": "TRIVENI",
+        "last_price": 295.28,
+        "composite_score": 70.8,
+        "factor_scores": {
+          "gap_analysis": 0.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.02,
+        "signed_rs_excess": 11.3,
+        "signed_pct_above_sma20": 17.96
+      },
+      {
+        "symbol": "JBMA",
+        "last_price": 673.95,
+        "composite_score": 70.8,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 93.3,
+          "atr_expansion": 37.7,
+          "price_structure": 70.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 3.37,
+        "signed_rs_excess": 8.65,
+        "signed_pct_above_sma20": 4.07
+      }
+    ]
+  },
+  {
+    "date": "2026-09-02",
+    "split": "holdout",
+    "market_context": {
+      "nifty_level": 24056.0,
+      "nifty_5d_change_pct": -1.15,
+      "vix": 11.5,
+      "banknifty_level": 57410.0
+    },
+    "candidates": [
+      {
+        "symbol": "MANALIPETC",
+        "last_price": 84.04,
+        "composite_score": 82.0,
+        "factor_scores": {
+          "gap_analysis": 91.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 89.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 77.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.75,
+        "signed_rs_excess": 13.39,
+        "signed_pct_above_sma20": 17.67
+      },
+      {
+        "symbol": "HAPPSTMNDS",
+        "last_price": 362.7,
+        "composite_score": 78.5,
+        "factor_scores": {
+          "gap_analysis": 24.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.72,
+        "signed_rs_excess": -17.52,
+        "signed_pct_above_sma20": -12.18
+      },
+      {
+        "symbol": "GODREJAGRO",
+        "last_price": 654.4,
+        "composite_score": 78.4,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 92.0,
+          "atr_expansion": 60.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 5.64,
+        "signed_rs_excess": 8.41,
+        "signed_pct_above_sma20": 12.15
+      },
+      {
+        "symbol": "EBGNG",
+        "last_price": 650.5,
+        "composite_score": 76.1,
+        "factor_scores": {
+          "gap_analysis": 48.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 77.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.45,
+        "signed_rs_excess": 12.39,
+        "signed_pct_above_sma20": 11.73
+      },
+      {
+        "symbol": "JAYKAY",
+        "last_price": 161.97,
+        "composite_score": 75.2,
+        "factor_scores": {
+          "gap_analysis": 7.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 89.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.21,
+        "signed_rs_excess": 11.63,
+        "signed_pct_above_sma20": 12.0
+      },
+      {
+        "symbol": "ADANIENSOL",
+        "last_price": 1382.0,
+        "composite_score": 74.5,
+        "factor_scores": {
+          "gap_analysis": 41.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.24,
+        "signed_rs_excess": -12.18,
+        "signed_pct_above_sma20": -12.21
+      },
+      {
+        "symbol": "SSWL",
+        "last_price": 357.25,
+        "composite_score": 74.2,
+        "factor_scores": {
+          "gap_analysis": 47.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.42,
+        "signed_rs_excess": 23.87,
+        "signed_pct_above_sma20": 15.61
+      },
+      {
+        "symbol": "ATHERENERG",
+        "last_price": 1725.6,
+        "composite_score": 73.7,
+        "factor_scores": {
+          "gap_analysis": 45.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 55.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -1.38,
+        "signed_rs_excess": 21.03,
+        "signed_pct_above_sma20": 14.1
+      },
+      {
+        "symbol": "GHCLTEXTIL",
+        "last_price": 140.45,
+        "composite_score": 73.6,
+        "factor_scores": {
+          "gap_analysis": 30.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 70.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.91,
+        "signed_rs_excess": 12.97,
+        "signed_pct_above_sma20": 13.24
+      },
+      {
+        "symbol": "DIFFNKG",
+        "last_price": 477.5,
+        "composite_score": 73.3,
+        "factor_scores": {
+          "gap_analysis": 37.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 70.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 51.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -1.12,
+        "signed_rs_excess": 22.94,
+        "signed_pct_above_sma20": 16.48
+      },
+      {
+        "symbol": "MARINE",
+        "last_price": 432.6,
+        "composite_score": 73.2,
+        "factor_scores": {
+          "gap_analysis": 17.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 78.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.54,
+        "signed_rs_excess": 16.97,
+        "signed_pct_above_sma20": 17.42
+      },
+      {
+        "symbol": "VINCOFE",
+        "last_price": 176.85,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 76.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 65.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 11.06,
+        "signed_pct_above_sma20": 12.21
+      },
+      {
+        "symbol": "ELECTCAST",
+        "last_price": 83.83,
+        "composite_score": 72.3,
+        "factor_scores": {
+          "gap_analysis": 38.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 49.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.15,
+        "signed_rs_excess": 10.6,
+        "signed_pct_above_sma20": 11.89
+      },
+      {
+        "symbol": "GKSL",
+        "last_price": 162.45,
+        "composite_score": 72.2,
+        "factor_scores": {
+          "gap_analysis": 25.5,
+          "volume_surge": 100.0,
+          "relative_strength": 88.5,
+          "atr_expansion": 78.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.77,
+        "signed_rs_excess": 7.7,
+        "signed_pct_above_sma20": 10.49
+      },
+      {
+        "symbol": "AEROFLEX",
+        "last_price": 552.05,
+        "composite_score": 72.2,
+        "factor_scores": {
+          "gap_analysis": 8.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 75.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 74.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.27,
+        "signed_rs_excess": 12.5,
+        "signed_pct_above_sma20": 15.12
+      },
+      {
+        "symbol": "EPL",
+        "last_price": 240.35,
+        "composite_score": 71.9,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 79.1,
+          "atr_expansion": 80.5,
+          "price_structure": 63.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -6.13,
+        "signed_rs_excess": -5.81,
+        "signed_pct_above_sma20": -2.73
+      },
+      {
+        "symbol": "MANINFRA",
+        "last_price": 124.56,
+        "composite_score": 71.9,
+        "factor_scores": {
+          "gap_analysis": 29.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 54.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.87,
+        "signed_rs_excess": 10.54,
+        "signed_pct_above_sma20": 10.78
+      },
+      {
+        "symbol": "TNPETRO",
+        "last_price": 132.35,
+        "composite_score": 71.6,
+        "factor_scores": {
+          "gap_analysis": 6.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 73.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.19,
+        "signed_rs_excess": 17.03,
+        "signed_pct_above_sma20": 19.4
+      },
+      {
+        "symbol": "CYIENTDLM",
+        "last_price": 857.2,
+        "composite_score": 71.5,
+        "factor_scores": {
+          "gap_analysis": 11.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 67.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.36,
+        "signed_rs_excess": 12.56,
+        "signed_pct_above_sma20": 15.83
+      },
+      {
+        "symbol": "DYCL",
+        "last_price": 542.4,
+        "composite_score": 71.3,
+        "factor_scores": {
+          "gap_analysis": 1.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 76.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.04,
+        "signed_rs_excess": 27.8,
+        "signed_pct_above_sma20": 20.47
+      },
+      {
+        "symbol": "RELIGARE",
+        "last_price": 249.78,
+        "composite_score": 71.2,
+        "factor_scores": {
+          "gap_analysis": 58.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 50.5,
+          "price_structure": 80.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 65.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.75,
+        "signed_rs_excess": 10.48,
+        "signed_pct_above_sma20": 6.08
+      },
+      {
+        "symbol": "ENGINERSIN",
+        "last_price": 280.05,
+        "composite_score": 70.9,
+        "factor_scores": {
+          "gap_analysis": 14.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.43,
+        "signed_rs_excess": 13.0,
+        "signed_pct_above_sma20": 13.38
+      },
+      {
+        "symbol": "SUDARSCHEM",
+        "last_price": 1240.7,
+        "composite_score": 70.7,
+        "factor_scores": {
+          "gap_analysis": 73.3,
+          "volume_surge": 100.0,
+          "relative_strength": 59.5,
+          "atr_expansion": 68.7,
+          "price_structure": 83.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 61.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.2,
+        "signed_rs_excess": 1.91,
+        "signed_pct_above_sma20": 6.64
+      },
+      {
+        "symbol": "MOL",
+        "last_price": 64.85,
+        "composite_score": 70.4,
+        "factor_scores": {
+          "gap_analysis": 76.0,
+          "volume_surge": 76.3,
+          "relative_strength": 74.4,
+          "atr_expansion": 80.3,
+          "price_structure": 90.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.28,
+        "signed_rs_excess": 4.89,
+        "signed_pct_above_sma20": 8.12
+      },
+      {
+        "symbol": "SOTL",
+        "last_price": 771.4,
+        "composite_score": 70.3,
+        "factor_scores": {
+          "gap_analysis": 14.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 64.6,
+          "price_structure": 99.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.44,
+        "signed_rs_excess": 15.66,
+        "signed_pct_above_sma20": 9.85
+      }
+    ]
+  },
+  {
+    "date": "2026-09-11",
+    "split": "holdout",
+    "market_context": {
+      "nifty_level": 23478.0,
+      "nifty_5d_change_pct": -1.66,
+      "vix": 11.8,
+      "banknifty_level": 56472.0
+    },
+    "candidates": [
+      {
+        "symbol": "WHEELS",
+        "last_price": 2313.0,
+        "composite_score": 81.5,
+        "factor_scores": {
+          "gap_analysis": 96.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 91.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 54.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.89,
+        "signed_rs_excess": 41.47,
+        "signed_pct_above_sma20": 40.36
+      },
+      {
+        "symbol": "SHUKRAPHAR",
+        "last_price": 53.97,
+        "composite_score": 81.5,
+        "factor_scores": {
+          "gap_analysis": 94.4,
+          "volume_surge": 100.0,
+          "relative_strength": 77.9,
+          "atr_expansion": 82.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 95.0,
+          "volume_profile": 53.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.83,
+        "signed_rs_excess": 5.59,
+        "signed_pct_above_sma20": 15.81
+      },
+      {
+        "symbol": "MANINDS",
+        "last_price": 876.45,
+        "composite_score": 79.0,
+        "factor_scores": {
+          "gap_analysis": 48.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 85.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -1.46,
+        "signed_rs_excess": 12.12,
+        "signed_pct_above_sma20": 18.99
+      },
+      {
+        "symbol": "EBGNG",
+        "last_price": 677.95,
+        "composite_score": 76.8,
+        "factor_scores": {
+          "gap_analysis": 45.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 87.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.36,
+        "signed_rs_excess": 10.63,
+        "signed_pct_above_sma20": 10.28
+      },
+      {
+        "symbol": "REDINGTON",
+        "last_price": 392.0,
+        "composite_score": 76.4,
+        "factor_scores": {
+          "gap_analysis": 96.5,
+          "volume_surge": 100.0,
+          "relative_strength": 84.5,
+          "atr_expansion": 58.6,
+          "price_structure": 97.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.9,
+        "signed_rs_excess": 6.91,
+        "signed_pct_above_sma20": 9.51
+      },
+      {
+        "symbol": "GENESYS",
+        "last_price": 299.67,
+        "composite_score": 75.6,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 36.26,
+        "signed_pct_above_sma20": 35.9
+      },
+      {
+        "symbol": "SILVERTUC",
+        "last_price": 152.0,
+        "composite_score": 74.8,
+        "factor_scores": {
+          "gap_analysis": 23.7,
+          "volume_surge": 100.0,
+          "relative_strength": 93.9,
+          "atr_expansion": 98.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.71,
+        "signed_rs_excess": -8.78,
+        "signed_pct_above_sma20": -14.82
+      },
+      {
+        "symbol": "SHAREINDIA",
+        "last_price": 196.32,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 35.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 57.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 73.7,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.07,
+        "signed_rs_excess": 17.64,
+        "signed_pct_above_sma20": 12.61
+      },
+      {
+        "symbol": "ELLEN",
+        "last_price": 373.5,
+        "composite_score": 74.4,
+        "factor_scores": {
+          "gap_analysis": 37.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 71.4,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.11,
+        "signed_rs_excess": 14.68,
+        "signed_pct_above_sma20": 13.93
+      },
+      {
+        "symbol": "EIEL",
+        "last_price": 211.65,
+        "composite_score": 73.2,
+        "factor_scores": {
+          "gap_analysis": 80.3,
+          "volume_surge": 100.0,
+          "relative_strength": 99.1,
+          "atr_expansion": 49.3,
+          "price_structure": 84.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 55.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.41,
+        "signed_rs_excess": 9.83,
+        "signed_pct_above_sma20": 6.84
+      },
+      {
+        "symbol": "GRAPHITE",
+        "last_price": 824.8,
+        "composite_score": 73.1,
+        "factor_scores": {
+          "gap_analysis": 21.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 67.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 52.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.65,
+        "signed_rs_excess": 16.01,
+        "signed_pct_above_sma20": 13.28
+      },
+      {
+        "symbol": "SOLARA",
+        "last_price": 707.25,
+        "composite_score": 72.9,
+        "factor_scores": {
+          "gap_analysis": 2.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 74.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 72.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.07,
+        "signed_rs_excess": 13.95,
+        "signed_pct_above_sma20": 13.43
+      },
+      {
+        "symbol": "INDOCO",
+        "last_price": 254.25,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 54.2,
+          "volume_surge": 100.0,
+          "relative_strength": 75.3,
+          "atr_expansion": 100.0,
+          "price_structure": 82.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.63,
+        "signed_rs_excess": -5.06,
+        "signed_pct_above_sma20": 6.45
+      },
+      {
+        "symbol": "VSSL",
+        "last_price": 392.0,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 26.2,
+          "volume_surge": 100.0,
+          "relative_strength": 96.8,
+          "atr_expansion": 74.6,
+          "price_structure": 96.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.79,
+        "signed_rs_excess": 9.36,
+        "signed_pct_above_sma20": 9.24
+      },
+      {
+        "symbol": "IKIO",
+        "last_price": 231.73,
+        "composite_score": 72.5,
+        "factor_scores": {
+          "gap_analysis": 7.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.21,
+        "signed_rs_excess": 12.9,
+        "signed_pct_above_sma20": 13.37
+      },
+      {
+        "symbol": "EXCELSOFT",
+        "last_price": 80.08,
+        "composite_score": 71.8,
+        "factor_scores": {
+          "gap_analysis": 27.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 63.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.84,
+        "signed_rs_excess": 14.99,
+        "signed_pct_above_sma20": 12.09
+      },
+      {
+        "symbol": "FINCABLES",
+        "last_price": 1418.4,
+        "composite_score": 71.8,
+        "factor_scores": {
+          "gap_analysis": 3.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 65.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 97.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.12,
+        "signed_rs_excess": 13.09,
+        "signed_pct_above_sma20": 10.51
+      },
+      {
+        "symbol": "PAISALO",
+        "last_price": 83.05,
+        "composite_score": 71.1,
+        "factor_scores": {
+          "gap_analysis": 17.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 53.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 79.6,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.53,
+        "signed_rs_excess": 19.83,
+        "signed_pct_above_sma20": 16.93
+      },
+      {
+        "symbol": "KEI",
+        "last_price": 4640.0,
+        "composite_score": 71.1,
+        "factor_scores": {
+          "gap_analysis": 7.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.3,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.21,
+        "signed_rs_excess": -11.24,
+        "signed_pct_above_sma20": -13.37
+      },
+      {
+        "symbol": "ATHERENERG",
+        "last_price": 1658.3,
+        "composite_score": 71.0,
+        "factor_scores": {
+          "gap_analysis": 71.7,
+          "volume_surge": 100.0,
+          "relative_strength": 64.2,
+          "atr_expansion": 64.1,
+          "price_structure": 83.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 65.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.15,
+        "signed_rs_excess": 2.84,
+        "signed_pct_above_sma20": 6.72
+      },
+      {
+        "symbol": "RIR",
+        "last_price": 177.38,
+        "composite_score": 70.9,
+        "factor_scores": {
+          "gap_analysis": 16.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 90.5,
+          "price_structure": 78.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 69.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.48,
+        "signed_rs_excess": 14.22,
+        "signed_pct_above_sma20": 5.62
+      },
+      {
+        "symbol": "KROSS",
+        "last_price": 231.54,
+        "composite_score": 70.8,
+        "factor_scores": {
+          "gap_analysis": 16.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 58.8,
+          "price_structure": 98.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.49,
+        "signed_rs_excess": 11.22,
+        "signed_pct_above_sma20": 9.66
+      },
+      {
+        "symbol": "SHAKTIPUMP",
+        "last_price": 503.2,
+        "composite_score": 70.2,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 91.1,
+          "atr_expansion": 42.6,
+          "price_structure": 65.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.4,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 8.36,
+        "signed_rs_excess": 8.22,
+        "signed_pct_above_sma20": 3.07
+      },
+      {
+        "symbol": "WABAG",
+        "last_price": 2211.8,
+        "composite_score": 69.7,
+        "factor_scores": {
+          "gap_analysis": 6.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 59.6,
+          "price_structure": 95.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 77.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.19,
+        "signed_rs_excess": 11.64,
+        "signed_pct_above_sma20": 9.02
+      },
+      {
+        "symbol": "CEIGALL",
+        "last_price": 379.1,
+        "composite_score": 69.7,
+        "factor_scores": {
+          "gap_analysis": 5.3,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 56.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.16,
+        "signed_rs_excess": 10.74,
+        "signed_pct_above_sma20": 11.81
+      }
+    ]
+  },
+  {
+    "date": "2026-09-23",
+    "split": "holdout",
+    "market_context": {
+      "nifty_level": 23329.0,
+      "nifty_5d_change_pct": 0.91,
+      "vix": 11.0,
+      "banknifty_level": 56216.0
+    },
+    "candidates": [
+      {
+        "symbol": "ASTEC",
+        "last_price": 794.5,
+        "composite_score": 79.6,
+        "factor_scores": {
+          "gap_analysis": 20.4,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 100.0,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 90.0,
+          "volume_profile": 71.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.61,
+        "signed_rs_excess": 17.02,
+        "signed_pct_above_sma20": 23.13
+      },
+      {
+        "symbol": "PROTEAN",
+        "last_price": 620.65,
+        "composite_score": 77.8,
+        "factor_scores": {
+          "gap_analysis": 75.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 65.7,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 73.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -2.27,
+        "signed_rs_excess": 26.05,
+        "signed_pct_above_sma20": 19.29
+      },
+      {
+        "symbol": "PARAGMILK",
+        "last_price": 279.4,
+        "composite_score": 77.5,
+        "factor_scores": {
+          "gap_analysis": 68.5,
+          "volume_surge": 100.0,
+          "relative_strength": 99.5,
+          "atr_expansion": 81.6,
+          "price_structure": 93.2,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.06,
+        "signed_rs_excess": 9.9,
+        "signed_pct_above_sma20": 8.64
+      },
+      {
+        "symbol": "INDSWFTLAB",
+        "last_price": 405.55,
+        "composite_score": 77.2,
+        "factor_scores": {
+          "gap_analysis": 75.5,
+          "volume_surge": 100.0,
+          "relative_strength": 80.8,
+          "atr_expansion": 93.3,
+          "price_structure": 95.9,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 77.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.27,
+        "signed_rs_excess": 6.17,
+        "signed_pct_above_sma20": 9.18
+      },
+      {
+        "symbol": "OPTIEMUS",
+        "last_price": 708.9,
+        "composite_score": 76.0,
+        "factor_scores": {
+          "gap_analysis": 4.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 75.1,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 95.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.13,
+        "signed_rs_excess": 16.27,
+        "signed_pct_above_sma20": 21.4
+      },
+      {
+        "symbol": "ROSSTECH",
+        "last_price": 1494.1,
+        "composite_score": 75.5,
+        "factor_scores": {
+          "gap_analysis": 10.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 84.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.3,
+        "signed_rs_excess": 17.16,
+        "signed_pct_above_sma20": 23.55
+      },
+      {
+        "symbol": "JAYKAY",
+        "last_price": 189.5,
+        "composite_score": 75.2,
+        "factor_scores": {
+          "gap_analysis": 25.6,
+          "volume_surge": 96.8,
+          "relative_strength": 100.0,
+          "atr_expansion": 95.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.77,
+        "signed_rs_excess": 18.69,
+        "signed_pct_above_sma20": 16.72
+      },
+      {
+        "symbol": "SYRMA",
+        "last_price": 1741.8,
+        "composite_score": 74.0,
+        "factor_scores": {
+          "gap_analysis": 13.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 76.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.39,
+        "signed_rs_excess": 14.62,
+        "signed_pct_above_sma20": 12.25
+      },
+      {
+        "symbol": "BLUESTONE",
+        "last_price": 930.4,
+        "composite_score": 73.9,
+        "factor_scores": {
+          "gap_analysis": 20.7,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 82.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.62,
+        "signed_rs_excess": 11.38,
+        "signed_pct_above_sma20": 10.94
+      },
+      {
+        "symbol": "MEESHO",
+        "last_price": 240.19,
+        "composite_score": 73.9,
+        "factor_scores": {
+          "gap_analysis": 41.5,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 61.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.25,
+        "signed_rs_excess": 12.17,
+        "signed_pct_above_sma20": 12.99
+      },
+      {
+        "symbol": "JASH",
+        "last_price": 584.75,
+        "composite_score": 73.5,
+        "factor_scores": {
+          "gap_analysis": 41.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 69.2,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.23,
+        "signed_rs_excess": 16.96,
+        "signed_pct_above_sma20": 16.5
+      },
+      {
+        "symbol": "IRISDOREME",
+        "last_price": 66.24,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 84.4,
+          "price_structure": 96.1,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.8,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 13.12,
+        "signed_pct_above_sma20": 9.22
+      },
+      {
+        "symbol": "MASPTOP50",
+        "last_price": 98.01,
+        "composite_score": 73.4,
+        "factor_scores": {
+          "gap_analysis": 83.2,
+          "volume_surge": 100.0,
+          "relative_strength": 59.6,
+          "atr_expansion": 100.0,
+          "price_structure": 86.6,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 62.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 2.5,
+        "signed_rs_excess": 1.92,
+        "signed_pct_above_sma20": 7.33
+      },
+      {
+        "symbol": "ARIHANTCAP",
+        "last_price": 90.99,
+        "composite_score": 73.1,
+        "factor_scores": {
+          "gap_analysis": 17.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 58.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.51,
+        "signed_rs_excess": 10.8,
+        "signed_pct_above_sma20": 14.02
+      },
+      {
+        "symbol": "AARTIPHARM",
+        "last_price": 883.75,
+        "composite_score": 72.8,
+        "factor_scores": {
+          "gap_analysis": 61.2,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.4,
+          "price_structure": 75.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 71.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.84,
+        "signed_rs_excess": 11.03,
+        "signed_pct_above_sma20": 5.07
+      },
+      {
+        "symbol": "PACEDIGITK",
+        "last_price": 167.74,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 100.0,
+          "volume_surge": 100.0,
+          "relative_strength": 91.5,
+          "atr_expansion": 59.4,
+          "price_structure": 59.3,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 65.0,
+          "volume_profile": 51.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 6.87,
+        "signed_rs_excess": 8.3,
+        "signed_pct_above_sma20": 1.87
+      },
+      {
+        "symbol": "CHEMPLASTS",
+        "last_price": 198.67,
+        "composite_score": 72.6,
+        "factor_scores": {
+          "gap_analysis": 3.1,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 86.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.1,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": -0.09,
+        "signed_rs_excess": 19.41,
+        "signed_pct_above_sma20": 13.14
+      },
+      {
+        "symbol": "ONEPOINT",
+        "last_price": 63.2,
+        "composite_score": 72.5,
+        "factor_scores": {
+          "gap_analysis": 15.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 74.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.45,
+        "signed_rs_excess": 10.59,
+        "signed_pct_above_sma20": 11.04
+      },
+      {
+        "symbol": "TRANSRAILL",
+        "last_price": 477.15,
+        "composite_score": 72.3,
+        "factor_scores": {
+          "gap_analysis": 46.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 50.9,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 50.0,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 1.4,
+        "signed_rs_excess": 16.93,
+        "signed_pct_above_sma20": 10.83
+      },
+      {
+        "symbol": "REGAAL",
+        "last_price": 97.21,
+        "composite_score": 72.1,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 75.5,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 50.3,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 21.03,
+        "signed_pct_above_sma20": 10.69
+      },
+      {
+        "symbol": "GABRIEL",
+        "last_price": 1471.4,
+        "composite_score": 72.0,
+        "factor_scores": {
+          "gap_analysis": 2.6,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 68.4,
+          "price_structure": 92.5,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.08,
+        "signed_rs_excess": 12.23,
+        "signed_pct_above_sma20": 8.49
+      },
+      {
+        "symbol": "KPIGREEN",
+        "last_price": 346.45,
+        "composite_score": 71.5,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 54.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 75.0,
+          "volume_profile": 71.2,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 24.09,
+        "signed_pct_above_sma20": 14.73
+      },
+      {
+        "symbol": "EPACKPEB",
+        "last_price": 250.34,
+        "composite_score": 71.2,
+        "factor_scores": {
+          "gap_analysis": 12.8,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 77.2,
+          "price_structure": 90.4,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 72.5,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.38,
+        "signed_rs_excess": 12.23,
+        "signed_pct_above_sma20": 8.09
+      },
+      {
+        "symbol": "ENGINERSIN",
+        "last_price": 302.55,
+        "composite_score": 71.0,
+        "factor_scores": {
+          "gap_analysis": 16.9,
+          "volume_surge": 100.0,
+          "relative_strength": 100.0,
+          "atr_expansion": 57.8,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 50.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.51,
+        "signed_rs_excess": 14.37,
+        "signed_pct_above_sma20": 12.21
+      },
+      {
+        "symbol": "SHUKRAPHAR",
+        "last_price": 58.59,
+        "composite_score": 70.9,
+        "factor_scores": {
+          "gap_analysis": 0.0,
+          "volume_surge": 100.0,
+          "relative_strength": 75.5,
+          "atr_expansion": 90.6,
+          "price_structure": 100.0,
+          "delivery_pct": 50.0,
+          "candlestick_pattern": 70.0,
+          "volume_profile": 70.9,
+          "sector_momentum": 50.0
+        },
+        "signed_gap_pct": 0.0,
+        "signed_rs_excess": 5.1,
+        "signed_pct_above_sma20": 14.73
+      }
+    ]
+  }
+]
