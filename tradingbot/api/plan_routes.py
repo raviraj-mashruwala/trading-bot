@@ -26,7 +26,7 @@ def _ensure_stores(state: AppState) -> None:
 async def list_plans(request: Request):
     state: AppState = request.app.state.app_state
     plans = []
-    for path in sorted(state.plan_store.plan_dir.glob("*.json")):
+    for path in state.plan_store.iter_plan_paths():
         try:
             plan = state.plan_store.load(path.stem)
             plans.append({

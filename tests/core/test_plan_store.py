@@ -106,3 +106,19 @@ def test_plan_with_future_schema_version_raises_plan_corrupt(tmp_path):
 
     with pytest.raises(PlanCorruptError, match="schema version 99"):
         store.load("2026-09-24")
+
+
+def test_non_dict_json_raises_plan_corrupt(tmp_path):
+    store = PlanStore(tmp_path)
+    (tmp_path / "2026-09-24.json").write_text(json.dumps(["AAPL", "MSFT"]))
+
+    with pytest.raises(PlanCorruptError, match="does not contain a JSON object"):
+        store.load("2026-09-24")
+
+
+def test_load_latest_ignores_non_plan_filenames(tmp_path):
+    store = PlanStore(tmp_path)
+    store.save(make_plan("2026-09-24"))
+    (tmp_path / "llm_dossiers.json").write_text(json.dumps(["AAPL", "MSFT"]))
+
+    assert store.load_latest().trade_date == "2026-09-24"

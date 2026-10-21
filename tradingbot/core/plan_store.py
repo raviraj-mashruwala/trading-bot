@@ -16,8 +16,16 @@ class PlanCorruptError(Exception):
     """Raised when a trade plan file exists but cannot be trusted."""
 
 
+PLAN_FILENAME_GLOB = "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
+
+
 class PlanStore:
-    """Trade plans live as one JSON file per trade date."""
+    """Trade plans live as one JSON file per trade date.
+
+    The directory may also hold scratch artifacts from research scripts
+    (not managed by this store), so lookups must only match genuine
+    trade-date filenames rather than globbing every `*.json`.
+    """
 
     def __init__(self, plan_dir: Path) -> None:
         self.plan_dir = Path(plan_dir)
@@ -25,6 +33,9 @@ class PlanStore:
 
     def path_for(self, trade_date: str) -> Path:
         return self.plan_dir / f"{trade_date}.json"
+
+    def iter_plan_paths(self):
+        return sorted(self.plan_dir.glob(PLAN_FILENAME_GLOB))
 
     def save(self, plan: TradePlan) -> Path:
         path = self.path_for(plan.trade_date)
@@ -41,6 +52,9 @@ class PlanStore:
         except json.JSONDecodeError as exc:
             raise PlanCorruptError(f"{path} could not be parsed as JSON: {exc}") from exc
 
+        if not isinstance(raw, dict):
+            raise PlanCorruptError(f"{path} does not contain a JSON object (got {type(raw).__name__})")
+
         version = raw.get("schema_version", PLAN_SCHEMA_VERSION)
         if version > PLAN_SCHEMA_VERSION:
             raise PlanCorruptError(
@@ -56,7 +70,7 @@ class PlanStore:
             raise PlanCorruptError(f"{path} has an invalid field value: {exc}") from exc
 
     def load_latest(self) -> TradePlan:
-        candidates = sorted(self.plan_dir.glob("*.json"))
+        candidates = self.iter_plan_paths()
         if not candidates:
             raise PlanNotFoundError(f"no trade plans found in {self.plan_dir}")
         return self.load(candidates[-1].stem)
