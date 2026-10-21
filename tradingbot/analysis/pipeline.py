@@ -610,8 +610,10 @@ class AnalysisPipeline:
             rs_excess = stock_5d_return - nifty_5d_change
             relative_strength_score = min(100.0, max(0.0, 50.0 + abs(rs_excess) * 5.0))
 
-            # ATR expansion (2% ATR = 100 score)
-            atr_expansion_score = min(100.0, max(0.0, atr_pct * 50.0))
+            # ATR expansion (6.3% ATR = 100 score — recalibrated from the original
+            # 2% threshold, which saturated for 96% of the liquid NSE universe
+            # whose median daily ATR is ~4%. See design doc Gate-0 diagnostic.)
+            atr_expansion_score = min(100.0, max(0.0, atr_pct * 15.87))
 
             # Price structure: close vs SMA20
             sma20 = float(close.tail(20).mean()) if len(close) >= 20 else last_price
