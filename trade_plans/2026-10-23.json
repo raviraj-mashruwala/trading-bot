@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-10-23",
+  "generated_at": "2026-10-22T20:20:42.995720+05:30",
+  "capital": 73772,
+  "max_risk_per_trade_pct": 0.01,
+  "max_daily_loss_pct": 0.025,
+  "market_regime": "range_bound",
+  "market_summary": "Auto-generated after run_20261023_163025_85b7e6",
+  "legs": [
+    {
+      "symbol": "WSTCSTPAPR",
+      "exchange": "NSE",
+      "strategy": "breakout",
+      "direction": "short",
+      "entry_price": 825.5,
+      "entry_type": "limit",
+      "stop_loss": 831.5,
+      "target_1": 813.79,
+      "target_2": 806.53,
+      "quantity": 86,
+      "risk_amount": 516.0,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.65,
+      "reasoning": "Five-signal confluence short: (1) MACD bearish cross (5.55 < Signal 7.41) confirming momentum deterioration; (2) failed breakout at BB Upper 847.82 \u2014 spike to 847 fully rejected with 63K volume then immediate reversal; (3) price trading below EMA-9 (829.0), EMA-12 (828.7), SMA-20 (830.8), and SMA-200 (838.75) \u2014 full EMA stack bearish; (4) BB midline (830.8) acting as dynamic resistance, price at 823 already below it; (5) distribution volume pattern \u2014 last two candles printed 69K and 94K on down-close candles vs 7.5\u20138.5K on prior up candles, confirming institutional selling. Advisory long direction overridden \u2014 data structure is clearly short-biased.",
+      "setup_id": 39
+    },
+    {
+      "symbol": "SHILPAMED",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "short",
+      "entry_price": 866.0,
+      "entry_type": "limit",
+      "stop_loss": 870.2,
+      "target_1": 857.83,
+      "target_2": 851.0,
+      "quantity": 175,
+      "risk_amount": 735.000000000008,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.63,
+      "reasoning": "Three independent signals confirm short: (1) High-volume (75K) bearish rejection candle from 869.6 \u2014 institutional supply visible. (2) MACD negative and below signal line \u2014 momentum confirmed bearish. (3) RSI 42.5 trending below 50 midline \u2014 no bullish momentum. Entry at EMA_9/12 cluster (867\u2013868) which now acts as resistance. Target_1 = BB Lower (857.83) is the natural magnetic support in a Bollinger range. ATR = 8.91 gives 4.2pt risk to stop vs 8.17pt reward to T1 \u2192 R:R \u2248 1.94:1.",
+      "setup_id": 36
+    }
+  ]
+}
