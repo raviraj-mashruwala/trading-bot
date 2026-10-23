@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime, time
 from unittest.mock import MagicMock, patch
 import pytest
@@ -192,3 +193,29 @@ def test_mark_degraded_accumulates_gap():
     intel.mark_degraded(45)
     assert intel.health.gap_seconds_today == 75
     assert intel.health.status == "degraded"
+
+
+def test_first_minute_close_does_not_freeze_tick_processing():
+    """Regression: the 1-minute close callback re-reads candles from the aggregator
+    while on_tick still held its symbol lock, freezing the ticker thread for good."""
+    ticker = FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    with patch.object(intel, '_fetch_historical_candles', return_value=[]):
+        intel.start(["RELIANCE"])
+
+    def tick(second_of_day: tuple[int, int, int], price: float) -> dict:
+        return {"instrument_token": "RELIANCE", "last_price": price, "volume_traded": 100,
+                "exchange_timestamp": datetime(2026, 9, 29, *second_of_day)}
+
+    def feed():
+        intel._on_ticks(None, [tick((9, 15, 10), 2450.0)])
+        intel._on_ticks(None, [tick((9, 16, 5), 2455.0)])   # closes the 09:15 candle
+        intel._on_ticks(None, [tick((9, 16, 20), 2457.0)])  # must still be processed
+
+    worker = threading.Thread(target=feed, daemon=True)
+    worker.start()
+    worker.join(2.0)
+
+    assert not worker.is_alive(), "tick processing froze at the first 1-minute candle close"
+    assert intel.aggregator.last_price("RELIANCE") == 2457.0
+    assert len(intel.aggregator.get_candles("RELIANCE", "1min")) == 1

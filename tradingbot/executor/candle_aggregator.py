@@ -34,6 +34,9 @@ class CandleAggregator:
         self._callbacks: dict[str, list[Callable]] = defaultdict(list)
 
     def on_tick(self, symbol: str, price: float, volume: int, timestamp: datetime) -> None:
+        # Callbacks read candles back through get_candles(), which takes this same
+        # non-reentrant lock, so they must fire only after it is released.
+        closed_events: list[tuple[str, LiveCandle]] = []
         with self._locks[symbol]:
             self._last_price[symbol] = price
             for tf in ("1min", "5min"):
@@ -43,10 +46,12 @@ class CandleAggregator:
                     if builder is not None:
                         closed = builder.to_candle(symbol, tf, is_complete=True)
                         self._history[symbol][tf].append(closed)
-                        self._fire(f"{tf}_close", symbol, closed)
+                        closed_events.append((f"{tf}_close", closed))
                     self._current[symbol][tf] = _CandleBuilder(boundary, price, volume)
                 else:
                     builder.update(price, volume)
+        for event, candle in closed_events:
+            self._fire(event, symbol, candle)
 
     def get_candles(self, symbol: str, timeframe: str) -> list[LiveCandle]:
         with self._locks[symbol]:
@@ -72,6 +77,7 @@ class CandleAggregator:
                 q.append(c)
 
     def close_stale_candles(self, symbol: str, now: datetime) -> None:
+        closed_events: list[tuple[str, LiveCandle]] = []
         with self._locks[symbol]:
             for tf in ("1min", "5min"):
                 builder = self._current[symbol].get(tf)
@@ -81,8 +87,10 @@ class CandleAggregator:
                 if builder.boundary != current_boundary:
                     closed = builder.to_candle(symbol, tf, is_complete=True, has_gap=True)
                     self._history[symbol][tf].append(closed)
-                    self._fire(f"{tf}_close", symbol, closed)
+                    closed_events.append((f"{tf}_close", closed))
                     self._current[symbol][tf] = None
+        for event, candle in closed_events:
+            self._fire(event, symbol, candle)
 
     def _fire(self, event: str, symbol: str, candle: LiveCandle) -> None:
         for cb in self._callbacks.get(event, []):
