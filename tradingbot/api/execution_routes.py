@@ -178,6 +178,7 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
         catchup = SessionCatchup(
             kite_client=data_kite_client,
             instrument_cache=instrument_cache,
+            jev_client=getattr(intelligence.escalator, "_jev", None),
         )
         current_time = now_ist().time()
         if catchup.should_run(current_time):

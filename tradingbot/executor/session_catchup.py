@@ -47,9 +47,10 @@ class CatchupDecision:
 
 
 class SessionCatchup:
-    def __init__(self, kite_client: Any, instrument_cache: Any) -> None:
+    def __init__(self, kite_client: Any, instrument_cache: Any, jev_client: Any | None = None) -> None:
         self._kite = kite_client
         self._cache = instrument_cache
+        self._jev = jev_client
 
     def should_run(self, current_time: time) -> bool:
         if current_time < MARKET_OPEN or current_time >= MARKET_CLOSE:
@@ -166,45 +167,69 @@ class SessionCatchup:
         return decisions
 
     def _jev_evaluate(self, ctx: MorningContext, leg: Any) -> CatchupDecision | None:
+        jev = self._jev
+        if jev is None or not jev.available:
+            return None
         try:
-            from typesafe_sdk import Jev
-            jev = Jev()
-            result = jev.evaluate(
-                f"Stock {ctx.symbol} planned {leg.direction.value.upper()} entry at "
-                f"₹{leg.entry_price:.2f}. Morning session: opened at "
-                f"₹{ctx.open_price:.2f} (gap {ctx.gap_pct:+.1f}%), "
-                f"traded ₹{ctx.low:.2f}-₹{ctx.high:.2f}, now at "
-                f"₹{ctx.current_price:.2f}, VWAP ₹{ctx.vwap:.2f}, "
-                f"trend {ctx.trend}, {ctx.minutes_elapsed} min elapsed. "
-                f"Should we still enter this trade?",
+            from tradingbot.core.jev_client import Noul
+            if Noul is None:
+                return None
+            answers = jev.evaluate(
+                state={
+                    "symbol": ctx.symbol,
+                    "direction": leg.direction.value,
+                    "planned_entry": leg.entry_price,
+                    "open_price": ctx.open_price,
+                    "gap_pct": ctx.gap_pct,
+                    "day_low": ctx.low,
+                    "day_high": ctx.high,
+                    "current_price": ctx.current_price,
+                    "vwap": ctx.vwap,
+                    "trend": ctx.trend,
+                    "minutes_elapsed": ctx.minutes_elapsed,
+                },
                 questions={
-                    "should_proceed": "Should this trade still be taken given the morning action?",
-                    "invalidated": "Has the morning price action invalidated the original setup?",
+                    "should_proceed": Noul(
+                        instructions="Should this planned trade still be taken given the morning price action?",
+                        criteria={
+                            "true": "Morning action is consistent with the planned entry; the setup is still actionable",
+                            "false": "Morning action makes the planned entry unattractive or unreachable",
+                        },
+                    ),
+                    "invalidated": Noul(
+                        instructions="Has the morning price action invalidated the original trade setup?",
+                        criteria={
+                            "true": "Price moved decisively through the planned levels or against the thesis",
+                            "false": "Setup thesis still intact despite the morning moves",
+                        },
+                    ),
                 },
             )
-            should_proceed = result.get("should_proceed", 0.5)
-            invalidated = result.get("invalidated", 0.5)
-
-            if invalidated > 0.7:
-                return CatchupDecision(
-                    symbol=ctx.symbol, action="skip",
-                    reason=f"Jev: setup invalidated ({invalidated:.0%})",
-                    confidence=1 - invalidated,
-                )
-            if should_proceed >= 0.6:
-                return CatchupDecision(
-                    symbol=ctx.symbol, action="proceed",
-                    reason=f"Jev: proceed ({should_proceed:.0%})",
-                    confidence=should_proceed,
-                )
-            return CatchupDecision(
-                symbol=ctx.symbol, action="skip",
-                reason=f"Jev: low confidence ({should_proceed:.0%})",
-                confidence=should_proceed,
-            )
+            if answers is None:
+                return None
+            should_proceed = answers["should_proceed"].noul
+            invalidated = answers["invalidated"].noul
         except Exception as exc:
             log.warning("%s: Jev catch-up failed: %s, using deterministic fallback", ctx.symbol, exc)
             return None
+
+        if invalidated > 0.7:
+            return CatchupDecision(
+                symbol=ctx.symbol, action="skip",
+                reason=f"Jev: setup invalidated ({invalidated:.0%})",
+                confidence=1 - invalidated,
+            )
+        if should_proceed >= 0.6:
+            return CatchupDecision(
+                symbol=ctx.symbol, action="proceed",
+                reason=f"Jev: proceed ({should_proceed:.0%})",
+                confidence=should_proceed,
+            )
+        return CatchupDecision(
+            symbol=ctx.symbol, action="skip",
+            reason=f"Jev: low confidence ({should_proceed:.0%})",
+            confidence=should_proceed,
+        )
 
     def _deterministic_decision(self, ctx: MorningContext, leg: Any) -> CatchupDecision:
         if abs(ctx.gap_pct) > 3.0:

@@ -158,3 +158,87 @@ def test_catchup_skips_invalidated_legs():
     assert states[0].waiting is False
     assert states[1].waiting is True
     assert states[1].skipped_reason is None
+
+
+class _FakeJev:
+    """Stands in for JevClient: same evaluate(state, questions) -> answers | None surface."""
+
+    def __init__(self, answers=None, available: bool = True):
+        self.available = available
+        self._answers = answers
+        self.calls: list[tuple[dict, dict]] = []
+
+    def evaluate(self, state, questions):
+        self.calls.append((state, questions))
+        return self._answers
+
+
+def _jev_answers(proceed: float, invalidated: float) -> dict:
+    from types import SimpleNamespace
+    return {
+        "should_proceed": SimpleNamespace(noul=proceed),
+        "invalidated": SimpleNamespace(noul=invalidated),
+    }
+
+
+def _catchup_with(jev) -> SessionCatchup:
+    return SessionCatchup(kite_client=MagicMock(), instrument_cache=MagicMock(), jev_client=jev)
+
+
+def test_jev_proceed_answer_is_used():
+    catchup = _catchup_with(_FakeJev(_jev_answers(proceed=0.8, invalidated=0.1)))
+    decisions = catchup.evaluate({"TEST": _make_context("TEST", 502.0)}, [_make_leg("TEST", 500.0)])
+    d = decisions["TEST"]
+    assert d.action == "proceed"
+    assert d.reason.startswith("Jev:")
+    assert d.confidence == 0.8
+
+
+def test_jev_invalidated_answer_skips_the_leg():
+    catchup = _catchup_with(_FakeJev(_jev_answers(proceed=0.6, invalidated=0.9)))
+    decisions = catchup.evaluate({"TEST": _make_context("TEST", 502.0)}, [_make_leg("TEST", 500.0)])
+    assert decisions["TEST"].action == "skip"
+    assert "invalidated" in decisions["TEST"].reason
+
+
+def test_jev_low_confidence_answer_skips_the_leg():
+    catchup = _catchup_with(_FakeJev(_jev_answers(proceed=0.3, invalidated=0.2)))
+    decisions = catchup.evaluate({"TEST": _make_context("TEST", 502.0)}, [_make_leg("TEST", 500.0)])
+    assert decisions["TEST"].action == "skip"
+    assert decisions["TEST"].reason.startswith("Jev:")
+
+
+def test_jev_receives_setup_facts_and_both_questions():
+    jev = _FakeJev(_jev_answers(proceed=0.8, invalidated=0.1))
+    leg = _make_leg("TEST", 500.0, "short")
+    _catchup_with(jev).evaluate({"TEST": _make_context("TEST", 502.0, gap=-1.3, trend="down")}, [leg])
+
+    state, questions = jev.calls[0]
+    assert state["symbol"] == "TEST"
+    assert state["direction"] == "short"
+    assert state["planned_entry"] == 500.0
+    assert state["gap_pct"] == -1.3
+    assert state["trend"] == "down"
+    assert set(questions) == {"should_proceed", "invalidated"}
+
+
+def test_no_jev_answer_falls_back_to_deterministic_rules():
+    catchup = _catchup_with(_FakeJev(answers=None))
+    decisions = catchup.evaluate({"TEST": _make_context("TEST", 550.0)}, [_make_leg("TEST", 500.0)])
+    assert decisions["TEST"].action == "skip"
+    assert "drift" in decisions["TEST"].reason.lower()
+
+
+def test_unavailable_jev_is_not_called():
+    jev = _FakeJev(_jev_answers(0.9, 0.0), available=False)
+    decisions = _catchup_with(jev).evaluate({"TEST": _make_context("TEST", 502.0)}, [_make_leg("TEST", 500.0)])
+    assert jev.calls == []
+    assert not decisions["TEST"].reason.startswith("Jev:")
+
+
+def test_no_jev_client_decides_by_rules_without_warning_noise(caplog):
+    catchup = SessionCatchup(kite_client=MagicMock(), instrument_cache=MagicMock())
+    with caplog.at_level("WARNING"):
+        decisions = catchup.evaluate({"TEST": _make_context("TEST", 502.0)}, [_make_leg("TEST", 500.0)])
+    assert decisions["TEST"].action == "proceed"
+    assert [r for r in caplog.records if r.levelname == "WARNING"] == []
