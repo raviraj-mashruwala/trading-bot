@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import Any, Callable
 
 from tradingbot.core.jev_client import JevClient
 from tradingbot.executor.candle_aggregator import CandleAggregator, LiveCandle
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 SEED_CANDLE_COUNT = 50
 STALE_TICK_THRESHOLD_SECONDS = 120
+LIVENESS_CHECK_INTERVAL_SECONDS = 15.0
+LIVENESS_PROBE_TIMEOUT_SECONDS = 1.0
 MARKET_OPEN_HOUR = 9
 MARKET_OPEN_MINUTE = 15
 
@@ -69,6 +71,9 @@ class ExecutionIntelligence:
             self.escalator = llm_escalator
 
         self.health = TickerHealth()
+        self.alert: Callable[[str], None] | None = None
+        self._last_liveness_check_at = float("-inf")
+        self._stale_alerted = False
 
     @property
     def is_degraded(self) -> bool:
@@ -189,14 +194,21 @@ class ExecutionIntelligence:
     _last_reconnect_at: float = 0.0
     _RECONNECT_COOLDOWN = 120.0
 
-    def check_and_reconnect(self) -> bool:
-        """If ticks are stale during market hours, force-reconnect the ticker.
+    def check_and_reconnect(self, now: datetime | None = None) -> bool:
+        """Watchdog for the ticker. Returns True if it restarted or reconnected it.
 
-        Returns True if a reconnect was triggered. Enforces 60s cooldown
-        between reconnects to prevent connection storms.
+        1. Liveness (any time, even pre-open): if the ticker thread's event loop does
+           not answer, force_reconnect() cannot work because it schedules on that loop,
+           so replace the thread outright.
+        2. Staleness (from market open): no ticks for STALE_TICK_THRESHOLD_SECONDS
+           means force-reconnect, at most once per cooldown, alerting once per episode.
         """
         import time as _time
-        now = datetime.now()
+        now = now or datetime.now()
+
+        if self._restart_if_ticker_wedged():
+            return True
+
         if now.hour < MARKET_OPEN_HOUR or (now.hour == MARKET_OPEN_HOUR and now.minute < MARKET_OPEN_MINUTE):
             return False
         # Check ticker's own timestamp first (set in ticker thread, no callback dependency)
@@ -208,20 +220,53 @@ class ExecutionIntelligence:
             stale = (now - now.replace(hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0)).total_seconds()
         else:
             stale = (now - self.health.last_tick_at).total_seconds()
-        if stale > STALE_TICK_THRESHOLD_SECONDS:
-            if _time.monotonic() - self._last_reconnect_at < self._RECONNECT_COOLDOWN:
-                return False
-            logger.warning(
-                "Ticks stale for %.0fs (threshold %ds) — forcing reconnect",
-                stale, STALE_TICK_THRESHOLD_SECONDS,
-            )
-            self.health.status = "reconnecting"
-            if hasattr(self._ticker, "force_reconnect"):
-                self._ticker.force_reconnect()
-                self.health.reconnect_count += 1
-                self._last_reconnect_at = _time.monotonic()
-                return True
+        if stale <= STALE_TICK_THRESHOLD_SECONDS:
+            self._stale_alerted = False
+            return False
+        if _time.monotonic() - self._last_reconnect_at < self._RECONNECT_COOLDOWN:
+            return False
+        logger.warning(
+            "Ticks stale for %.0fs (threshold %ds) — forcing reconnect",
+            stale, STALE_TICK_THRESHOLD_SECONDS,
+        )
+        if not self._stale_alerted:
+            self._stale_alerted = True
+            self._notify(f"No ticks for {stale:.0f}s — forcing ticker reconnect")
+        self.health.status = "reconnecting"
+        if hasattr(self._ticker, "force_reconnect"):
+            self._ticker.force_reconnect()
+            self.health.reconnect_count += 1
+            self._last_reconnect_at = _time.monotonic()
+            return True
         return False
+
+    def _restart_if_ticker_wedged(self) -> bool:
+        import time as _time
+        probe = getattr(self._ticker, "is_loop_responsive", None)
+        restart = getattr(self._ticker, "restart", None)
+        if probe is None or restart is None:
+            return False
+        mono = _time.monotonic()
+        if mono - self._last_liveness_check_at < LIVENESS_CHECK_INTERVAL_SECONDS:
+            return False
+        self._last_liveness_check_at = mono
+        if probe(LIVENESS_PROBE_TIMEOUT_SECONDS):
+            return False
+        logger.error("Ticker thread is unresponsive — restarting it")
+        restart()
+        self.health.status = "reconnecting"
+        self.health.reconnect_count += 1
+        self._last_reconnect_at = mono
+        self._notify("Ticker thread was frozen and has been restarted. Live ticks may have been missed.")
+        return True
+
+    def _notify(self, message: str) -> None:
+        if self.alert is None:
+            return
+        try:
+            self.alert(message)
+        except Exception:
+            logger.warning("Ticker alert delivery failed", exc_info=True)
 
     def mark_degraded(self, gap_seconds: int) -> None:
         self.health.gap_seconds_today += gap_seconds

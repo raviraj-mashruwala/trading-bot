@@ -135,6 +135,9 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             kite_client=data_kite_client,
             jev_config=config.jev,
         )
+        telegram_for_alerts = getattr(state, "_telegram", None)
+        if telegram_for_alerts is not None:
+            intelligence.alert = telegram_for_alerts.notify_critical
 
         regime_monitor = None
         if config.jev and config.jev.enabled:

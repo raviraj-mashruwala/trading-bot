@@ -219,3 +219,105 @@ def test_first_minute_close_does_not_freeze_tick_processing():
     assert not worker.is_alive(), "tick processing froze at the first 1-minute candle close"
     assert intel.aggregator.last_price("RELIANCE") == 2457.0
     assert len(intel.aggregator.get_candles("RELIANCE", "1min")) == 1
+
+
+class WatchdogTicker(FakeTicker):
+    """FakeTicker with the liveness and reconnect surface the watchdog uses."""
+
+    def __init__(self, responsive: bool = True, last_tick_time: datetime | None = None):
+        super().__init__()
+        self.responsive = responsive
+        self.last_tick_time = last_tick_time
+        self.probes = 0
+        self.restarts = 0
+        self.reconnects = 0
+
+    def is_loop_responsive(self, timeout: float = 1.0) -> bool:
+        self.probes += 1
+        return self.responsive
+
+    def restart(self) -> None:
+        self.restarts += 1
+
+    def force_reconnect(self) -> None:
+        self.reconnects += 1
+
+
+def _watchdog_intel(ticker, alerts: list | None = None) -> ExecutionIntelligence:
+    intel = ExecutionIntelligence(ticker, _make_config())
+    if alerts is not None:
+        intel.alert = alerts.append
+    return intel
+
+
+def test_watchdog_restarts_wedged_ticker_even_before_market_open():
+    ticker = WatchdogTicker(responsive=False)
+    alerts: list[str] = []
+    intel = _watchdog_intel(ticker, alerts)
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5)) is True
+
+    assert ticker.restarts == 1
+    assert intel.health.status == "reconnecting"
+    assert intel.health.reconnect_count == 1
+    assert len(alerts) == 1 and "frozen" in alerts[0]
+
+
+def test_watchdog_probes_liveness_at_most_every_interval():
+    ticker = WatchdogTicker(responsive=True)
+    intel = _watchdog_intel(ticker)
+
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5))
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5, 5))
+
+    assert ticker.probes == 1
+
+
+def test_watchdog_leaves_healthy_ticker_alone():
+    ticker = WatchdogTicker(responsive=True, last_tick_time=datetime(2026, 9, 29, 9, 20, 0))
+    intel = _watchdog_intel(ticker)
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 20, 30)) is False
+
+    assert ticker.restarts == 0 and ticker.reconnects == 0
+
+
+def test_stale_ticks_force_reconnect_and_alert_once_per_episode():
+    ticker = WatchdogTicker(responsive=True, last_tick_time=datetime(2026, 9, 29, 9, 3, 2))
+    alerts: list[str] = []
+    intel = _watchdog_intel(ticker, alerts)
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 15, 1)) is True
+    intel._last_reconnect_at = 0.0  # let the reconnect cooldown pass
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 17, 2)) is True
+
+    assert ticker.reconnects == 2
+    assert len(alerts) == 1 and "No ticks" in alerts[0]
+
+
+def test_stale_alert_rearms_after_ticks_resume():
+    ticker = WatchdogTicker(responsive=True, last_tick_time=datetime(2026, 9, 29, 9, 3, 2))
+    alerts: list[str] = []
+    intel = _watchdog_intel(ticker, alerts)
+
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 15, 1))
+    ticker.last_tick_time = datetime(2026, 9, 29, 9, 16, 0)
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 16, 10))  # ticks are back
+    intel._last_reconnect_at = 0.0
+    ticker.last_tick_time = datetime(2026, 9, 29, 9, 20, 0)
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 30, 0))  # stale again
+
+    assert len(alerts) == 2
+
+
+def test_alert_failure_does_not_break_the_watchdog():
+    ticker = WatchdogTicker(responsive=False)
+    intel = _watchdog_intel(ticker)
+
+    def broken_alert(message: str) -> None:
+        raise RuntimeError("telegram down")
+
+    intel.alert = broken_alert
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5)) is True
+    assert ticker.restarts == 1
