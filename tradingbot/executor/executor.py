@@ -199,6 +199,7 @@ class Executor:
                 self._submit_entry(state, current_price=price)
 
     _MARKET_START = time(9, 0)
+    _CONTINUOUS_TRADING_START = time(9, 15)  # 09:00-09:15 is the pre-open call auction
     _MARKET_END = time(15, 30)
 
     def tick(self) -> None:
@@ -431,6 +432,10 @@ class Executor:
 
     def _evaluate_entry(self, state: LegState, now: datetime) -> None:
         """Consult EntryGuard before placing an order. ENTER / WAIT / VETO."""
+        if now.timetz().replace(tzinfo=None) < self._CONTINUOUS_TRADING_START:
+            # Pre-open: ticks are sparse and orders would join the call auction.
+            state.waiting = True
+            return
         intel = self._intelligence
         symbol_state = intel.scorer.get_state(state.leg.symbol)
         if symbol_state is None:

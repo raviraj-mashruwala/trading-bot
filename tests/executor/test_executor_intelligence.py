@@ -511,3 +511,45 @@ def test_wait_leg_times_out_at_entry_window_end(tmp_path):
 
     assert state.cancelled is True
     assert "Wait timeout" in state.skipped_reason
+
+
+# ---------------------------------------------------------------------------
+# Pre-open: no continuous trading, so no ticks and no entries yet
+# ---------------------------------------------------------------------------
+
+def test_pre_open_waits_quietly_instead_of_crying_stale_data(tmp_path, caplog):
+    import logging
+
+    clock = Clock(datetime(2026, 9, 24, 9, 10, tzinfo=IST))
+    executor, broker, _, database, intel = build(tmp_path, [make_leg()], clock=clock)
+    intel.scorer.get_state.return_value = _state(timestamp=datetime(2026, 9, 24, 9, 0))
+    executor.start()
+
+    with caplog.at_level(logging.WARNING):
+        executor.tick()
+
+    assert executor.states[0].entry_order_id is None
+    assert executor.states[0].waiting is True
+    assert "stale" not in caplog.text.lower()
+    assert not any("Stale" in d["reason"] for d in _decisions(database))
+
+
+def test_entry_proceeds_once_continuous_trading_starts(tmp_path):
+    clock = Clock(datetime(2026, 9, 24, 9, 10, tzinfo=IST))
+    executor, _, _, _, intel = build(tmp_path, [make_leg()], clock=clock)
+    intel.scorer.get_state.return_value = _state(timestamp=datetime(2026, 9, 24, 9, 16))
+    executor.start()
+    executor.tick()
+    assert executor.states[0].entry_order_id is None
+
+    clock.advance_to(9, 30)
+    intel.scorer.get_state.return_value = _state(timestamp=datetime(2026, 9, 24, 9, 29, 50))
+    executor.tick()
+
+    assert executor.states[0].entry_order_id is not None
+
+
+def _decisions(database):
+    from tradingbot.executor.decision_logger import DecisionLogger
+
+    return DecisionLogger(database).recent(limit=50)
