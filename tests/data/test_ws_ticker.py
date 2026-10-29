@@ -73,3 +73,50 @@ def test_superseded_connect_loop_exits_without_connecting():
     ticker._generation = 2
     # generation 1 was replaced by restart(); it must return instead of opening a websocket
     asyncio.run(asyncio.wait_for(ticker._connect_loop(1), timeout=2.0))
+
+
+def _quote_packet(token: int, ltp_paise: int, volume: int) -> bytes:
+    import struct
+
+    body = struct.pack(">IIIIII", token, ltp_paise, 5, ltp_paise, volume, 0) + bytes(20)
+    assert len(body) == 44
+    return struct.pack(">HH", 1, len(body)) + body
+
+
+def test_quote_packet_carries_volume_traded():
+    from tradingbot.data.ws_ticker import _parse_binary
+
+    (tick,) = _parse_binary(_quote_packet(738561, 245000, 123456))
+
+    assert tick["instrument_token"] == 738561
+    assert tick["last_price"] == 2450.0
+    assert tick["volume_traded"] == 123456
+
+
+def test_ticker_subscribes_in_quote_mode_so_volume_arrives():
+    import json
+
+    sent = []
+
+    class FakeWs:
+        async def send(self, message):
+            sent.append(json.loads(message))
+
+    ticker = AsyncKiteTicker("k", "t")
+    ticker._ws = FakeWs()
+
+    asyncio.run(ticker._send_set_mode([101, 202]))
+
+    assert sent == [{"a": "mode", "v": ["quote", [101, 202]]}]
+
+
+def test_full_tick_callback_receives_whole_ticks_for_int_tokens():
+    ticker = AsyncKiteTicker("k", "t")
+    seen = []
+    ticker.subscribe([101])
+    ticker.set_full_tick_callback(lambda _ws, ticks: seen.extend(ticks))
+
+    ticker._dispatch_ticks([{"instrument_token": 101, "last_price": 10.0, "volume_traded": 500}])
+
+    assert seen == [{"instrument_token": 101, "last_price": 10.0, "volume_traded": 500}]
+    assert 101 in ticker.subscribed_tokens

@@ -321,3 +321,75 @@ def test_alert_failure_does_not_break_the_watchdog():
 
     assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5)) is True
     assert ticker.restarts == 1
+
+
+class FullTickTicker(FakeTicker):
+    """Ticker that, like AsyncKiteTicker, can deliver whole ticks (with volume)."""
+
+    def __init__(self):
+        super().__init__()
+        self.full_tick_callback = None
+        self.per_token_callback_used = False
+
+    def subscribe(self, tokens, callback=None):
+        self.subscribed.extend(tokens)
+        if callback is not None:
+            self.per_token_callback_used = True
+
+    def set_full_tick_callback(self, callback):
+        self.full_tick_callback = callback
+
+
+def _volume_tick(cumulative: int, second: int, price: float = 2450.0) -> dict:
+    return {"instrument_token": "RELIANCE", "last_price": price, "volume_traded": cumulative,
+            "exchange_timestamp": datetime(2026, 9, 29, 9, 15, second)}
+
+
+def _started_intel(ticker=None):
+    ticker = ticker or FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    with patch.object(intel, '_fetch_historical_candles', return_value=[]):
+        intel.start(["RELIANCE"])
+    return intel
+
+
+def test_start_routes_whole_ticks_to_intelligence_when_ticker_supports_it():
+    ticker = FullTickTicker()
+    intel = _started_intel(ticker)
+
+    assert ticker.full_tick_callback == intel._on_ticks
+    assert ticker.per_token_callback_used is False
+
+
+def test_candle_volume_is_the_delta_of_cumulative_day_volume():
+    intel = _started_intel()
+
+    intel._on_ticks(None, [_volume_tick(10_000, 1)])   # first sighting: baseline only
+    intel._on_ticks(None, [_volume_tick(10_300, 20)])
+    intel._on_ticks(None, [_volume_tick(10_800, 40)])
+
+    candle = intel.aggregator.get_current("RELIANCE", "1min")
+    assert candle.volume == 800
+
+
+def test_cumulative_volume_reset_does_not_go_negative():
+    intel = _started_intel()
+
+    intel._on_ticks(None, [_volume_tick(10_000, 1)])
+    intel._on_ticks(None, [_volume_tick(500, 20)])     # counter restarted
+    intel._on_ticks(None, [_volume_tick(900, 40)])
+
+    candle = intel.aggregator.get_current("RELIANCE", "1min")
+    assert candle.volume == 400
+
+
+def test_ticks_without_volume_leave_candle_volume_alone():
+    intel = _started_intel()
+
+    intel._on_ticks(None, [_volume_tick(10_000, 1)])
+    intel._on_ticks(None, [{"instrument_token": "RELIANCE", "last_price": 2451.0,
+                            "exchange_timestamp": datetime(2026, 9, 29, 9, 15, 20)}])
+    intel._on_ticks(None, [_volume_tick(10_250, 40)])
+
+    candle = intel.aggregator.get_current("RELIANCE", "1min")
+    assert candle.volume == 250

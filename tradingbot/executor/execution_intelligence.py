@@ -47,6 +47,7 @@ class ExecutionIntelligence:
         self._symbols: list[str] = []
         self._symbol_to_token: dict[str, int] = {}
         self._token_to_symbol: dict[int, str] = {}
+        self._last_cumulative_volume: dict[str, int] = {}
 
         self.aggregator = CandleAggregator()
         self.scorer = MomentumScorer()
@@ -92,7 +93,12 @@ class ExecutionIntelligence:
                 self.aggregator.seed(sym, "1min", [c for c in candles if c.timeframe == "1min"])
                 self.aggregator.seed(sym, "5min", [c for c in candles if c.timeframe == "5min"])
             subscribe_tokens.append(token)
-        self._ticker.subscribe(subscribe_tokens, self._on_ticks)
+        if hasattr(self._ticker, "set_full_tick_callback"):
+            # Whole ticks carry volume; the per-token callback only gets (token, ltp).
+            self._ticker.subscribe(subscribe_tokens)
+            self._ticker.set_full_tick_callback(self._on_ticks)
+        else:
+            self._ticker.subscribe(subscribe_tokens, self._on_ticks)
         if hasattr(self._ticker, "set_lifecycle_callbacks"):
             self._ticker.set_lifecycle_callbacks(
                 on_disconnect=self.on_disconnect,
@@ -131,14 +137,25 @@ class ExecutionIntelligence:
         for tick in ticks:
             raw_token = tick.get("instrument_token", "")
             price = tick.get("last_price", 0.0)
-            volume = tick.get("volume_traded", 0)
             ts = tick.get("exchange_timestamp", now)
             if price <= 0:
                 continue
             symbol = self._token_to_symbol.get(raw_token, raw_token) if isinstance(raw_token, int) else raw_token
             if symbol:
+                volume = self._volume_delta(symbol, tick.get("volume_traded"))
                 self.aggregator.on_tick(symbol, price, volume, ts)
                 self.scorer.update_vwap(symbol, price, volume)
+
+    def _volume_delta(self, symbol: str, cumulative: int | None) -> int:
+        """Kite reports volume traded for the whole day; candles need the increment."""
+        if not cumulative:
+            return 0
+        last = self._last_cumulative_volume.get(symbol)
+        self._last_cumulative_volume[symbol] = cumulative
+        if last is None or cumulative < last:
+            # First sighting, or the counter restarted: re-baseline, don't guess.
+            return 0
+        return cumulative - last
 
     def _on_1min_close(self, symbol: str, candle: Any) -> None:
         candles_1m = self.aggregator.get_candles(symbol, "1min")

@@ -120,6 +120,10 @@ class AsyncKiteTicker:
             if int_tokens:
                 asyncio.run_coroutine_threadsafe(self._send_subscribe(int_tokens), self._loop)
 
+    def set_full_tick_callback(self, callback: Callable[[Any, list[dict]], None]) -> None:
+        """Receive whole ticks (price and cumulative volume), not just (token, ltp)."""
+        self._full_tick_callback = callback
+
     def unsubscribe(self, tokens: list[int]) -> None:
         for t in tokens:
             self._callbacks.pop(t, None)
@@ -284,7 +288,7 @@ class AsyncKiteTicker:
     async def _send_set_mode(self, tokens: list[int]) -> None:
         if self._ws:
             import json
-            msg = json.dumps({"a": "mode", "v": [MODE_LTP, tokens]})
+            msg = json.dumps({"a": "mode", "v": [MODE_QUOTE, tokens]})
             await self._ws.send(msg)
 
     @property
