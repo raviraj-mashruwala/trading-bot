@@ -356,11 +356,11 @@ def serve(obj: dict, port: int, use_reload: bool) -> None:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpx2").setLevel(logging.WARNING)
 
-    uvicorn.run(
-        "tradingbot.api.app:create_app",
-        factory=True,
-        host="0.0.0.0",
-        port=port,
-        reload=use_reload,
-        log_level="warning",
-    )
+    options = dict(factory=True, host="0.0.0.0", port=port, log_level="warning")
+    if use_reload:
+        uvicorn.run("tradingbot.api.app:create_app", reload=True, **options)
+    else:
+        # A second Ctrl+C / SIGTERM force-exits even when the event loop is wedged.
+        from tradingbot.api.server import ForceExitServer
+
+        ForceExitServer(uvicorn.Config("tradingbot.api.app:create_app", **options)).run()

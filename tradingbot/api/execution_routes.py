@@ -37,6 +37,7 @@ def _tick_interval() -> int:
 
 async def _run_execution(state: AppState, mode: Mode, plan) -> None:
     intelligence = None
+    watchdog = None
     try:
         config = state.config
 
@@ -202,7 +203,14 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
         ws_mgr: ConnectionManager | None = getattr(state, "ws_manager", None)
         last_decision_count = 0
 
+        from tradingbot.executor.loop_watchdog import LoopWatchdog
+        tg_for_watchdog = getattr(state, "_telegram", None)
+        watchdog = LoopWatchdog(alert=tg_for_watchdog.notify_critical if tg_for_watchdog else None)
+        watchdog.beat()
+        watchdog.start()
+
         while not executor.is_done:
+            watchdog.beat()
             executor.tick()
 
             # Watchdog: force-reconnect ticker if ticks are stale
@@ -322,6 +330,8 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             except Exception:
                 logger.warning("crash alert delivery failed", exc_info=True)
     finally:
+        if watchdog is not None:
+            watchdog.stop()
         # Never leave a ticker thread behind: a restart would run two side by side.
         if intelligence is not None:
             try:
