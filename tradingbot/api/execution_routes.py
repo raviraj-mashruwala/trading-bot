@@ -36,6 +36,7 @@ def _tick_interval() -> int:
 
 
 async def _run_execution(state: AppState, mode: Mode, plan) -> None:
+    intelligence = None
     try:
         config = state.config
 
@@ -314,6 +315,19 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
     except Exception as exc:  # noqa: BLE001
         logger.error("execution failed: %s", exc, exc_info=True)
         state.executor_status = "idle"
+        tg = getattr(state, "_telegram", None)
+        if tg:
+            try:
+                tg.notify_critical(f"Execution crashed and stopped: {exc}")
+            except Exception:
+                logger.warning("crash alert delivery failed", exc_info=True)
+    finally:
+        # Never leave a ticker thread behind: a restart would run two side by side.
+        if intelligence is not None:
+            try:
+                intelligence.stop()
+            except Exception:
+                logger.warning("ticker stop failed", exc_info=True)
 
 
 async def _verify_squareoff(state: AppState, broker, plan) -> None:

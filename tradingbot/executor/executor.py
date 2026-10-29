@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, time
 from typing import TYPE_CHECKING
 
-from tradingbot.core.broker import BrokerInterface, OrderStatus
+from tradingbot.core.broker import BrokerError, BrokerInterface, OrderStatus
 from tradingbot.core.config import ExecutionConfig
 from tradingbot.core.database import Database
 from tradingbot.core.models import (
@@ -595,10 +595,22 @@ class Executor:
                         f"Price {current_price:.2f} gapped through entry {leg.entry_price:.2f} ({gap_pct:.2f}%) — market order",
                     )
 
-        if use_market:
-            state.entry_order_id = self.orders.submit_entry_market(leg)
-        else:
-            state.entry_order_id = self.orders.submit_entry(leg)
+        try:
+            if use_market:
+                state.entry_order_id = self.orders.submit_entry_market(leg)
+            else:
+                state.entry_order_id = self.orders.submit_entry(leg)
+        except BrokerError as exc:
+            # One rejected order must not take the other legs down with it.
+            logger.error("entry order rejected for %s: %s", leg.symbol, exc)
+            reason = f"Order rejected: {exc}"
+            state.skipped_reason = reason
+            state.cancelled = True
+            state.waiting = False
+            self._emit_decision(leg.symbol, "ENTRY_VETO", reason)
+            if self._telegram:
+                self._telegram.notify_critical(f"Entry order failed for <b>{leg.symbol}</b>\n<i>{reason}</i>")
+            return
         state.entry_submitted_at = self.clock()
 
     def _poll_entry(self, state: LegState, now: datetime) -> None:

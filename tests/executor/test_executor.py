@@ -347,3 +347,59 @@ async def test_executor_emits_events_when_event_bus_provided(tmp_path):
     assert "exec.entry_filled" in types
 
     database.close()
+
+
+def _reject_orders(broker, message="IP is not allowed to place orders for this app"):
+    from tradingbot.core.broker import BrokerError
+
+    def place_order(*args, **kwargs):
+        raise BrokerError(message)
+
+    broker.place_order = place_order
+
+
+def test_a_rejected_entry_order_fails_that_leg_without_raising(tmp_path):
+    executor, broker, _, _ = build(tmp_path, [make_leg("RELIANCE"), make_leg("INFY")], price=105.0)
+    _reject_orders(broker)
+
+    executor.start()
+
+    assert [s.entry_order_id for s in executor.states] == [None, None]
+    assert all(s.is_finished for s in executor.states)
+    assert all("IP is not allowed" in s.skipped_reason for s in executor.states)
+    assert executor.is_done
+
+
+def test_a_rejected_entry_order_sends_a_telegram_alert(tmp_path):
+    from unittest.mock import MagicMock
+
+    executor, broker, _, _ = build(tmp_path, [make_leg()], price=105.0)
+    executor._telegram = MagicMock()
+    _reject_orders(broker)
+
+    executor.start()
+
+    executor._telegram.notify_critical.assert_called_once()
+    message = executor._telegram.notify_critical.call_args.args[0]
+    assert "RELIANCE" in message
+    assert "IP is not allowed" in message
+
+
+def test_one_rejected_leg_does_not_stop_the_next_leg(tmp_path):
+    from tradingbot.core.broker import BrokerError
+
+    executor, broker, _, _ = build(tmp_path, [make_leg("RELIANCE"), make_leg("INFY")], price=105.0)
+    real_place_order = broker.place_order
+
+    def place_order(*args, **kwargs):
+        if kwargs.get("symbol") == "RELIANCE":
+            raise BrokerError("rejected")
+        return real_place_order(*args, **kwargs)
+
+    broker.place_order = place_order
+
+    executor.start()
+
+    reliance, infy = executor.states
+    assert reliance.entry_order_id is None and reliance.is_finished
+    assert infy.entry_order_id is not None
