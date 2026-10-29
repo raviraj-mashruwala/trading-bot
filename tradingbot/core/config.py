@@ -180,6 +180,7 @@ class LLMConfig:
     timeout_sec: int
     max_retries: int
     base_url: str = ""
+    queue_dir: str = "llm_queue"
 
 
 @dataclass(frozen=True)
@@ -363,13 +364,19 @@ def load_config(config_path: Path | None = None) -> Config:
             timeout_sec=int(llm_raw["timeout_sec"]),
             max_retries=int(llm_raw["max_retries"]),
             base_url=llm_raw.get("base_url", ""),
+            queue_dir=str(llm_raw.get("queue_dir", "llm_queue")),
         ),
         paper=PaperConfig(
             slippage_pct=float(paper_raw["slippage_pct"]),
             initial_capital=float(paper_raw["initial_capital"]),
         ),
         secrets=Secrets(
-            anthropic_api_key=_require_env("ANTHROPIC_API_KEY"),
+            # The file provider never calls Anthropic, so no key is needed.
+            anthropic_api_key=(
+                os.environ.get("ANTHROPIC_API_KEY", "")
+                if llm_raw["provider"] == "file"
+                else _require_env("ANTHROPIC_API_KEY")
+            ),
             kite_api_key=_require_env("KITE_API_KEY"),
             kite_api_secret=_require_env("KITE_API_SECRET"),
         ),

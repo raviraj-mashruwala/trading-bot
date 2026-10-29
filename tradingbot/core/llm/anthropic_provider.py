@@ -158,4 +158,10 @@ def build_provider(
     """Return the provider named in config."""
     if config.provider == "anthropic":
         return AnthropicProvider(config, api_key=secrets.anthropic_api_key, log_dir=log_dir)
-    raise ValueError(f"unknown llm.provider {config.provider!r}; expected 'anthropic'")
+    if config.provider == "file":
+        from tradingbot.core.llm.file_provider import FileAnswerProvider
+
+        return FileAnswerProvider(Path(config.queue_dir))
+    raise ValueError(
+        f"unknown llm.provider {config.provider!r}; expected 'anthropic' or 'file'"
+    )
