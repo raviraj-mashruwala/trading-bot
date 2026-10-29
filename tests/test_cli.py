@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, time
+from datetime import date, datetime, time, timedelta
 
 from click.testing import CliRunner
 
@@ -112,8 +112,9 @@ def make_plan() -> TradePlan:
 
 
 def make_trade() -> ExecutedTrade:
+    # Recent, so the default history window never ages it out.
     return ExecutedTrade(
-        trade_date="2026-09-24",
+        trade_date=(date.today() - timedelta(days=1)).isoformat(),
         symbol="RELIANCE",
         strategy=StrategyName.BREAKOUT,
         direction=Direction.LONG,
