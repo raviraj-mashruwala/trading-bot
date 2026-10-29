@@ -21,3 +21,6 @@ logs/
 *.db-info
 :memory:
 :memory:-info
+
+# git worktrees
+.worktrees/
