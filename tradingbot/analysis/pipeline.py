@@ -21,6 +21,7 @@ from tradingbot.core.llm.provider import LLMUsage
 from tradingbot.core.models import AnalysisRun, MarketRegime, StrategyName
 from tradingbot.persistence.review_store import TradeReviewStore
 from tradingbot.screening.candlestick import score_patterns as _score_candlestick
+from tradingbot.core.llm.file_provider import AnswersNeeded, llm_step
 from tradingbot.screening.volume_profile_score import score_volume_profile as _score_volume_profile
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -54,6 +55,14 @@ _STRATEGY_MAP: dict[str, StrategyName] = {
     "bb_lower": StrategyName.BOLLINGER_SQUEEZE,
     "fade": StrategyName.MEAN_REVERSION,
 }
+
+
+class DataNeeded(Exception):
+    """Shortlisted stocks have no candle data yet; the fetch script must run first."""
+
+    def __init__(self, symbols: list[str]) -> None:
+        self.symbols = symbols
+        super().__init__(f"candle data needed for: {', '.join(symbols)}")
 
 
 def _match_strategy(name: str) -> StrategyName | None:
@@ -103,6 +112,7 @@ class AnalysisPipeline:
         screening_config: Any = None,
         jev_config: Any = None,
         duckdb_store: Any = None,
+        require_prefetched: bool = False,
     ):
         self._sync = data_sync
         self._candles = candle_store
@@ -123,6 +133,7 @@ class AnalysisPipeline:
         self._capital = capital
         self._screening = screening_config
         self._approved_setup_ids: dict[str, int] = {}
+        self._require_prefetched = require_prefetched
 
         # Intelligent screener wraps deterministic screener with Jev layer
         self._intelligent_screener = None
@@ -202,7 +213,8 @@ class AnalysisPipeline:
         if self._jev_tier2 is not None:
             regime = await self._jev_tier2.analyze_regime(**_regime_args)
         if regime is None:
-            regime = await self._tier2.analyze_regime(**_regime_args)
+            with llm_step("regime"):
+                regime = await self._tier2.analyze_regime(**_regime_args)
             llm_calls += 1
             if isinstance(regime.get("_usage"), LLMUsage):
                 total_cost += regime.pop("_usage").cost_usd()
@@ -211,7 +223,8 @@ class AnalysisPipeline:
         if self._jev_tier2 is not None:
             sectors = await self._jev_tier2.analyze_sectors(regime, {}, {})
         if sectors is None:
-            sectors = await self._tier2.analyze_sectors(regime, {}, {})
+            with llm_step("sectors"):
+                sectors = await self._tier2.analyze_sectors(regime, {}, {})
             llm_calls += 1
             if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
                 total_cost += sectors.pop("_usage").cost_usd()
@@ -227,7 +240,8 @@ class AnalysisPipeline:
             for s in scored
         ]
 
-        shortlist_result = await self._tier2.shortlist(regime, sectors, scored_dicts)
+        with llm_step("shortlist"):
+            shortlist_result = await self._tier2.shortlist(regime, sectors, scored_dicts)
         llm_calls += 1
         if isinstance(shortlist_result.get("_usage"), LLMUsage):
             total_cost += shortlist_result.pop("_usage").cost_usd()
@@ -239,40 +253,19 @@ class AnalysisPipeline:
         # --- Fetch intraday data for shortlisted stocks (on-demand from Kite) ---
         symbols = [s["symbol"] for s in shortlist]
         if symbols and getattr(self, '_duckdb', None) is not None:
-            self._bus.emit_sync("strategy.indicators", {
-                "status": "fetching", "message": f"Fetching intraday data for {len(symbols)} stocks...",
-            })
-            try:
-                from tradingbot.data.kite_data_sync import KiteDataSync
-                from tradingbot.data.kite_client import KiteClient
-                from kiteconnect import KiteConnect
-                from pathlib import Path
-                import os
-
-                config = getattr(self, '_config', None)
-                token_path = Path.home() / ".tradingbot" / "kite_token"
-                kite_api_key = os.environ.get("KITE_API_KEY", "")
-                if token_path.exists() and kite_api_key:
-                    kite = KiteConnect(api_key=kite_api_key)
-                    kite.set_access_token(token_path.read_text().strip())
-                    kite_client = KiteClient(kite, rate_limit_per_sec=3)
-
-                    sync = KiteDataSync(kite_client, self._duckdb, self._instrument_cache)
-
-                    def _progress(msg):
-                        self._bus.emit_sync("strategy.indicators", {"status": "fetching", "message": msg})
-
-                    await sync.fetch_shortlist_data(symbols, progress_callback=_progress)
-                else:
-                    log.warning("Kite auth not available — skipping intraday fetch")
-            except Exception as exc:
-                log.warning("On-demand intraday fetch failed: %s", exc, exc_info=True)
+            if self._require_prefetched:
+                missing = self.missing_shortlist_data(symbols)
+                if missing:
+                    raise DataNeeded(missing)
+            else:
+                await self.fetch_shortlist(symbols)
 
         # --- Performance context for LLM ---
         perf_ctx = self._build_performance_context()
 
         # --- Phase 1: Claude Deep Analysis (ALL shortlisted stocks) ---
         all_setups: list[dict[str, Any]] = []
+        pending_requests: list[Any] = []
         if not shortlist:
             self._bus.emit_sync("strategy.indicators", {"status": "skipped", "reason": "no shortlisted stocks"})
             self._bus.emit_sync("strategy.deep_analysis", {"status": "skipped", "reason": "no shortlisted stocks"})
@@ -301,15 +294,21 @@ class AnalysisPipeline:
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "status": "fetching", "message": f"Analyzing {sym} ({i+1}/{len(shortlist)})",
             })
-            deep = await self._tier3.deep_analyze(
-                symbol=sym,
-                direction=direction,
-                regime=regime,
-                indicators=indicators,
-                backtest_results=[],
-                price_action=price_action,
-                performance_context=perf_ctx,
-            )
+            try:
+                with llm_step(f"deep:{sym}"):
+                    deep = await self._tier3.deep_analyze(
+                        symbol=sym,
+                        direction=direction,
+                        regime=regime,
+                        indicators=indicators,
+                        backtest_results=[],
+                        price_action=price_action,
+                        performance_context=perf_ctx,
+                    )
+            except AnswersNeeded as needed:
+                # Keep going so every stock's request is written in this one run.
+                pending_requests.extend(needed.requests)
+                continue
             llm_calls += 1
             if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
                 total_cost += deep.pop("_usage").cost_usd()
@@ -334,6 +333,9 @@ class AnalysisPipeline:
                 "status": "fetching" if i + 1 < len(shortlist) else "done",
                 "message": f"{sym}: {n_setups} setups found ({i+1}/{len(shortlist)})",
             })
+
+        if pending_requests:
+            raise AnswersNeeded(pending_requests)
 
         self._bus.emit_sync("strategy.setups", {
             "total_setups": sum(len(s.get("setups", [])) for s in all_setups),
@@ -403,9 +405,10 @@ class AnalysisPipeline:
         )
 
         if setups_with_data:
-            validation = await self._tier3.validate_portfolio(
-                setups_with_data, regime, sectors
-            )
+            with llm_step("adversarial"):
+                validation = await self._tier3.validate_portfolio(
+                    setups_with_data, regime, sectors
+                )
             llm_calls += 1
             if isinstance(validation.get("_usage") if isinstance(validation, dict) else None, LLMUsage):
                 total_cost += validation.pop("_usage").cost_usd()
@@ -513,6 +516,43 @@ class AnalysisPipeline:
             len(shortlist), setups_proposed, setups_approved, llm_calls, duration,
         )
         return analysis_run
+
+    def missing_shortlist_data(self, symbols: list[str]) -> list[str]:
+        """Symbols with no intraday candles at all (first-time stocks)."""
+        return [sym for sym in symbols if self._duckdb.last_date(sym, "15m") is None]
+
+    async def fetch_shortlist(self, symbols: list[str], progress: Any = None) -> dict[str, int]:
+        """Download intraday candles for the shortlist. Gap-aware, so safe to rerun."""
+        self._bus.emit_sync("strategy.indicators", {
+            "status": "fetching", "message": f"Fetching intraday data for {len(symbols)} stocks...",
+        })
+        try:
+            from tradingbot.data.kite_data_sync import KiteDataSync
+            from tradingbot.data.kite_client import KiteClient
+            from kiteconnect import KiteConnect
+            from pathlib import Path
+            import os
+
+            token_path = Path.home() / ".tradingbot" / "kite_token"
+            kite_api_key = os.environ.get("KITE_API_KEY", "")
+            if not (token_path.exists() and kite_api_key):
+                log.warning("Kite auth not available — skipping intraday fetch")
+                return {}
+            kite = KiteConnect(api_key=kite_api_key)
+            kite.set_access_token(token_path.read_text().strip())
+            kite_client = KiteClient(kite, rate_limit_per_sec=3)
+
+            sync = KiteDataSync(kite_client, self._duckdb, self._instrument_cache)
+
+            def _progress(msg):
+                self._bus.emit_sync("strategy.indicators", {"status": "fetching", "message": msg})
+                if progress is not None:
+                    progress(msg)
+
+            return await sync.fetch_shortlist_data(symbols, progress_callback=_progress)
+        except Exception as exc:
+            log.warning("On-demand intraday fetch failed: %s", exc, exc_info=True)
+            return {}
 
     def _fetch_universe(self) -> list[dict]:
         """Fetch instrument universe (fast — 1 Kite API call)."""

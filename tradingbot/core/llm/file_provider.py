@@ -16,6 +16,9 @@ import json
 import logging
 import os
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +31,24 @@ logger = logging.getLogger(__name__)
 
 # An unparseable answer younger than this may still be mid-write.
 FRESH_FILE_SECONDS = 3.0
+
+
+_current_step: ContextVar[str | None] = ContextVar("llm_step", default=None)
+
+
+@contextmanager
+def llm_step(name: str) -> Iterator[None]:
+    """Name the pipeline step making the next LLM calls.
+
+    Live inputs (index level, VIX, flows) drift between reruns, which would change
+    a prompt-hash id and orphan an answer already written. Inside a step the
+    request id depends on the tool and step only, so a rerun finds its answer.
+    """
+    token = _current_step.set(name)
+    try:
+        yield
+    finally:
+        _current_step.reset(token)
 
 
 class AnswersNeeded(Exception):
@@ -55,7 +76,11 @@ class FileAnswerProvider(LLMProvider):
         tool_description: str,
         input_schema: dict[str, Any],
     ) -> dict[str, Any]:
-        rid = request_id(tool_name, system_prompt, user_prompt)
+        step = _current_step.get()
+        if step is not None:
+            rid = request_id(tool_name, f"step:{step}", "")
+        else:
+            rid = request_id(tool_name, system_prompt, user_prompt)
         answer_path = self.queue_dir / "answers" / f"{rid}.json"
 
         if answer_path.exists():
@@ -64,7 +89,7 @@ class FileAnswerProvider(LLMProvider):
                 return answer
 
         request_path = self._write_request_once(
-            rid, system_prompt, user_prompt, tool_name, tool_description, input_schema,
+            rid, system_prompt, user_prompt, tool_name, tool_description, input_schema, step,
         )
         raise AnswersNeeded([request_path])
 
@@ -112,6 +137,7 @@ class FileAnswerProvider(LLMProvider):
         tool_name: str,
         tool_description: str,
         input_schema: dict[str, Any],
+        step: str | None,
     ) -> Path:
         requests = self.queue_dir / "requests"
         requests.mkdir(parents=True, exist_ok=True)
@@ -127,6 +153,7 @@ class FileAnswerProvider(LLMProvider):
             "user_prompt": user_prompt,
             "input_schema": input_schema,
             "created_at": now_ist().isoformat(),
+            "step": step,
         }
         temporary = requests / f".{rid}.tmp"
         temporary.write_text(json.dumps(payload, indent=2))

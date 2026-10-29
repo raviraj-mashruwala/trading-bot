@@ -11,7 +11,7 @@ from tradingbot.analysis.prompts import (
     SECTOR_TOOL,
     SHORTLIST_TOOL,
 )
-from tradingbot.core.llm.file_provider import AnswersNeeded, FileAnswerProvider, request_id
+from tradingbot.core.llm.file_provider import AnswersNeeded, FileAnswerProvider, llm_step, request_id
 
 SCHEMA = {
     "type": "object",
@@ -64,8 +64,9 @@ async def test_missing_answer_writes_request_and_raises_answers_needed_without_w
     request = json.loads(request_path.read_text())
     assert set(request) == {
         "id", "tool_name", "tool_description", "system_prompt",
-        "user_prompt", "input_schema", "created_at",
+        "user_prompt", "input_schema", "created_at", "step",
     }
+    assert request["step"] is None
     assert request["id"] == rid()
     assert request["input_schema"] == SCHEMA
 
@@ -210,3 +211,42 @@ async def test_production_tool_schemas_accept_minimal_valid_answers(tmp_path, to
     result = await call(FileAnswerProvider(tmp_path), tool=tool)
 
     assert result == MINIMAL_ANSWERS[name]
+
+
+async def test_step_keys_the_request_so_changed_prompts_reuse_the_same_answer(tmp_path):
+    # Live inputs drift between reruns; the answer must still be found.
+    provider = FileAnswerProvider(tmp_path)
+    with llm_step("regime"):
+        with pytest.raises(AnswersNeeded) as first:
+            await call(provider, user_prompt="nifty=24000")
+    answers = tmp_path / "answers"
+    answers.mkdir()
+    (answers / first.value.requests[0].name).write_text(json.dumps({"picks": ["INFY"]}))
+
+    with llm_step("regime"):
+        result = await call(provider, user_prompt="nifty=24037")
+
+    assert result == {"picks": ["INFY"]}
+    assert len(list((tmp_path / "requests").iterdir())) == 1
+    assert json.loads(first.value.requests[0].read_text())["step"] == "regime"
+
+
+async def test_different_steps_with_the_same_tool_get_different_requests(tmp_path):
+    provider = FileAnswerProvider(tmp_path)
+    for step in ("deep:INFY", "deep:TCS"):
+        with llm_step(step):
+            with pytest.raises(AnswersNeeded):
+                await call(provider)
+
+    assert len(list((tmp_path / "requests").iterdir())) == 2
+
+
+async def test_step_is_cleared_after_the_block(tmp_path):
+    provider = FileAnswerProvider(tmp_path)
+    with llm_step("regime"):
+        pass
+
+    with pytest.raises(AnswersNeeded) as raised:
+        await call(provider)
+
+    assert raised.value.requests == [tmp_path / "requests" / f"{rid()}.json"]
