@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, time
 from typing import TYPE_CHECKING
@@ -120,6 +122,33 @@ class Executor:
         self.states: list[LegState] = []
         self.blocked = False
         self.kill_switch_tripped = False
+        self._async_loop: asyncio.AbstractEventLoop | None = None
+        self._async_loop_lock = threading.Lock()
+
+    # ----- Async bridge -----------------------------------------------------------
+
+    def _run_async(self, coro, timeout: float = 12):
+        """Run a coroutine to completion from sync code and return its result.
+
+        tick() is sync but the API calls it on the event loop's own thread, so
+        scheduling the coroutine onto that loop and waiting would freeze the loop
+        until the timeout. Always run on a private loop in a daemon thread
+        instead. One long-lived loop (not asyncio.run per call) so clients cached
+        by the escalators stay bound to a live loop.
+        """
+        with self._async_loop_lock:
+            if self._async_loop is None:
+                loop = asyncio.new_event_loop()
+                threading.Thread(
+                    target=loop.run_forever, name="executor-async", daemon=True
+                ).start()
+                self._async_loop = loop
+        future = asyncio.run_coroutine_threadsafe(coro, self._async_loop)
+        try:
+            return future.result(timeout=timeout)
+        except BaseException:
+            future.cancel()
+            raise
 
     # ----- Lifecycle --------------------------------------------------------------
 
@@ -494,7 +523,6 @@ class Executor:
             if verdict.confidence < 0.4:
                 # Gray zone: attempt LLM escalation (best-effort, async-safe)
                 try:
-                    import asyncio
                     coro = intel.escalator.evaluate_entry(
                         state.leg,
                         symbol_state,
@@ -502,15 +530,7 @@ class Executor:
                         intel.aggregator.get_candles(state.leg.symbol, "5min"),
                         ticker_degraded=intel.is_degraded,
                     )
-                    try:
-                        loop = asyncio.get_running_loop()
-                        # API path: already in an async context
-                        import concurrent.futures
-                        future = asyncio.run_coroutine_threadsafe(coro, loop)
-                        result = future.result(timeout=12)
-                    except RuntimeError:
-                        # CLI path: no running loop
-                        result = asyncio.run(coro)
+                    result = self._run_async(coro)
 
                     if result.action == "VETO":
                         state.skipped_reason = f"LLM veto: {result.reasoning}"
@@ -876,14 +896,8 @@ class Executor:
         if intel is None or not hasattr(intel.escalator, "evaluate_exit"):
             return
         try:
-            import asyncio
             coro = intel.escalator.evaluate_exit(state, symbol_state, candles_1m, candles_5m)
-            try:
-                loop = asyncio.get_running_loop()
-                future = asyncio.run_coroutine_threadsafe(coro, loop)
-                result = future.result(timeout=12)
-            except RuntimeError:
-                result = asyncio.run(coro)
+            result = self._run_async(coro)
         except Exception:
             logger.debug("Jev exit check failed", exc_info=True)
             return

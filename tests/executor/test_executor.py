@@ -403,3 +403,49 @@ def test_one_rejected_leg_does_not_stop_the_next_leg(tmp_path):
     reliance, infy = executor.states
     assert reliance.entry_order_id is None and reliance.is_finished
     assert infy.entry_order_id is not None
+
+
+async def _answer(value=42):
+    return value
+
+
+def test_run_async_works_without_a_running_loop(tmp_path):
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    assert executor._run_async(_answer()) == 42
+
+
+async def test_run_async_does_not_deadlock_inside_a_running_loop(tmp_path):
+    # tick() runs on the API's event loop thread; blocking on a coroutine
+    # scheduled onto that same loop would freeze it until the timeout.
+    import time as _time
+
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    started = _time.monotonic()
+    assert executor._run_async(_answer(7), timeout=3) == 7
+    assert _time.monotonic() - started < 1.0
+
+
+def test_run_async_reuses_one_loop_across_calls(tmp_path):
+    import asyncio
+
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    async def current_loop():
+        return asyncio.get_running_loop()
+
+    assert executor._run_async(current_loop()) is executor._run_async(current_loop())
+
+
+def test_run_async_times_out(tmp_path):
+    import asyncio
+    import concurrent.futures
+
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    async def slow():
+        await asyncio.sleep(5)
+
+    with pytest.raises(concurrent.futures.TimeoutError):
+        executor._run_async(slow(), timeout=0.2)
