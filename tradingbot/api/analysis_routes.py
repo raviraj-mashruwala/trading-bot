@@ -68,6 +68,14 @@ def _make_step_tracker(state: AppState):
     return _on_event
 
 
+def _pipeline_cache_dir(state: AppState):
+    """Where a staged (rerunnable) analysis remembers Jev's answers: the per-date queue dir.
+
+    The web API runs the pipeline once, so it needs no cache and keeps its old behaviour.
+    """
+    return Path(state.config.llm.queue_dir) if state.require_prefetched else None
+
+
 def _build_context_fetcher(state: AppState, market_provider):
     """The index, VIX and flows fetcher. It reads NIFTY, BANKNIFTY and VIX from the
     candle store, so it must be given one (without it every index read is empty)."""
@@ -148,6 +156,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             screening_config=config.screening,
             jev_config=config.jev,
             require_prefetched=state.require_prefetched,
+            cache_dir=_pipeline_cache_dir(state),
         )
 
         await state.event_bus.emit("analysis.started", {

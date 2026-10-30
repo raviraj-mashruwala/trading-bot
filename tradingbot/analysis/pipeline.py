@@ -10,10 +10,13 @@ The old plan_generator still works for backward compat.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import time
 import uuid
 from datetime import date, datetime, timedelta
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -131,6 +134,7 @@ class AnalysisPipeline:
         jev_config: Any = None,
         duckdb_store: Any = None,
         require_prefetched: bool = False,
+        cache_dir: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
@@ -152,6 +156,7 @@ class AnalysisPipeline:
         self._screening = screening_config
         self._approved_setup_ids: dict[str, int] = {}
         self._require_prefetched = require_prefetched
+        self._cache_dir = cache_dir
 
         # Intelligent screener wraps deterministic screener with Jev layer
         self._intelligent_screener = None
@@ -227,9 +232,14 @@ class AnalysisPipeline:
             advance_decline=_advance_decline(stock_metrics), sector_data=sector_data,
         )
 
-        regime = None
-        if self._jev_tier2 is not None:
+        # Jev answers from live inputs, so a rerun would get a different regime. A staged
+        # analysis is rerun several times: remember what Jev said the first time.
+        jev_cache = self._load_jev_cache()
+        regime = jev_cache.get("regime")
+        if regime is None and self._jev_tier2 is not None:
             regime = await self._jev_tier2.analyze_regime(**_regime_args)
+            if regime is not None:
+                self._store_jev_cache("regime", regime)
         if regime is None:
             with llm_step("regime"):
                 regime = await self._tier2.analyze_regime(**_regime_args)
@@ -237,9 +247,11 @@ class AnalysisPipeline:
             if isinstance(regime.get("_usage"), LLMUsage):
                 total_cost += regime.pop("_usage").cost_usd()
 
-        sectors = None
-        if self._jev_tier2 is not None:
+        sectors = jev_cache.get("sectors")
+        if sectors is None and self._jev_tier2 is not None:
             sectors = await self._jev_tier2.analyze_sectors(regime, {}, {})
+            if sectors is not None:
+                self._store_jev_cache("sectors", sectors)
         if sectors is None:
             with llm_step("sectors"):
                 sectors = await self._tier2.analyze_sectors(regime, {}, {})
@@ -540,6 +552,26 @@ class AnalysisPipeline:
             len(shortlist), setups_proposed, setups_approved, llm_calls, duration,
         )
         return analysis_run
+
+    def _load_jev_cache(self) -> dict:
+        if self._cache_dir is None:
+            return {}
+        try:
+            cached = json.loads((Path(self._cache_dir) / "jev_tier2.json").read_text())
+        except (OSError, ValueError):
+            return {}
+        return cached if isinstance(cached, dict) else {}
+
+    def _store_jev_cache(self, key: str, value: dict) -> None:
+        if self._cache_dir is None:
+            return
+        directory = Path(self._cache_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        cached = self._load_jev_cache()
+        cached[key] = value
+        temporary = directory / ".jev_tier2.tmp"
+        temporary.write_text(json.dumps(cached, indent=2, default=str))
+        os.replace(temporary, directory / "jev_tier2.json")
 
     def _retire_previous_approved(self, trade_date: date) -> None:
         """Staged runs are rerunnable by design, so a finished run replaces its predecessor.
