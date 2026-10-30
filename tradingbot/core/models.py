@@ -633,6 +633,7 @@ class ScoredStock:
     composite_score: float
     factor_scores: dict[str, float]
     instrument_token: int
+    signals: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

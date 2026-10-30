@@ -75,6 +75,14 @@ def _previous_trading_day(day: date) -> date:
     return previous
 
 
+def _advance_decline(stock_metrics: list[dict]) -> float:
+    """Advancers per decliner on the last session across the screened universe."""
+    changes = [m.get("signals", {}).get("change_1d_pct", 0.0) for m in stock_metrics]
+    advancers = sum(1 for c in changes if c > 0)
+    decliners = sum(1 for c in changes if c < 0)
+    return advancers / decliners if decliners else float(advancers)
+
+
 def _match_strategy(name: str) -> StrategyName | None:
     """Map Claude's strategy name to the closest generic strategy."""
     if not name or not name.strip():
@@ -216,7 +224,7 @@ class AnalysisPipeline:
             nifty=market_ctx.nifty_level, banknifty=getattr(market_ctx, "banknifty_level", 0.0),
             vix=market_ctx.india_vix, nifty_5d_change=nifty_5d_change,
             fii_5d_net=market_ctx.fii_net_cr, dii_5d_net=market_ctx.dii_net_cr,
-            advance_decline=0, sector_data=sector_data,
+            advance_decline=_advance_decline(stock_metrics), sector_data=sector_data,
         )
 
         regime = None
@@ -246,6 +254,7 @@ class AnalysisPipeline:
                 "sector": s.sector,
                 "last_price": s.last_price,
                 "factor_scores": s.factor_scores,
+                "signals": s.signals,
             }
             for s in scored
         ]
@@ -622,6 +631,7 @@ class AnalysisPipeline:
 
         import statistics
         import pandas as pd
+        from tradingbot.strategy.indicators import rsi
         from datetime import timedelta
 
         now = datetime.now(tz=IST)
@@ -695,6 +705,24 @@ class AnalysisPipeline:
             pct_above = ((last_price - sma20) / sma20 * 100) if sma20 > 0 else 0
             price_structure_score = min(100.0, max(0.0, 50.0 + abs(pct_above) * 5.0))
 
+            # Signed signals. The factor scores above are magnitudes (abs() inside), so
+            # without these the shortlist cannot tell a stock rising from one falling.
+            prev_close = float(close.iloc[-2]) if len(close) >= 2 else last_price
+            rsi_now = rsi(close).iloc[-1]
+            high_20d = float(df["high"].tail(20).max())
+            signals = {
+                "change_1d_pct": round((last_price / prev_close - 1) * 100, 2) if prev_close > 0 else 0.0,
+                "change_5d_pct": round(stock_5d_return, 2),
+                "rsi_14": 50.0 if pd.isna(rsi_now) else round(float(rsi_now), 1),
+                "vs_sma20_pct": round((last_price / sma20 - 1) * 100, 2) if sma20 > 0 else 0.0,
+                "from_20d_high_pct": round((last_price / high_20d - 1) * 100, 2) if high_20d > 0 else 0.0,
+                "gap_pct": (
+                    round((float(df["open"].iloc[-1]) - prev_close) / prev_close * 100, 2)
+                    if prev_close > 0 else 0.0
+                ),
+                "vol_ratio": round(vol_today / avg_volume, 2) if avg_volume > 0 else 0.0,
+            }
+
             sector = inst.get("sector", "unknown")
             sector_returns.setdefault(sector, []).append(stock_5d_return)
 
@@ -709,6 +737,7 @@ class AnalysisPipeline:
                 "atr_pct": atr_pct,
                 "sector": sector,
                 "trading_days": trading_days,
+                "signals": signals,
                 "_stock_5d_return": stock_5d_return,
                 "factor_scores": {
                     "gap_analysis": gap_score,

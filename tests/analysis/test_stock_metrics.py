@@ -302,3 +302,54 @@ def test_sector_momentum_populated_for_all_stocks():
     assert len(result) == 2
     # sector_momentum should reflect positive sector return, not stuck at 50
     assert result[0]["factor_scores"]["sector_momentum"] > 50.0
+
+
+# ── Signed signals: direction, which the unsigned factor scores cannot give ───
+
+def _frame(closes, opens=None, volumes=None):
+    n = len(closes)
+    dates = [datetime.now(tz=IST) - timedelta(days=n - i) for i in range(n)]
+    closes = np.asarray(closes, dtype=float)
+    return pd.DataFrame({
+        "open": closes if opens is None else np.asarray(opens, dtype=float),
+        "high": closes + 1, "low": closes - 1, "close": closes,
+        "volume": np.full(n, 600000) if volumes is None else np.asarray(volumes),
+    }, index=pd.DatetimeIndex(dates, name="date"))
+
+
+def _signals_for(df):
+    cache = MagicMock()
+    cache.get_all.return_value = [{"token": 1, "symbol": "X", "exchange": "NSE", "lot_size": 1, "tick_size": 0.05}]
+    store = MagicMock()
+    store.read.return_value = df
+    (metric,) = _make_pipeline(cache, store)._build_stock_metrics()
+    return metric["signals"]
+
+
+def test_signals_are_negative_for_a_falling_stock_and_positive_for_a_rising_one():
+    falling = _signals_for(_frame(np.linspace(600, 480, 30)))
+    rising = _signals_for(_frame(np.linspace(480, 600, 30)))
+
+    assert falling["change_1d_pct"] < 0 and falling["change_5d_pct"] < 0
+    assert falling["vs_sma20_pct"] < 0 and falling["rsi_14"] < 30
+    assert rising["change_1d_pct"] > 0 and rising["change_5d_pct"] > 0
+    assert rising["vs_sma20_pct"] > 0 and rising["rsi_14"] > 70
+
+
+def test_signal_values_are_exact_on_a_known_frame():
+    closes = [100.0] * 28 + [100.0, 102.0]            # last day +2%
+    opens = [100.0] * 29 + [103.0]                    # opened 3% above the prior close of 100... 
+    volumes = [100000] * 29 + [300000]                # 3x the 20-day average (average includes today)
+    signals = _signals_for(_frame(closes, opens=opens, volumes=volumes))
+
+    assert signals["change_1d_pct"] == pytest.approx(2.0)
+    assert signals["change_5d_pct"] == pytest.approx(2.0)
+    assert signals["gap_pct"] == pytest.approx(3.0)
+    assert signals["from_20d_high_pct"] == pytest.approx((102.0 / 103.0 - 1) * 100, abs=0.01)  # high = close + 1
+    assert signals["vol_ratio"] == pytest.approx(300000 / ((19 * 100000 + 300000) / 20), abs=0.01)
+
+
+def test_gap_is_signed():
+    down = _signals_for(_frame([100.0] * 30, opens=[100.0] * 29 + [97.0]))
+
+    assert down["gap_pct"] == pytest.approx(-3.0)

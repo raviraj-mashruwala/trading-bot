@@ -27,6 +27,11 @@ class MarketDataProvider:
                       "-N1", "-N2", "-N3", "-N4", "-N5", "-N6",
                       "-SM", "-BE", "-BZ", "-ST", "-BL")
     _JUNK_RE = re.compile(r"-[A-Z]{2}$")
+    # ETFs and funds are baskets or commodities, not intraday single-stock setups. Kite names
+    # every one "... ETF" or "... BEES"; whole-word matching keeps operating companies such as
+    # "SBI FUNDS MANAGEMENT".
+    _FUND_NAME_RE = re.compile(r"\b(ETF|BEES|FUND|GILT|LIQUID)\b", re.IGNORECASE)
+    _FUND_SYMBOL_RE = re.compile(r"(BEES|ETF)$")
 
     def get_universe(
         self,
@@ -47,6 +52,8 @@ class MarketDataProvider:
                 if any(sym.endswith(s) for s in self._JUNK_SUFFIXES):
                     continue
                 if self._JUNK_RE.search(sym):
+                    continue
+                if self._FUND_SYMBOL_RE.search(sym) or self._FUND_NAME_RE.search(i.get("name") or ""):
                     continue
                 lp = float(i.get("last_price", 0) or 0)
                 if lp > 0 and not (min_price <= lp <= max_price):

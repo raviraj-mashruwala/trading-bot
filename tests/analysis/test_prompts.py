@@ -284,3 +284,35 @@ def test_adversarial_system_contains_final_check_questions():
         "flaw",
     ]:
         assert phrase.lower() in ADVERSARIAL_SYSTEM.lower(), f"Missing phrase: {phrase!r}"
+
+
+def test_shortlist_prompt_shows_signed_signals_per_stock():
+    stock = _make_stock()
+    stock["signals"] = {
+        "change_1d_pct": -4.2, "change_5d_pct": -11.0, "rsi_14": 27.0, "vs_sma20_pct": -8.1,
+        "from_20d_high_pct": -35.0, "gap_pct": -1.3, "vol_ratio": 2.4,
+    }
+
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, [stock])
+
+    assert "change_1d=-4.2%" in prompt
+    assert "change_5d=-11.0%" in prompt
+    assert "rsi14=27" in prompt
+    assert "vs_sma20=-8.1%" in prompt
+    assert "from_20d_high=-35.0%" in prompt
+    assert "gap=-1.3%" in prompt
+    assert "vol_ratio=2.4" in prompt
+
+
+def test_shortlist_prompt_without_signals_still_renders():
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, [_make_stock()])
+
+    assert "RELIANCE" in prompt
+    assert "change_1d" not in prompt
+
+
+def test_shortlist_task_says_direction_comes_from_the_signed_lines():
+    prompt = build_shortlist_user_prompt({"regime": "range_bound"}, {}, [_make_stock()])
+
+    assert "signed" in prompt.lower()
+    assert "already extended" in prompt
