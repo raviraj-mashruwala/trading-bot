@@ -166,3 +166,64 @@ def test_fetch_populates_nifty_level_from_candle_store():
     ctx = fetcher.fetch()
     assert ctx.nifty_level == pytest.approx(24500.0, rel=0.01)
     assert ctx.india_vix == pytest.approx(13.0)
+
+
+class DuckDbShapedStore:
+    """Same read() signature as the real CandleStore: read(symbol, interval, days=...)."""
+
+    def __init__(self, frames):
+        self._frames = frames
+        self.calls = []
+
+    def read(self, symbol, interval, days=None, from_date=None, to_date=None):
+        assert isinstance(days, int) or days is None, f"days must be an int row count, got {days!r}"
+        self.calls.append((symbol, interval, days))
+        return self._frames[symbol].tail(days or len(self._frames[symbol]))
+
+
+def _store():
+    vix = pd.DataFrame({"open": [13.0] * 12, "high": [13.5] * 12, "low": [12.5] * 12,
+                        "close": [13.0 + i * 0.1 for i in range(12)], "volume": [0] * 12})
+    return DuckDbShapedStore({
+        "NIFTY 50": _make_daily_df(120, last_close=24500.0, trend="up"),
+        "NIFTY BANK": _make_daily_df(120, last_close=52000.0, trend="up"),
+        "INDIA VIX": vix,
+    })
+
+
+def test_context_reads_the_real_candle_store_signature():
+    store = _store()
+    fetcher = MarketContextFetcher(
+        http_client=make_client(lambda r: httpx.Response(200, json=[])), candle_store=store,
+    )
+
+    ctx = fetcher.fetch()
+
+    assert ctx.nifty_level == pytest.approx(24500.0, rel=0.01)
+    assert ctx.india_vix == pytest.approx(13.0 + 11 * 0.1)  # the real last close, not the 15.0 default
+    assert ("NIFTY 50", "day", 120) in store.calls
+
+
+def test_context_carries_the_banknifty_level():
+    fetcher = MarketContextFetcher(
+        http_client=make_client(lambda r: httpx.Response(200, json=[])), candle_store=_store(),
+    )
+
+    ctx = fetcher.fetch()
+
+    assert ctx.banknifty_level == pytest.approx(52000.0, rel=0.01)
+    assert ctx.to_dict()["banknifty_level"] == pytest.approx(52000.0, rel=0.01)
+
+
+def test_analysis_builds_the_context_fetcher_with_the_candle_store():
+    from types import SimpleNamespace
+
+    from tradingbot.api.analysis_routes import _build_context_fetcher
+
+    store = object()
+    provider = object()
+
+    fetcher = _build_context_fetcher(SimpleNamespace(candle_store=store), provider)
+
+    assert fetcher._candles is store
+    assert fetcher._provider is provider

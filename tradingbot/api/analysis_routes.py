@@ -68,6 +68,16 @@ def _make_step_tracker(state: AppState):
     return _on_event
 
 
+def _build_context_fetcher(state: AppState, market_provider):
+    """The index, VIX and flows fetcher. It reads NIFTY, BANKNIFTY and VIX from the
+    candle store, so it must be given one (without it every index read is empty)."""
+    from tradingbot.scanner.market_context import MarketContextFetcher
+
+    return MarketContextFetcher(
+        candle_store=getattr(state, "candle_store", None), market_data_provider=market_provider,
+    )
+
+
 async def _run_analysis(state: AppState, trade_date: date) -> None:
     """Run the 3-tier analysis pipeline."""
     sub_id = state.event_bus.subscribe(_make_step_tracker(state))
@@ -131,7 +141,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             event_bus=state.event_bus,
             capital=live_capital,
             instrument_cache=inst_cache,
-            context_fetcher=MarketContextFetcher(market_data_provider=market_provider),
+            context_fetcher=_build_context_fetcher(state, market_provider),
             lookback_days=config.backtest.lookback_days,
             db_path=Path(state.data_dir) / "tradingbot.db",
             market_data_provider=market_provider,

@@ -122,10 +122,12 @@ class MarketContext:
     sector_leaders: list[str]
     sector_laggards: list[str]
     regime: MarketRegime
+    banknifty_level: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "nifty_level": self.nifty_level,
+            "banknifty_level": self.banknifty_level,
             "nifty_trend": self.nifty_trend,
             "banknifty_trend": self.banknifty_trend,
             "india_vix": self.india_vix,

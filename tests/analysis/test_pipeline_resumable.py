@@ -267,7 +267,7 @@ async def test_reruns_converge_to_one_run_even_when_live_inputs_drift(deps, tmp_
     drift = iter(range(1000))
     context = MagicMock()
     context.fetch.side_effect = lambda: MagicMock(
-        nifty_level=24000 + next(drift), india_vix=15.0 + next(drift) / 100,
+        nifty_level=24000 + next(drift), banknifty_level=52000.0, india_vix=15.0 + next(drift) / 100,
         fii_net_cr=100.0, dii_net_cr=100.0, sector_leaders=[], sector_laggards=[],
         regime=MagicMock(value="range_bound"),
     )

@@ -86,3 +86,42 @@ async def test_pipeline_uses_defaults_when_no_fetcher(tmp_path):
     tier2.analyze_regime.assert_called_once()
     kwargs = tier2.analyze_regime.call_args.kwargs
     assert kwargs["vix"] == 15.0
+
+
+async def test_regime_call_gets_the_banknifty_level(tmp_path):
+    from datetime import date
+    from unittest.mock import AsyncMock, MagicMock
+
+    from tradingbot.analysis.pipeline import AnalysisPipeline
+    from tradingbot.core.models import MarketRegime
+    from tradingbot.persistence.run_store import RunStore
+    from tradingbot.persistence.setup_store import SetupStore
+
+    db = tmp_path / "t.db"
+    context = MagicMock()
+    context.fetch.return_value = MagicMock(
+        nifty_level=24500.0, banknifty_level=52000.0, india_vix=14.0, fii_net_cr=1.0,
+        dii_net_cr=1.0, sector_leaders=[], sector_laggards=[], regime=MarketRegime.RANGE_BOUND,
+    )
+    tier2 = AsyncMock()
+    tier2.analyze_regime.return_value = {
+        "regime": "range_bound", "regime_confidence": 0.5, "bias": "neutral",
+        "sectors_in_play": [], "risk_appetite": "moderate", "reasoning": "x",
+    }
+    tier2.analyze_sectors.return_value = {"sectors": [], "reasoning": "x"}
+    tier2.shortlist.return_value = {"shortlist": [], "max_positions_today": 1, "reasoning": "x"}
+    screener = MagicMock()
+    screener.screen.return_value = []
+    pipeline = AnalysisPipeline(
+        data_sync=MagicMock(), candle_store=MagicMock(), screener=screener, tier2=tier2,
+        tier3=AsyncMock(), backtest_engine=MagicMock(), monte_carlo=MagicMock(),
+        run_store=RunStore(db), setup_store=SetupStore(db),
+        event_bus=MagicMock(emit=AsyncMock()), capital=400000, context_fetcher=context,
+    )
+    pipeline._fetch_delivery_data = lambda trade_date: {}
+
+    await pipeline.run(date(2026, 9, 27))
+
+    kwargs = tier2.analyze_regime.call_args.kwargs
+    assert kwargs["banknifty"] == 52000.0
+    assert kwargs["nifty"] == 24500.0

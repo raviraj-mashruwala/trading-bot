@@ -213,7 +213,7 @@ class AnalysisPipeline:
         # --- Tier 2: regime + sectors (Jev when available, Claude fallback) ---
         sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
         _regime_args = dict(
-            nifty=market_ctx.nifty_level, banknifty=0,
+            nifty=market_ctx.nifty_level, banknifty=getattr(market_ctx, "banknifty_level", 0.0),
             vix=market_ctx.india_vix, nifty_5d_change=nifty_5d_change,
             fii_5d_net=market_ctx.fii_net_cr, dii_5d_net=market_ctx.dii_net_cr,
             advance_decline=0, sector_data=sector_data,
