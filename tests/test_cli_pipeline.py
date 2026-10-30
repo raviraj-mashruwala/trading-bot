@@ -552,3 +552,34 @@ def test_analyze_exit_10_says_which_round_it_is(env, monkeypatch, tool, label):
     result = invoke(env, "pipeline", "analyze", "--date", TRADE_DATE)
 
     assert f"(round: {label})" in result.output
+
+
+def test_shortlist_round_points_at_fetch_before_analyze(env, monkeypatch):
+    def behaviour(state, trade_date):
+        add_request(Path(state.config.llm.queue_dir), tool="submit_shortlist")
+        state.analysis_status = "blocked"
+        state.analysis_blocked = AnswersNeeded([])
+
+    fake_analysis(monkeypatch, behaviour)
+
+    result = invoke(env, "pipeline", "analyze", "--date", TRADE_DATE)
+
+    assert (
+        f"then run: scripts/analysis/fetch.sh {TRADE_DATE}, "
+        f"then rerun scripts/analysis/analyze.sh {TRADE_DATE}"
+    ) in result.output
+
+
+@pytest.mark.parametrize("tool", ["submit_deep_analysis", "submit_validation", "submit_regime_analysis"])
+def test_other_rounds_still_point_straight_back_at_analyze(env, monkeypatch, tool):
+    def behaviour(state, trade_date):
+        add_request(Path(state.config.llm.queue_dir), tool=tool)
+        state.analysis_status = "blocked"
+        state.analysis_blocked = AnswersNeeded([])
+
+    fake_analysis(monkeypatch, behaviour)
+
+    result = invoke(env, "pipeline", "analyze", "--date", TRADE_DATE)
+
+    assert f"then rerun: scripts/analysis/analyze.sh {TRADE_DATE}" in result.output
+    assert "fetch.sh" not in result.output

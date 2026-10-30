@@ -83,7 +83,7 @@ next: paste this into Claude Code (opened in this repo):
 
   /answer-llm-requests 2026-11-02 - answer only. Don't run any scripts, I'll run them myself.
 
-then rerun: scripts/analysis/analyze.sh 2026-11-02
+then run: scripts/analysis/fetch.sh 2026-11-02, then rerun scripts/analysis/analyze.sh 2026-11-02
 ```
 
 `fetch.sh` ends with `next: rerun scripts/analysis/analyze.sh <date>`, and if you run it

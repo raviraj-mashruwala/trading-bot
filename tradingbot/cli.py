@@ -392,13 +392,13 @@ def _chat_prompt(day: date) -> str:
     return f"/answer-llm-requests {day} - answer only. Don't run any scripts, I'll run them myself."
 
 
-def _echo_paste_prompt(day: date, rerun: str) -> None:
+def _echo_paste_prompt(day: date, then: str) -> None:
     click.echo("")
     click.echo("next: paste this into Claude Code (opened in this repo):")
     click.echo("")
     click.echo(f"  {_chat_prompt(day)}")
     click.echo("")
-    click.echo(f"then rerun: {rerun} {day}")
+    click.echo(then)
 
 
 def _echo_pending(pending: list, day: date, rerun: str) -> None:
@@ -406,7 +406,13 @@ def _echo_pending(pending: list, day: date, rerun: str) -> None:
     click.echo(f"{len(pending)} LLM requests pending for {day} (round: {', '.join(labels)}):")
     for request in pending:
         click.echo(f"  {request.id}  {request.tool_name}  {request.path}")
-    _echo_paste_prompt(day, rerun)
+    if {request.tool_name for request in pending} == {"submit_shortlist"}:
+        # The shortlist decides which candles are needed; fetch is gap-aware, so it is
+        # quick when they are already fresh.
+        then = f"then run: scripts/analysis/fetch.sh {day}, then rerun {rerun} {day}"
+    else:
+        then = f"then rerun: {rerun} {day}"
+    _echo_paste_prompt(day, then)
 
 
 def _file_llm_config(config: Config) -> Config:
@@ -523,7 +529,7 @@ def pipeline_fetch(obj: dict, target: str | None) -> None:
             f"If analyze.sh has not run, run scripts/analysis/analyze.sh {trade_date} first. "
             "If it exited 10, the shortlist still needs answering:"
         )
-        _echo_paste_prompt(trade_date, "scripts/analysis/fetch.sh")
+        _echo_paste_prompt(trade_date, f"then rerun: scripts/analysis/fetch.sh {trade_date}")
         sys.exit(1)
     symbols = [pick["symbol"] for pick in shortlist.get("shortlist", [])]
     if not symbols:
