@@ -163,52 +163,11 @@ def create_app(
                     )
                     telegram_cmd_task = asyncio.create_task(cmd_handler.start())
 
-        # Scheduled jobs: sync at 4 PM, review at 8:30 PM (trading days only)
-        from tradingbot.api.sync_routes import _run_sync
+        # Only execution is scheduled. Sync, analysis and review are manual.
         from zoneinfo import ZoneInfo
         from datetime import datetime as _dt
 
         IST = ZoneInfo("Asia/Kolkata")
-
-        async def _nightly_review(state_ref, review_date=None):
-            try:
-                import logging
-                _log = logging.getLogger(__name__)
-                _log.info("Nightly review starting for %s", review_date or "today")
-                await state_ref.event_bus.emit("review.started", {"trade_date": review_date or ""})
-                from tradingbot.core.llm.anthropic_provider import build_provider
-                from tradingbot.analysis.nightly_reviewer import run_nightly_review
-                llm = build_provider(state_ref.config.llm, state_ref.config.secrets)
-                db = Database(Path(state_ref.data_dir) / "tradingbot.db")
-                db.initialise()
-                try:
-                    jev_for_review = None
-                    if state_ref.config.jev and state_ref.config.jev.enabled:
-                        from tradingbot.core.jev_client import JevClient
-                        try:
-                            jev_for_review = JevClient(state_ref.config.jev)
-                            if not jev_for_review.available:
-                                jev_for_review = None
-                        except Exception:
-                            pass
-                    result = await run_nightly_review(
-                        db, llm,
-                        trade_date=review_date,
-                        setup_store=getattr(state_ref, "setup_store", None),
-                        candle_store=getattr(state_ref, "candle_store", None),
-                        jev_client=jev_for_review,
-                    )
-                finally:
-                    db.close()
-                await state_ref.event_bus.emit("review.complete", {
-                    "trade_date": result.get("trade_date", ""),
-                    "grade": result.get("grade", ""),
-                    "skipped": result.get("skipped", False),
-                })
-            except Exception:
-                import logging
-                logging.getLogger(__name__).warning("Nightly review failed", exc_info=True)
-                await state_ref.event_bus.emit("review.failed", {"error": "Review failed"})
 
         async def _auto_start_execution(state_ref):
             try:
@@ -275,45 +234,10 @@ def create_app(
                 if tg:
                     tg.notify_auto_start_failed(f"{type(exc).__name__}: check application logs")
 
-        async def _auto_run_analysis(state_ref):
-            try:
-                import logging
-                _log = logging.getLogger(__name__)
-                from tradingbot.scanner.calendar import next_trading_day
-                from tradingbot.core.models import now_ist
-                now = now_ist()
-                target = next_trading_day(now.date())
-
-                # Check if plan already exists for target date
-                try:
-                    existing_plan = state_ref.plan_store.load(str(target))
-                    if existing_plan and existing_plan.legs:
-                        _log.info("Plan for %s already exists (%d legs) — skipping analysis", target, len(existing_plan.legs))
-                        return
-                except Exception:
-                    pass
-
-                _log.info("Auto-running analysis for %s", target)
-                await state_ref.event_bus.emit("analysis.auto_start", {"trade_date": str(target)})
-                from tradingbot.api.analysis_routes import _run_analysis
-                await _run_analysis(state_ref, target)
-            except Exception as exc:
-                import logging
-                logging.getLogger(__name__).warning("Auto-analysis failed", exc_info=True)
-                tg = getattr(state_ref, "_telegram", None)
-                if tg:
-                    tg.notify_analysis_failed(f"{type(exc).__name__}: {exc}")
-
         async def _daily_scheduler():
-            from tradingbot.scheduler import (
-                should_start_execution, should_sync, should_run_analysis,
-                should_review, previous_day,
-            )
+            from tradingbot.scheduler import should_start_execution
             from tradingbot.scanner.calendar import is_trading_day
             last_exec_date = None
-            last_sync_date = None
-            last_analysis_date = None
-            last_review_date = None
             while True:
                 await asyncio.sleep(30)
                 try:
@@ -326,45 +250,6 @@ def create_app(
                         state = app.state.app_state
                         asyncio.create_task(_auto_start_execution(state))
                         last_exec_date = today
-
-                    if should_sync(now_time, today, last_sync_date, trading):
-                        import logging
-                        logging.getLogger(__name__).info("Scheduled daily sync at 4 PM IST")
-                        state = app.state.app_state
-                        if state.sync_task is None or state.sync_task.done():
-                            async def _sync_with_events(s):
-                                await s.event_bus.emit("sync.started", {})
-                                await _run_sync(s)
-                                status = s.sync_status or {}
-                                await s.event_bus.emit("sync.complete", {
-                                    "stocks_synced": status.get("stocks_synced", 0),
-                                    "rows_written": status.get("rows_written", 0),
-                                    "status": status.get("status", "unknown"),
-                                    "error": status.get("error", ""),
-                                })
-                            state.sync_task = asyncio.create_task(_sync_with_events(state))
-                        last_sync_date = today
-
-                    if should_run_analysis(now_time, today, last_analysis_date, trading):
-                        state = app.state.app_state
-                        asyncio.create_task(_auto_run_analysis(state))
-                        last_analysis_date = today
-
-                    prev = previous_day(today)
-                    prev_trading = is_trading_day(prev)
-                    if should_review(now_time, today, last_review_date, prev_trading):
-                        state = app.state.app_state
-                        review_date = str(prev)
-                        existing = Database(Path(state.data_dir) / "tradingbot.db")
-                        existing.initialise()
-                        already_done = existing.get_nightly_review(review_date) is not None
-                        existing.close()
-                        if not already_done:
-                            asyncio.create_task(_nightly_review(state, review_date))
-                        else:
-                            import logging
-                            logging.getLogger(__name__).info("Nightly review already exists for %s", review_date)
-                        last_review_date = today
                 except Exception:
                     pass
 

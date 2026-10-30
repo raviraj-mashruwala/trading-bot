@@ -40,7 +40,6 @@ def build_risk_manager(config: Config) -> RiskManager:
         config.risk,
         config.strategy,
         capital=config.general.capital,
-        plan_max_age_hours=config.execution.plan_max_age_hours,
         max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
     )
 

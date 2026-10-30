@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import date, datetime, time
 
 import pytest
@@ -65,7 +66,6 @@ def make_execution_config() -> ExecutionConfig:
         square_off_time=time(15, 10),
         connection_timeout_sec=30,
         heartbeat_interval_sec=60,
-        plan_max_age_hours=14.0,
         max_entry_price_drift_pct=10.0,
     )
 
@@ -138,14 +138,25 @@ def test_start_skips_a_leg_whose_price_has_gapped_away(tmp_path):
     assert executor.states[0].entry_order_id is None
 
 
-def test_a_stale_plan_prevents_any_order(tmp_path):
-    stale = make_plan([make_leg()], generated_at=datetime(2026, 9, 21, 8, 0, tzinfo=IST))
-    executor, broker, _, _ = build(tmp_path, [make_leg()], plan=stale)
+def test_a_plan_for_another_day_prevents_any_order(tmp_path):
+    other_day = dataclasses.replace(make_plan([make_leg()]), trade_date="2026-09-23")
+    executor, broker, _, _ = build(tmp_path, [make_leg()], plan=other_day)
 
     executor.start()
 
     assert executor.blocked is True
     assert executor.states == []
+
+
+def test_an_old_plan_for_today_still_executes(tmp_path):
+    # Generated days ago (e.g. Friday for a Monday session): age does not matter.
+    old = make_plan([make_leg()], generated_at=datetime(2026, 9, 18, 8, 0, tzinfo=IST))
+    executor, broker, _, _ = build(tmp_path, [make_leg()], price=105.0, plan=old)
+
+    executor.start()
+
+    assert executor.blocked is False
+    assert executor.states[0].entry_order_id is not None
 
 
 def test_a_filled_entry_gets_a_protective_stop(tmp_path):

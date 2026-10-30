@@ -108,7 +108,6 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
         risk_manager = RiskManager(
             config.risk, config.strategy, capital=live_capital,
-            plan_max_age_hours=config.execution.plan_max_age_hours,
             max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
             margin_fetcher=margin_fetcher,
         )

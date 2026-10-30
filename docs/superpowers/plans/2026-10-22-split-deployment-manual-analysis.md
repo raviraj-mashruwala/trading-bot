@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Update 2026-10-30:** Part A is superseded by `2026-10-30-staged-manual-analysis.md` (built and merged). Two decisions since then change Part B: the plan-age limit was removed (a plan is valid for its own trade date however old, so Task 8's freshness check and `plan_max_age_hours` references are obsolete), and the sync/analysis/review schedulers were removed (only the 09:00 execution job remains, so Task 5's per-role job gating reduces to refusing live execution on role `manual`, if that role is still wanted).
+
 **Goal:** Run the live executor alone on a deployed box (09:00 to 15:10 IST, fed by live ticks) while the analysis pipeline (data sync, screening, LLM research, plan) is triggered by hand from a laptop, with every LLM answer produced inside a Claude Code conversation instead of the Anthropic API.
 
 **Architecture:** Analysis side: a new `"file"` `LLMProvider` writes each request as JSON into a per-trade-date queue directory and blocks until a schema-valid response file appears; a Claude Code session answers the queue via a project skill. Pipeline code and tool schemas are untouched, so plan structure is identical. Executor side: a `[deployment] role` setting switches scheduled jobs per machine, the executor resolves its own instrument tokens, and `plan push` copies a freshness-checked plan to the box over scp.

@@ -112,7 +112,6 @@ def make_execution_config() -> ExecutionConfig:
         square_off_time=time(15, 10),
         connection_timeout_sec=30,
         heartbeat_interval_sec=60,
-        plan_max_age_hours=14.0,
         max_entry_price_drift_pct=10.0,
     )
 
