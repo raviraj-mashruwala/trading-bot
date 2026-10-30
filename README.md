@@ -14,6 +14,9 @@ setups before the open; a deterministic executor follows the plan during the ses
 Analysis and execution are fully decoupled — run the analysis the night before or
 the morning of, it makes no difference to the executor.
 
+**Running it day to day:** see [docs/DAILY_WORKFLOW.md](docs/DAILY_WORKFLOW.md) for the
+evening sync/analysis (answered inside Claude Code, no API billing) and the morning routine.
+
 ## Prerequisites
 
 | Tool | Version | Install |
