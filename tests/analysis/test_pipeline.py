@@ -423,3 +423,30 @@ def test_hub_and_spoke_drops_hub_not_spokes():
         assert "C" in syms, "Highest-confidence symbol must always survive"
         assert "A" not in syms, "A must be dropped (correlated with C, lower confidence)"
         assert "B" in syms, "B must survive — not correlated with C; only correlated with dropped A"
+
+
+def test_price_action_summary_lists_reference_levels(pipeline_deps):
+    from tradingbot.core.models import IndicatorSnapshot
+
+    snap = IndicatorSnapshot(
+        symbol="X", last_close=100.0, rsi_14=50.0, macd=0.0, macd_signal=0.0,
+        bb_upper=110.0, bb_middle=100.0, bb_lower=90.0, atr_14=2.0, sma_20=100.0,
+        sma_50=100.0, sma_200=100.0, ema_12=100.0, ema_26=100.0, vwap=101.0, pivot=100.5,
+        support_levels=[95.0], resistance_levels=[105.0],
+        last_session_high=104.0, last_session_low=98.0, last_session_close=100.0,
+        high_5d=108.0, low_5d=94.0, high_20d=115.0, low_20d=88.0,
+        pivot_r1=103.0, pivot_s1=97.0, poc=99.0, vah=102.0, val=97.5,
+    )
+    import pandas as pd
+
+    df = pd.DataFrame({"open": [1.0] * 5, "high": [1.0] * 5, "low": [1.0] * 5,
+                       "close": [1.0] * 5, "volume": [1] * 5})
+
+    text = AnalysisPipeline(**pipeline_deps)._build_price_action_summary("X", df, snap)
+
+    assert "Last session: H 104.00 L 98.00 C 100.00" in text
+    assert "5d H/L: 108.00 / 94.00" in text
+    assert "20d H/L: 115.00 / 88.00" in text
+    assert "Pivot 100.50 (R1 103.00, S1 97.00)" in text
+    assert "POC 99.00 VAH 102.00 VAL 97.50" in text
+    assert "VWAP (last session): 101.00" in text

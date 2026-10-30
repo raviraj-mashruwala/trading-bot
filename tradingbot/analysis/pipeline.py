@@ -873,10 +873,16 @@ class AnalysisPipeline:
         last_5 = df.tail(5)[["open", "high", "low", "close", "volume"]].to_dict("records")
         return (
             f"{symbol} last 5 candles (15m): {last_5}\n"
-            f"VWAP: {snap.vwap:.2f} | RSI14: {snap.rsi_14:.1f} | "
+            f"VWAP (last session): {snap.vwap:.2f} | RSI14: {snap.rsi_14:.1f} | "
             f"ATR14: {snap.atr_14:.2f} | ADX14: {snap.adx_14:.1f}\n"
             f"BB: [{snap.bb_lower:.2f}, {snap.bb_middle:.2f}, {snap.bb_upper:.2f}] "
             f"BW: {snap.bb_bandwidth:.3f}\n"
+            f"Last session: H {snap.last_session_high:.2f} L {snap.last_session_low:.2f} "
+            f"C {snap.last_session_close:.2f} | "
+            f"5d H/L: {snap.high_5d:.2f} / {snap.low_5d:.2f} | "
+            f"20d H/L: {snap.high_20d:.2f} / {snap.low_20d:.2f}\n"
+            f"Pivot {snap.pivot:.2f} (R1 {snap.pivot_r1:.2f}, S1 {snap.pivot_s1:.2f}) | "
+            f"Volume profile (10 sessions): POC {snap.poc:.2f} VAH {snap.vah:.2f} VAL {snap.val:.2f}\n"
             f"Support: {snap.support_levels} | Resistance: {snap.resistance_levels}\n"
             f"Supertrend: {snap.supertrend:.2f} "
             f"({'up' if snap.supertrend_direction == 1 else 'down'})"

@@ -73,11 +73,48 @@ def ema(close: pd.Series, period: int) -> pd.Series:
     return close.ewm(span=period, adjust=False).mean()
 
 
+PROFILE_SESSIONS = 10  # sessions behind the volume profile and the support/resistance clusters
+
+
+def session_keys(df: pd.DataFrame) -> pd.Series:
+    """The trading date of every row. A frame with no timestamps is one session."""
+    if "timestamp" in df.columns:
+        stamps = pd.to_datetime(df["timestamp"])
+    elif isinstance(df.index, pd.DatetimeIndex):
+        stamps = df.index.to_series()
+    else:
+        return pd.Series(0, index=df.index)
+    return stamps.dt.normalize()
+
+
+def recent_sessions(df: pd.DataFrame, sessions: int = PROFILE_SESSIONS) -> pd.DataFrame:
+    """Only the rows of the last `sessions` trading sessions."""
+    keys = session_keys(df)
+    return df[keys.isin(sorted(keys.unique())[-sessions:])]
+
+
+def session_ohlc(df: pd.DataFrame) -> pd.DataFrame:
+    """One OHLCV row per session, oldest first."""
+    grouped = df.groupby(session_keys(df), sort=True)
+    return pd.DataFrame({
+        "open": grouped["open"].first(),
+        "high": grouped["high"].max(),
+        "low": grouped["low"].min(),
+        "close": grouped["close"].last(),
+        "volume": grouped["volume"].sum(),
+    })
+
+
 def vwap(df: pd.DataFrame) -> pd.Series:
-    """Cumulative volume weighted average price across the supplied frame."""
+    """Volume weighted average price, anchored to each trading session.
+
+    VWAP is an intraday reference: it restarts every session. Accumulating across
+    weeks (as this once did) gives a multi-week average that sits nowhere near price.
+    """
     typical = (df["high"] + df["low"] + df["close"]) / 3.0
-    cumulative_volume = df["volume"].cumsum()
-    return (typical * df["volume"]).cumsum() / cumulative_volume
+    keys = session_keys(df)
+    cumulative_volume = df["volume"].groupby(keys).cumsum()
+    return (typical * df["volume"]).groupby(keys).cumsum() / cumulative_volume
 
 
 def pivot_points(df: pd.DataFrame) -> dict[str, float]:
@@ -101,9 +138,13 @@ def support_resistance(
 ) -> tuple[list[float], list[float]]:
     """Cluster swing highs and lows with DBSCAN into support and resistance levels.
 
+    Only the last PROFILE_SESSIONS sessions count: levels from weeks ago are not
+    where price is trading now.
+
     eps_pct is expressed as a percentage of the last close so the same setting
     behaves consistently across a 90 rupee stock and a 3000 rupee one.
     """
+    df = recent_sessions(df)
     last_close = float(df["close"].iloc[-1])
     pivots = np.concatenate([df["high"].to_numpy(), df["low"].to_numpy()]).reshape(-1, 1)
     if len(pivots) < min_samples:
@@ -216,16 +257,16 @@ def camarilla_pivots(df: pd.DataFrame) -> dict[str, float]:
 def vwap_bands(
     df: pd.DataFrame,
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
-    """VWAP with +/-1 sigma and +/-2 sigma bands.
+    """Session-anchored VWAP with +/-1 sigma and +/-2 sigma bands.
 
     Returns (vwap, upper1, lower1, upper2, lower2).
     """
     typical = (df["high"] + df["low"] + df["close"]) / 3
-    cum_vol = df["volume"].cumsum()
-    cum_tp_vol = (typical * df["volume"]).cumsum()
-    vwap_line = cum_tp_vol / cum_vol
+    keys = session_keys(df)
+    cum_vol = df["volume"].groupby(keys).cumsum()
+    vwap_line = (typical * df["volume"]).groupby(keys).cumsum() / cum_vol
 
-    cum_sq = ((typical - vwap_line) ** 2 * df["volume"]).cumsum()
+    cum_sq = (((typical - vwap_line) ** 2) * df["volume"]).groupby(keys).cumsum()
     std = np.sqrt(cum_sq / cum_vol)
 
     return vwap_line, vwap_line + std, vwap_line - std, vwap_line + 2 * std, vwap_line - 2 * std
@@ -238,7 +279,8 @@ def bollinger_bandwidth(close: pd.Series, period: int = 20, std: float = 2.0) ->
 
 
 def volume_profile(df: pd.DataFrame, bins: int = 20) -> dict[str, float]:
-    """Volume profile: POC, VAH, VAL from price-volume distribution."""
+    """Volume profile: POC, VAH, VAL from the last PROFILE_SESSIONS sessions."""
+    df = recent_sessions(df)
     prices = df["close"].values
     volumes = df["volume"].values.astype(float)
 
@@ -295,6 +337,12 @@ def compute_snapshot(symbol: str, df: pd.DataFrame) -> IndicatorSnapshot:
     vwap_line, vwap_u1, vwap_l1, _, _ = vwap_bands(df)
     vol_prof = volume_profile(df)
 
+    sessions_df = session_ohlc(df)
+    last_session = sessions_df.iloc[-1]
+    pivots = pivot_points(sessions_df)  # from the last session, not the last 15m candle
+    last_5 = sessions_df.tail(5)
+    last_20 = sessions_df.tail(20)
+
     return IndicatorSnapshot(
         symbol=symbol,
         last_close=float(close.iloc[-1]),
@@ -310,8 +358,17 @@ def compute_snapshot(symbol: str, df: pd.DataFrame) -> IndicatorSnapshot:
         sma_200=float(sma(close, 200).iloc[-1]),
         ema_12=float(ema(close, 12).iloc[-1]),
         ema_26=float(ema(close, 26).iloc[-1]),
-        vwap=float(vwap(df).iloc[-1]),
-        pivot=float(pivot_points(df)["pivot"]),
+        vwap=float(vwap_line.iloc[-1]),
+        pivot=float(pivots["pivot"]),
+        pivot_r1=float(pivots["r1"]),
+        pivot_s1=float(pivots["s1"]),
+        last_session_high=float(last_session["high"]),
+        last_session_low=float(last_session["low"]),
+        last_session_close=float(last_session["close"]),
+        high_5d=float(last_5["high"].max()),
+        low_5d=float(last_5["low"].min()),
+        high_20d=float(last_20["high"].max()),
+        low_20d=float(last_20["low"].min()),
         support_levels=supports,
         resistance_levels=resistances,
         adx_14=float(adx_val.iloc[-1]) if not np.isnan(adx_val.iloc[-1]) else 0.0,
