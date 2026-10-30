@@ -298,6 +298,7 @@ def test_llm_pending_lists_requests(env):
 
 @pytest.mark.parametrize("name,command", [
     ("sync", "pipeline sync"), ("analyze", "pipeline analyze"), ("fetch", "pipeline fetch"),
+    ("review", "pipeline review"),
 ])
 def test_scripts_exist_are_executable_and_call_the_cli(name, command):
     script = ROOT / "scripts" / "analysis" / f"{name}.sh"
@@ -310,7 +311,7 @@ def test_scripts_exist_are_executable_and_call_the_cli(name, command):
     assert '"$@"' in text
 
 
-@pytest.mark.parametrize("name", ["Sync", "Analyze", "Fetch"])
+@pytest.mark.parametrize("name", ["Sync", "Analyze", "Fetch", "Review"])
 def test_intellij_run_configurations_point_at_the_scripts(name):
     config = (ROOT / ".idea" / "runConfigurations" / f"Analysis___{name}.xml").read_text()
 
@@ -318,7 +319,7 @@ def test_intellij_run_configurations_point_at_the_scripts(name):
     assert "$PROJECT_DIR$" in config
 
 
-@pytest.mark.parametrize("name", ["analyze", "fetch"])
+@pytest.mark.parametrize("name", ["analyze", "fetch", "review"])
 def test_scripts_accept_a_bare_date_argument(name):
     import os
     import subprocess
@@ -370,3 +371,116 @@ def test_other_commands_still_require_the_anthropic_key(tmp_path, monkeypatch):
 
     assert result.exit_code != 0
     assert "ANTHROPIC_API_KEY" in result.output
+
+
+# ----- review ------------------------------------------------------------------
+
+def fake_review(monkeypatch, behaviour):
+    async def fake(database, llm, trade_date=None, setup_store=None, candle_store=None, jev_client=None):
+        return await behaviour(llm, trade_date)
+
+    monkeypatch.setattr("tradingbot.analysis.nightly_reviewer.run_nightly_review", fake)
+
+
+async def ask_the_llm(llm, trade_date):
+    return await llm.analyze(
+        system_prompt="s", user_prompt="u", tool_name="nightly_review",
+        tool_description="d", input_schema={"type": "object"},
+    )
+
+
+def test_review_exit_10_lists_the_pending_request_and_next_step(env, monkeypatch):
+    fake_review(monkeypatch, ask_the_llm)
+
+    result = invoke(env, "pipeline", "review", "--date", TRADE_DATE)
+
+    assert result.exit_code == 10, result.output
+    assert "1 LLM requests pending" in result.output
+    assert "nightly_review" in result.output
+    assert f"scripts/analysis/review.sh {TRADE_DATE}" in result.output
+
+
+def test_review_exit_0_prints_grade_trades_and_pnl(env, monkeypatch):
+    async def done(llm, trade_date):
+        return {"trade_date": trade_date, "grade": "B", "trades_count": 3, "total_pnl": 1234.5}
+
+    fake_review(monkeypatch, done)
+
+    result = invoke(env, "pipeline", "review", "--date", TRADE_DATE)
+
+    assert result.exit_code == 0, result.output
+    assert "grade B" in result.output
+    assert "3 trades" in result.output
+    assert "1,234.50" in result.output
+
+
+def test_review_with_no_activity_says_so_and_exits_0(env, monkeypatch):
+    async def skipped(llm, trade_date):
+        return {"trade_date": trade_date, "skipped": True, "reason": "no activity"}
+
+    fake_review(monkeypatch, skipped)
+
+    result = invoke(env, "pipeline", "review", "--date", TRADE_DATE)
+
+    assert result.exit_code == 0
+    assert "no activity" in result.output
+
+
+def test_review_uses_the_file_provider_a_per_date_queue_and_the_review_step(env, monkeypatch):
+    from tradingbot.core.llm.file_provider import FileAnswerProvider, _current_step
+
+    seen = {}
+
+    async def inspect(llm, trade_date):
+        seen["provider"] = llm
+        seen["step"] = _current_step.get()
+        return {"skipped": True, "reason": "x", "trade_date": trade_date}
+
+    fake_review(monkeypatch, inspect)
+
+    invoke(env, "pipeline", "review", "--date", TRADE_DATE)
+
+    assert isinstance(seen["provider"], FileAnswerProvider)  # never the Anthropic API
+    assert str(seen["provider"].queue_dir).endswith(f"llm_queue/{TRADE_DATE}")
+    assert seen["step"] == "review"
+
+
+def test_review_does_not_need_a_kite_token(tmp_path, monkeypatch):
+    write_env(monkeypatch)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path / "no-home")
+
+    async def skipped(llm, trade_date):
+        return {"skipped": True, "reason": "no activity", "trade_date": trade_date}
+
+    fake_review(monkeypatch, skipped)
+
+    result = invoke(tmp_path, "pipeline", "review", "--date", TRADE_DATE)
+
+    assert result.exit_code == 0, result.output
+
+
+def test_review_failure_exits_1_with_the_message(env, monkeypatch):
+    async def boom(llm, trade_date):
+        raise RuntimeError("db locked")
+
+    fake_review(monkeypatch, boom)
+
+    result = invoke(env, "pipeline", "review", "--date", TRADE_DATE)
+
+    assert result.exit_code == 1
+    assert "db locked" in result.output
+
+
+def test_review_defaults_to_the_default_review_date(env, monkeypatch):
+    seen = {}
+    monkeypatch.setattr("tradingbot.cli.default_review_date", lambda: date(2026, 10, 22))
+
+    async def capture(llm, trade_date):
+        seen["date"] = trade_date
+        return {"skipped": True, "reason": "x", "trade_date": trade_date}
+
+    fake_review(monkeypatch, capture)
+
+    invoke(env, "pipeline", "review")
+
+    assert seen["date"] == "2026-10-22"

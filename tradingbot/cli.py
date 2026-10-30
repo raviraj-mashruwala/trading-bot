@@ -12,7 +12,9 @@ from pathlib import Path
 
 import click
 
-from tradingbot.api.headless import build_headless_state, default_trade_date, queue_dir_for
+from tradingbot.api.headless import (
+    build_headless_state, default_review_date, default_trade_date, queue_dir_for,
+)
 from tradingbot.core.broker import BrokerInterface
 from tradingbot.core.config import Config, ConfigError, load_config
 from tradingbot.core.database import Database
@@ -509,6 +511,69 @@ def pipeline_fetch(obj: dict, target: str | None) -> None:
             "An expired Kite token is the usual cause: run `tradingbot auth` and retry."
         )
     click.echo(f"fetched {len(symbols)} stocks ({sum((results or {}).values()):,} rows)")
+
+
+@pipeline_group.command("review")
+@click.option("--date", "target", default=None, help="Session date YYYY-MM-DD. Defaults to the latest finished session.")
+@click.pass_obj
+def pipeline_review(obj: dict, target: str | None) -> None:
+    """Grade a finished session. Answered in Claude Code like the analysis, no API billing.
+
+    Exit 0: review saved (or nothing to review). 10: LLM answer needed. 1: error.
+    """
+    from tradingbot.analysis import nightly_reviewer
+    from tradingbot.api import analysis_routes
+    from tradingbot.core.llm.anthropic_provider import build_provider
+    from tradingbot.core.llm.file_provider import AnswersNeeded, llm_step
+    from tradingbot.core.llm.queue_status import pending_requests
+
+    review_date = default_review_date() if target is None else _resolve_trade_date(target)
+    state = build_headless_state(
+        _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=review_date.isoformat(),
+    )
+    analysis_routes._ensure_stores(state)
+    provider = build_provider(state.config.llm, state.config.secrets)
+
+    jev_client = None
+    if state.config.jev and state.config.jev.enabled:
+        try:
+            from tradingbot.core.jev_client import JevClient
+
+            candidate = JevClient(state.config.jev)
+            jev_client = candidate if candidate.available else None
+        except Exception:  # noqa: BLE001 - Jev pre-grades are optional
+            jev_client = None
+
+    async def run_review() -> dict:
+        with llm_step("review"):
+            return await nightly_reviewer.run_nightly_review(
+                state.database, provider, trade_date=review_date.isoformat(),
+                setup_store=state.setup_store, candle_store=state.candle_store,
+                jev_client=jev_client,
+            )
+
+    try:
+        review = asyncio.run(run_review())
+    except AnswersNeeded:
+        pending = pending_requests(Path(state.config.llm.queue_dir))
+        click.echo(f"{len(pending)} LLM requests pending for {review_date}:")
+        for request in pending:
+            click.echo(f"  {request.id}  {request.tool_name}  {request.path}")
+        click.echo(
+            f'next: ask Claude to "answer the pending LLM requests for {review_date}", '
+            f"then rerun scripts/analysis/review.sh {review_date}"
+        )
+        sys.exit(EXIT_ANSWERS_NEEDED)
+    except Exception as exc:  # noqa: BLE001
+        _fail(f"review failed: {exc}")
+
+    if review.get("skipped"):
+        click.echo(f"review {review_date}: {review.get('reason', 'skipped')}; nothing to review")
+        return
+    click.echo(
+        f"review {review_date}: grade {review.get('grade', '?')}, "
+        f"{review.get('trades_count', 0)} trades, P&L {review.get('total_pnl', 0):,.2f}"
+    )
 
 
 @cli.group("llm")

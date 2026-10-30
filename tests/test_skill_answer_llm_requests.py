@@ -31,6 +31,8 @@ def test_front_matter_names_the_skill_and_its_trigger(text):
     "rejected/<id>.reason.txt",          # rule 4: fix rejected answers
     "parallel subagents",                # rule 5
     "Never leave a script running",      # rule 6
+    "scripts/analysis/review.sh",        # nightly review uses the same loop
+    "nightly_review",
 ])
 def test_skill_states_each_rule(text, marker):
     assert marker in text

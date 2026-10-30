@@ -1,6 +1,6 @@
 ---
 name: answer-llm-requests
-description: Use when the user asks to answer the pending LLM requests for a trade date, or to run the analysis for a date. Drives the staged analysis pipeline, answering each LLM step in this conversation instead of the Anthropic API.
+description: Use when the user asks to answer the pending LLM requests for a trade date, to run the analysis for a date, or to run the nightly review. Drives the staged pipeline, answering each LLM step in this conversation instead of the Anthropic API.
 ---
 
 # Answer pending LLM requests
@@ -33,6 +33,16 @@ The analysis pipeline never waits on this conversation. Each script run does its
 5. **Deep-analysis requests are independent.** There is one per shortlisted stock (`tool_name` `submit_deep_analysis`, step `deep:<SYMBOL>`). When there are several, answer them with parallel subagents, one request file each, and give each subagent the file path and the rules in step 3. Regime, sectors, shortlist and adversarial requests depend on earlier answers, so answer those yourself.
 
 6. **Rerun.** When `llm pending` prints `none`, go back to step 1. Never leave a script running while you answer: the script has already exited, and every rerun is a fresh, fast process.
+
+## Nightly review
+
+The same loop grades a finished session. Run `scripts/analysis/review.sh <D>` instead of `analyze.sh` (`<D>` is the session date; omit it for the latest finished session).
+
+- **exit 0**: report the grade, trade count and P&L it printed, or that there was nothing to review. Stop.
+- **exit 1**: report the error. Stop.
+- **exit 10**: one request is pending, `tool_name` `nightly_review` (step `review`). Answer it as in step 3 above: persona from `system_prompt`, only the session data in `user_prompt`, exactly the `input_schema` object, written once to `answers/<id>.json`. Then rerun `review.sh <D>`.
+
+Review requests live in the same queue directory as that date's analysis, `llm_queue/<D>/`. There is no fetch step and no Kite login is needed.
 
 ## Notes
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from tradingbot.api.headless import build_headless_state, default_trade_date
+from tradingbot.api.headless import build_headless_state, default_review_date, default_trade_date
 from tradingbot.core.config import load_config
 from tradingbot.core.models import IST
 from tests.test_cli import write_config, write_env
@@ -52,3 +52,23 @@ def test_default_trade_date_is_next_trading_day_after_close():
     friday_evening = datetime(2026, 10, 23, 18, 0, tzinfo=IST)
 
     assert default_trade_date(friday_evening).isoformat() == "2026-10-26"
+
+
+def test_default_review_date_is_today_once_the_session_is_over():
+    friday_evening = datetime(2026, 10, 23, 18, 0, tzinfo=IST)
+
+    assert default_review_date(friday_evening).isoformat() == "2026-10-23"
+
+
+def test_default_review_date_is_the_previous_trading_day_before_the_close():
+    friday_noon = datetime(2026, 10, 23, 12, 0, tzinfo=IST)
+
+    assert default_review_date(friday_noon).isoformat() == "2026-10-22"
+
+
+def test_default_review_date_skips_the_weekend():
+    monday_morning = datetime(2026, 10, 26, 9, 0, tzinfo=IST)
+    saturday = datetime(2026, 10, 24, 11, 0, tzinfo=IST)
+
+    assert default_review_date(monday_morning).isoformat() == "2026-10-23"
+    assert default_review_date(saturday).isoformat() == "2026-10-23"

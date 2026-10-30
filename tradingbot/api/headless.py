@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from tradingbot.api.state import AppState
@@ -12,7 +12,7 @@ from tradingbot.core.database import Database
 from tradingbot.core.events import EventBus
 from tradingbot.core.models import now_ist
 from tradingbot.core.plan_store import PlanStore
-from tradingbot.scanner.calendar import MARKET_POST_CLOSE, is_trading_day, next_trading_day
+from tradingbot.scanner.calendar import MARKET_CLOSE, MARKET_POST_CLOSE, is_trading_day, next_trading_day
 
 
 def queue_dir_for(config: Config, data_dir: Path, subdir: str | None = None) -> Path:
@@ -57,3 +57,15 @@ def default_trade_date(now: datetime | None = None) -> date:
     if is_trading_day(today) and now.time() <= MARKET_POST_CLOSE:
         return today
     return next_trading_day(today)
+
+
+def default_review_date(now: datetime | None = None) -> date:
+    """The latest session that is over: today after the close, else the previous trading day."""
+    now = now or now_ist()
+    today = now.date()
+    if is_trading_day(today) and now.time() > MARKET_CLOSE:
+        return today
+    day = today - timedelta(days=1)
+    while not is_trading_day(day):
+        day -= timedelta(days=1)
+    return day

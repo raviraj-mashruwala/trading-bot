@@ -129,20 +129,33 @@ until 09:15, manages the plan, and squares off at 15:10. Watch the dashboard
 
 ## After market (optional): nightly review
 
-The review is manual now. To grade a day:
+Grades the finished session. Like the analysis, the answer comes from Claude Code, so
+there is no API billing, and the server does not need to be running.
+
+In Claude Code, say: `run the nightly review for 2026-10-29` (omit the date for the latest
+finished session). Or run it by hand (IntelliJ: **Analysis — Review**):
 
 ```bash
-curl -X POST "http://localhost:8000/api/review/nightly?date=2026-10-29"
+scripts/analysis/review.sh 2026-10-29
 ```
 
-(the server must be running). Results: `GET /api/review/nightly?date=...`.
+| Exit code | Meaning | You do |
+|---|---|---|
+| `10` | The review needs Claude's answer | Say `answer the pending LLM requests for 2026-10-29`, then rerun `review.sh` |
+| `0` | Saved (or nothing to review that day) | Done. Prints grade, trades and P&L |
+| `1` | Error | Read the message |
+
+Read past reviews with `GET http://localhost:8000/api/review/nightly?date=2026-10-29`.
+
+> Do not use `POST /api/review/nightly` for this: that route calls the Anthropic API
+> and bills it.
 
 ## Where things live
 
 | What | Where |
 |---|---|
 | Trade plans | `trade_plans/YYYY-MM-DD.json` |
-| LLM questions for a day | `llm_queue/<date>/requests/` |
+| LLM questions for a day (analysis and review) | `llm_queue/<date>/requests/` |
 | Claude's answers | `llm_queue/<date>/answers/` |
 | Rejected (invalid) answers | `llm_queue/<date>/rejected/` (with a `.reason.txt`) |
 | Candle cache | `candles.duckdb` |
@@ -168,6 +181,7 @@ curl -X POST "http://localhost:8000/api/review/nightly?date=2026-10-29"
 scripts/analysis/sync.sh                    # evening: refresh candles
 scripts/analysis/analyze.sh [DATE]          # advance the analysis (exit 10 / 11 / 0)
 scripts/analysis/fetch.sh [DATE]            # download shortlist candles (when exit 11)
+scripts/analysis/review.sh [DATE]           # after market: grade the session (exit 10 / 0)
 uv run python -m tradingbot llm pending --date DATE   # what still needs an answer
 uv run python -m tradingbot auth            # morning: Kite login
 uv run python -m tradingbot plan show --date DATE
