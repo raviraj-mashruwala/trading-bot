@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import logging
 import sys
 import time as time_module
@@ -11,6 +12,7 @@ from pathlib import Path
 
 import click
 
+from tradingbot.api.headless import build_headless_state, default_trade_date, queue_dir_for
 from tradingbot.core.broker import BrokerInterface
 from tradingbot.core.config import Config, ConfigError, load_config
 from tradingbot.core.database import Database
@@ -21,7 +23,7 @@ from tradingbot.data.ws_ticker import AsyncKiteTicker as LiveTickManager
 from tradingbot.executor.execution_intelligence import ExecutionIntelligence
 from tradingbot.executor.executor import Executor
 from tradingbot.paper.virtual_broker import VirtualBroker
-from tradingbot.scanner.calendar import NotATradingDayError, next_trading_day
+from tradingbot.scanner.calendar import NotATradingDayError, is_trading_day, next_trading_day
 from tradingbot.strategy.backtester import Backtester
 from tradingbot.strategy.strategies import STRATEGY_REGISTRY
 
@@ -337,6 +339,193 @@ def sync(obj: dict, daily_days: int, intraday_days: int) -> None:
     """Sync historical data from Kite into local DuckDB cache."""
     click.echo("Data sync is now handled via the web UI Settings page.")
     click.echo("Go to Settings → Data Cache → Start Initial Fill.")
+
+
+# ----- Staged manual analysis -----------------------------------------------------
+# Heavy work (sync, candle fetch) runs as plain commands; LLM answers come from a
+# Claude Code session via files. Nothing here waits for the conversation: a command
+# that needs an answer exits with a code that says so.
+
+EXIT_ANSWERS_NEEDED = 10
+EXIT_DATA_NEEDED = 11
+
+
+def _require_kite_token() -> None:
+    if not (Path.home() / ".tradingbot" / "kite_token").exists():
+        _fail("no Kite access token found. Run `tradingbot auth` first.")
+
+
+def _resolve_trade_date(target: str | None) -> date:
+    if target is None:
+        return default_trade_date()
+    try:
+        trade_date = date.fromisoformat(target)
+    except ValueError:
+        _fail(f"invalid --date {target!r}; expected YYYY-MM-DD")
+    if not is_trading_day(trade_date):
+        _fail(f"{trade_date} is not a trading day")
+    return trade_date
+
+
+def _file_llm_config(config: Config) -> Config:
+    """These commands never call the Anthropic API, whatever config.toml says."""
+    return dataclasses.replace(config, llm=dataclasses.replace(config.llm, provider="file"))
+
+
+async def _run_with_progress(state, coro) -> None:
+    """Run a coroutine while printing pipeline events as they happen."""
+    def show(event: dict) -> None:
+        data = event.get("data", {})
+        message = data.get("message") or data.get("status") or ""
+        click.echo(f"  [{event['type']}] {message}".rstrip())
+
+    subscription = state.event_bus.subscribe(show)
+    pump = asyncio.create_task(state.event_bus.flush_loop())
+    try:
+        await coro
+    finally:
+        await asyncio.sleep(0.1)  # let queued events reach the subscriber
+        await state.event_bus.shutdown()
+        await pump
+        state.event_bus.unsubscribe(subscription)
+
+
+@cli.group("pipeline")
+def pipeline_group() -> None:
+    """Run the analysis pipeline in stages, without the web server."""
+
+
+@pipeline_group.command("sync")
+@click.option("--full", "force_full", is_flag=True, help="Force a full initial fill.")
+@click.pass_obj
+def pipeline_sync(obj: dict, force_full: bool) -> None:
+    """Sync market data from Kite into the local candle cache. No LLM."""
+    from tradingbot.api import sync_routes
+
+    _require_kite_token()
+    state = build_headless_state(obj["config"], obj["data_dir"])
+    asyncio.run(_run_with_progress(state, sync_routes._run_sync(state, force_full=force_full)))
+
+    status = state.sync_status
+    if status.get("status") == "error":
+        _fail(status.get("error", "sync failed"))
+    click.echo(f"sync: {status}")
+
+
+@pipeline_group.command("analyze")
+@click.option("--date", "target", default=None, help="Trade date YYYY-MM-DD. Defaults to the next session.")
+@click.pass_obj
+def pipeline_analyze(obj: dict, target: str | None) -> None:
+    """Advance the analysis as far as it can go, then exit.
+
+    Exit 0: plan written. 10: LLM answers needed. 11: run `pipeline fetch`. 1: error.
+    """
+    from tradingbot.analysis.pipeline import DataNeeded
+    from tradingbot.api import analysis_routes
+    from tradingbot.core.llm.file_provider import AnswersNeeded
+    from tradingbot.core.llm.queue_status import pending_requests
+
+    _require_kite_token()
+    trade_date = _resolve_trade_date(target)
+    state = build_headless_state(
+        _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=trade_date.isoformat(),
+    )
+    state.require_prefetched = True
+
+    started = now_ist()
+    asyncio.run(_run_with_progress(state, analysis_routes._run_analysis(state, trade_date)))
+
+    blocked = state.analysis_blocked
+    if isinstance(blocked, AnswersNeeded):
+        pending = pending_requests(Path(state.config.llm.queue_dir))
+        click.echo(f"{len(pending)} LLM requests pending for {trade_date}:")
+        for request in pending:
+            click.echo(f"  {request.id}  {request.tool_name}  {request.path}")
+        click.echo(
+            f'next: ask Claude to "answer the pending LLM requests for {trade_date}", '
+            f"then rerun scripts/analysis/analyze.sh {trade_date}"
+        )
+        sys.exit(EXIT_ANSWERS_NEEDED)
+    if isinstance(blocked, DataNeeded):
+        click.echo(f"shortlist candle data needed for: {', '.join(blocked.symbols)}")
+        click.echo(f"next: run scripts/analysis/fetch.sh {trade_date}, then rerun analyze.sh {trade_date}")
+        sys.exit(EXIT_DATA_NEEDED)
+    if state.analysis_status == "failed":
+        _fail(state.analysis_error or "analysis failed")
+
+    plan_path = state.plan_store.path_for(trade_date.isoformat())
+    try:
+        plan = state.plan_store.load(trade_date.isoformat())
+    except (PlanNotFoundError, PlanCorruptError):
+        plan = None
+    if plan is None or plan.generated_at < started:
+        _fail(f"analysis finished but no plan was written for {trade_date} (see log above)")
+    click.echo(f"plan: {plan_path} ({len(plan.legs)} legs)")
+
+
+@pipeline_group.command("fetch")
+@click.option("--date", "target", default=None, help="Trade date YYYY-MM-DD. Defaults to the next session.")
+@click.pass_obj
+def pipeline_fetch(obj: dict, target: str | None) -> None:
+    """Download candles for the stocks Claude shortlisted. Heavy; no LLM."""
+    from tradingbot.analysis.pipeline import AnalysisPipeline
+    from tradingbot.core.llm.queue_status import answered_payload
+    from tradingbot.data.instrument_cache import InstrumentCache
+
+    _require_kite_token()
+    trade_date = _resolve_trade_date(target)
+    state = build_headless_state(
+        _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=trade_date.isoformat(),
+    )
+
+    shortlist = answered_payload(Path(state.config.llm.queue_dir), "submit_shortlist")
+    if shortlist is None:
+        _fail(
+            f"no answered shortlist for {trade_date}; answer the pending LLM requests "
+            f"(run scripts/analysis/analyze.sh {trade_date} first)"
+        )
+    symbols = [pick["symbol"] for pick in shortlist.get("shortlist", [])]
+    if not symbols:
+        click.echo("shortlist is empty; nothing to fetch")
+        return
+
+    pipeline = AnalysisPipeline(
+        data_sync=None, candle_store=None, screener=None, tier2=None, tier3=None,
+        backtest_engine=None, monte_carlo=None, run_store=None, setup_store=None,
+        event_bus=state.event_bus, capital=0.0,
+        instrument_cache=InstrumentCache(Path(obj["data_dir"]) / "instruments.db"),
+        duckdb_store=state.candle_store,
+    )
+    results = asyncio.run(
+        _run_with_progress(state, pipeline.fetch_shortlist(symbols, progress=click.echo))
+    )
+
+    missing = pipeline.missing_shortlist_data(symbols)
+    if missing:
+        _fail(f"no candle data after fetch for: {', '.join(missing)}")
+    click.echo(f"fetched {len(symbols)} stocks ({sum((results or {}).values()):,} rows)")
+
+
+@cli.group("llm")
+def llm_group() -> None:
+    """Inspect LLM requests waiting for a Claude Code session."""
+
+
+@llm_group.command("pending")
+@click.option("--date", "target", default=None, help="Trade date YYYY-MM-DD. Defaults to the next session.")
+@click.pass_obj
+def llm_pending(obj: dict, target: str | None) -> None:
+    """List requests that have no valid answer yet."""
+    from tradingbot.core.llm.queue_status import pending_requests
+
+    trade_date = _resolve_trade_date(target)
+    queue_dir = queue_dir_for(obj["config"], obj["data_dir"], trade_date.isoformat())
+    pending = pending_requests(queue_dir)
+    if not pending:
+        click.echo("none")
+        return
+    for request in pending:
+        click.echo(f"{request.id}  {request.tool_name}  {request.path}")
 
 
 @cli.command()

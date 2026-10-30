@@ -71,8 +71,10 @@ def _make_step_tracker(state: AppState):
 async def _run_analysis(state: AppState, trade_date: date) -> None:
     """Run the 3-tier analysis pipeline."""
     sub_id = state.event_bus.subscribe(_make_step_tracker(state))
+    state.analysis_blocked = None
     try:
-        from tradingbot.analysis.pipeline import AnalysisPipeline
+        from tradingbot.analysis.pipeline import AnalysisPipeline, DataNeeded
+        from tradingbot.core.llm.file_provider import AnswersNeeded
         from tradingbot.analysis.tier2_analyzer import Tier2Analyzer
         from tradingbot.analysis.tier3_analyzer import Tier3Analyzer
         from tradingbot.backtest.monte_carlo import MonteCarloSimulator
@@ -135,6 +137,7 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             market_data_provider=market_provider,
             screening_config=config.screening,
             jev_config=config.jev,
+            require_prefetched=state.require_prefetched,
         )
 
         await state.event_bus.emit("analysis.started", {
@@ -174,6 +177,12 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         state.analysis_status = "idle"
         state.pipeline_started_at = None
         raise
+    except (AnswersNeeded, DataNeeded) as blocked:
+        # Not a failure: the run stopped to wait for the conversation or a download.
+        logger.info("analysis blocked: %s", blocked)
+        state.analysis_blocked = blocked
+        state.analysis_status = "blocked"
+        state.pipeline_started_at = None
     except Exception as exc:  # noqa: BLE001
         logger.error("analysis failed: %s", exc, exc_info=True)
         state.analysis_status = "failed"
