@@ -72,6 +72,13 @@ It runs as far as it can, prints what is needed, and exits:
 
 IntelliJ shows exit 10 and 11 as red runs. That is normal, not a failure.
 
+**Which date does it use?** Every step prints it first, for example
+`analyze: trade date 2026-10-30 (default: next session)`. With no date given, `analyze`
+and `fetch` use today until 16:00 on a trading day, and the next trading day after that
+(and on weekends or holidays). `review` uses the latest finished session. Reruns that
+straddle 16:00 would switch dates, so when you work around 16:00, pin the date: pass it
+as an argument, or set it under *Script options* in the IntelliJ run configuration.
+
 ### What happens during a full analysis
 
 ```

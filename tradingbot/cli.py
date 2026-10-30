@@ -371,6 +371,12 @@ def _resolve_trade_date(target: str | None) -> date:
     return trade_date
 
 
+def _announce(step: str, label: str, chosen: date, explicit: bool, default_hint: str) -> None:
+    """Say which date a step is about to use, so a defaulted date is never a surprise."""
+    source = "from --date" if explicit else f"default: {default_hint}"
+    click.echo(f"{step}: {label} {chosen} ({source})")
+
+
 def _file_llm_config(config: Config) -> Config:
     """These commands never call the Anthropic API, whatever config.toml says."""
     return dataclasses.replace(config, llm=dataclasses.replace(config.llm, provider="file"))
@@ -431,6 +437,7 @@ def pipeline_analyze(obj: dict, target: str | None) -> None:
 
     _require_kite_token()
     trade_date = _resolve_trade_date(target)
+    _announce("analyze", "trade date", trade_date, target is not None, "next session")
     state = build_headless_state(
         _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=trade_date.isoformat(),
     )
@@ -478,6 +485,7 @@ def pipeline_fetch(obj: dict, target: str | None) -> None:
 
     _require_kite_token()
     trade_date = _resolve_trade_date(target)
+    _announce("fetch", "trade date", trade_date, target is not None, "next session")
     state = build_headless_state(
         _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=trade_date.isoformat(),
     )
@@ -528,6 +536,7 @@ def pipeline_review(obj: dict, target: str | None) -> None:
     from tradingbot.core.llm.queue_status import pending_requests
 
     review_date = default_review_date() if target is None else _resolve_trade_date(target)
+    _announce("review", "session", review_date, target is not None, "latest finished session")
     state = build_headless_state(
         _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=review_date.isoformat(),
     )

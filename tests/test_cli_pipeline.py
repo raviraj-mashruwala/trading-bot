@@ -484,3 +484,47 @@ def test_review_defaults_to_the_default_review_date(env, monkeypatch):
     invoke(env, "pipeline", "review")
 
     assert seen["date"] == "2026-10-22"
+
+
+# ----- the chosen date is announced up front ---------------------------------------
+
+def stop_after_start(monkeypatch):
+    fake_analysis(monkeypatch, lambda state, d: (
+        setattr(state, "analysis_status", "failed"), setattr(state, "analysis_error", "stop"),
+    ))
+
+
+def test_analyze_announces_an_explicit_date(env, monkeypatch):
+    stop_after_start(monkeypatch)
+
+    result = invoke(env, "pipeline", "analyze", "--date", TRADE_DATE)
+
+    assert f"analyze: trade date {TRADE_DATE} (from --date)" in result.output
+
+
+def test_analyze_announces_a_defaulted_date(env, monkeypatch):
+    stop_after_start(monkeypatch)
+    monkeypatch.setattr("tradingbot.cli.default_trade_date", lambda: date(2026, 10, 26))
+
+    result = invoke(env, "pipeline", "analyze")
+
+    assert "analyze: trade date 2026-10-26 (default: next session)" in result.output
+
+
+def test_fetch_announces_the_date_before_doing_anything(env):
+    result = invoke(env, "pipeline", "fetch", "--date", TRADE_DATE)  # fails: no shortlist yet
+
+    assert f"fetch: trade date {TRADE_DATE} (from --date)" in result.output
+
+
+def test_review_announces_a_defaulted_date(env, monkeypatch):
+    monkeypatch.setattr("tradingbot.cli.default_review_date", lambda: date(2026, 10, 22))
+
+    async def skipped(llm, trade_date):
+        return {"skipped": True, "reason": "x", "trade_date": trade_date}
+
+    fake_review(monkeypatch, skipped)
+
+    result = invoke(env, "pipeline", "review")
+
+    assert "review: session 2026-10-22 (default: latest finished session)" in result.output
