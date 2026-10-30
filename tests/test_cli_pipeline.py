@@ -71,8 +71,8 @@ def test_analyze_exit_10_lists_pending_requests_and_next_step(env, monkeypatch):
     assert result.exit_code == 10
     assert "1 LLM requests pending" in result.output
     assert "abc123" in result.output and "submit_regime_analysis" in result.output
-    assert "answer the pending LLM requests" in result.output
-    assert TRADE_DATE in result.output
+    assert f"/answer-llm-requests {TRADE_DATE} - answer only. Don't run any scripts, I'll run them myself." in result.output
+    assert f"then rerun: scripts/analysis/analyze.sh {TRADE_DATE}" in result.output
 
 
 def test_analyze_exit_11_names_symbols_and_fetch_script(env, monkeypatch):
@@ -211,13 +211,15 @@ def test_fetch_uses_shortlist_from_answered_request(env, monkeypatch):
 
     assert result.exit_code == 0, result.output
     assert fetched == ["INFY", "TCS"]
+    assert f"next: rerun scripts/analysis/analyze.sh {TRADE_DATE}" in result.output
 
 
-def test_fetch_without_shortlist_answer_exits_1_with_message(env):
+def test_fetch_without_shortlist_answer_exits_1_and_prints_the_chat_prompt(env):
     result = invoke(env, "pipeline", "fetch", "--date", TRADE_DATE)
 
     assert result.exit_code == 1
     assert "shortlist" in result.output.lower()
+    assert f"/answer-llm-requests {TRADE_DATE} - answer only." in result.output
 
 
 def test_fetch_exits_1_when_data_is_still_missing_afterwards(env, monkeypatch):
@@ -397,7 +399,9 @@ def test_review_exit_10_lists_the_pending_request_and_next_step(env, monkeypatch
     assert result.exit_code == 10, result.output
     assert "1 LLM requests pending" in result.output
     assert "nightly_review" in result.output
-    assert f"scripts/analysis/review.sh {TRADE_DATE}" in result.output
+    assert f"/answer-llm-requests {TRADE_DATE} - answer only. Don't run any scripts, I'll run them myself." in result.output
+    assert f"then rerun: scripts/analysis/review.sh {TRADE_DATE}" in result.output
+    assert "nightly review" in result.output  # round label
 
 
 def test_review_exit_0_prints_grade_trades_and_pnl(env, monkeypatch):
@@ -528,3 +532,23 @@ def test_review_announces_a_defaulted_date(env, monkeypatch):
     result = invoke(env, "pipeline", "review")
 
     assert "review: session 2026-10-22 (default: latest finished session)" in result.output
+
+
+@pytest.mark.parametrize("tool,label", [
+    ("submit_regime_analysis", "regime"),
+    ("submit_sector_analysis", "sectors"),
+    ("submit_shortlist", "shortlist"),
+    ("submit_deep_analysis", "deep analysis"),
+    ("submit_validation", "adversarial review"),
+])
+def test_analyze_exit_10_says_which_round_it_is(env, monkeypatch, tool, label):
+    def behaviour(state, trade_date):
+        add_request(Path(state.config.llm.queue_dir), tool=tool)
+        state.analysis_status = "blocked"
+        state.analysis_blocked = AnswersNeeded([])
+
+    fake_analysis(monkeypatch, behaviour)
+
+    result = invoke(env, "pipeline", "analyze", "--date", TRADE_DATE)
+
+    assert f"(round: {label})" in result.output

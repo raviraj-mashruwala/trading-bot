@@ -377,6 +377,38 @@ def _announce(step: str, label: str, chosen: date, explicit: bool, default_hint:
     click.echo(f"{step}: {label} {chosen} ({source})")
 
 
+_ROUND_LABELS = {
+    "submit_regime_analysis": "regime",
+    "submit_sector_analysis": "sectors",
+    "submit_shortlist": "shortlist",
+    "submit_deep_analysis": "deep analysis",
+    "submit_validation": "adversarial review",
+    "nightly_review": "nightly review",
+}
+
+
+def _chat_prompt(day: date) -> str:
+    """The exact prompt to paste into Claude Code when the next step is the conversation."""
+    return f"/answer-llm-requests {day} - answer only. Don't run any scripts, I'll run them myself."
+
+
+def _echo_paste_prompt(day: date, rerun: str) -> None:
+    click.echo("")
+    click.echo("next: paste this into Claude Code (opened in this repo):")
+    click.echo("")
+    click.echo(f"  {_chat_prompt(day)}")
+    click.echo("")
+    click.echo(f"then rerun: {rerun} {day}")
+
+
+def _echo_pending(pending: list, day: date, rerun: str) -> None:
+    labels = sorted({_ROUND_LABELS.get(request.tool_name, request.tool_name) for request in pending})
+    click.echo(f"{len(pending)} LLM requests pending for {day} (round: {', '.join(labels)}):")
+    for request in pending:
+        click.echo(f"  {request.id}  {request.tool_name}  {request.path}")
+    _echo_paste_prompt(day, rerun)
+
+
 def _file_llm_config(config: Config) -> Config:
     """These commands never call the Anthropic API, whatever config.toml says."""
     return dataclasses.replace(config, llm=dataclasses.replace(config.llm, provider="file"))
@@ -449,13 +481,7 @@ def pipeline_analyze(obj: dict, target: str | None) -> None:
     blocked = state.analysis_blocked
     if isinstance(blocked, AnswersNeeded):
         pending = pending_requests(Path(state.config.llm.queue_dir))
-        click.echo(f"{len(pending)} LLM requests pending for {trade_date}:")
-        for request in pending:
-            click.echo(f"  {request.id}  {request.tool_name}  {request.path}")
-        click.echo(
-            f'next: ask Claude to "answer the pending LLM requests for {trade_date}", '
-            f"then rerun scripts/analysis/analyze.sh {trade_date}"
-        )
+        _echo_pending(pending, trade_date, "scripts/analysis/analyze.sh")
         sys.exit(EXIT_ANSWERS_NEEDED)
     if isinstance(blocked, DataNeeded):
         click.echo(f"shortlist candle data needed for: {', '.join(blocked.symbols)}")
@@ -492,10 +518,13 @@ def pipeline_fetch(obj: dict, target: str | None) -> None:
 
     shortlist = answered_payload(Path(state.config.llm.queue_dir), "submit_shortlist")
     if shortlist is None:
-        _fail(
-            f"no answered shortlist for {trade_date}; answer the pending LLM requests "
-            f"(run scripts/analysis/analyze.sh {trade_date} first)"
+        click.echo(f"fetch: no answered shortlist for {trade_date} yet.")
+        click.echo(
+            f"If analyze.sh has not run, run scripts/analysis/analyze.sh {trade_date} first. "
+            "If it exited 10, the shortlist still needs answering:"
         )
+        _echo_paste_prompt(trade_date, "scripts/analysis/fetch.sh")
+        sys.exit(1)
     symbols = [pick["symbol"] for pick in shortlist.get("shortlist", [])]
     if not symbols:
         click.echo("shortlist is empty; nothing to fetch")
@@ -519,6 +548,7 @@ def pipeline_fetch(obj: dict, target: str | None) -> None:
             "An expired Kite token is the usual cause: run `tradingbot auth` and retry."
         )
     click.echo(f"fetched {len(symbols)} stocks ({sum((results or {}).values()):,} rows)")
+    click.echo(f"next: rerun scripts/analysis/analyze.sh {trade_date}")
 
 
 @pipeline_group.command("review")
@@ -565,13 +595,7 @@ def pipeline_review(obj: dict, target: str | None) -> None:
         review = asyncio.run(run_review())
     except AnswersNeeded:
         pending = pending_requests(Path(state.config.llm.queue_dir))
-        click.echo(f"{len(pending)} LLM requests pending for {review_date}:")
-        for request in pending:
-            click.echo(f"  {request.id}  {request.tool_name}  {request.path}")
-        click.echo(
-            f'next: ask Claude to "answer the pending LLM requests for {review_date}", '
-            f"then rerun scripts/analysis/review.sh {review_date}"
-        )
+        _echo_pending(pending, review_date, "scripts/analysis/review.sh")
         sys.exit(EXIT_ANSWERS_NEEDED)
     except Exception as exc:  # noqa: BLE001
         _fail(f"review failed: {exc}")

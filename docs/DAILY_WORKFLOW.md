@@ -65,12 +65,31 @@ It runs as far as it can, prints what is needed, and exits:
 
 | Exit code | Meaning | You do |
 |---|---|---|
-| `10` | LLM answers needed | In Claude Code say: `answer the pending LLM requests for 2026-10-30`, then rerun `analyze.sh` |
+| `10` | LLM answers needed | Paste the prompt the script printed into Claude Code (see below), then rerun `analyze.sh` |
 | `11` | Shortlist candles missing | Run `scripts/analysis/fetch.sh 2026-10-30` (IntelliJ: **Analysis — Fetch**), then rerun `analyze.sh` |
 | `0` | Done | Plan written to `trade_plans/2026-10-30.json` |
 | `1` | Error | Read the message; see Troubleshooting |
 
 IntelliJ shows exit 10 and 11 as red runs. That is normal, not a failure.
+
+When a step needs the conversation, the script prints exactly what to paste, and which
+round it is:
+
+```
+1 LLM requests pending for 2026-11-02 (round: shortlist):
+  2a1c53f4b6419b64  submit_shortlist  llm_queue/2026-11-02/requests/2a1c53f4b6419b64.json
+
+next: paste this into Claude Code (opened in this repo):
+
+  /answer-llm-requests 2026-11-02 - answer only. Don't run any scripts, I'll run them myself.
+
+then rerun: scripts/analysis/analyze.sh 2026-11-02
+```
+
+`fetch.sh` ends with `next: rerun scripts/analysis/analyze.sh <date>`, and if you run it
+before the shortlist is answered it prints the same paste prompt. Rounds you will see:
+regime, sectors, shortlist, deep analysis, adversarial review (Jev answers regime and
+sectors itself when it is available).
 
 **Which date does it use?** Every step prints it first, for example
 `analyze: trade date 2026-10-30 (default: next session)`. With no date given, `analyze`
@@ -148,7 +167,7 @@ scripts/analysis/review.sh 2026-10-29
 
 | Exit code | Meaning | You do |
 |---|---|---|
-| `10` | The review needs Claude's answer | Say `answer the pending LLM requests for 2026-10-29`, then rerun `review.sh` |
+| `10` | The review needs Claude's answer | Paste the prompt the script printed into Claude Code, then rerun `review.sh` |
 | `0` | Saved (or nothing to review that day) | Done. Prints grade, trades and P&L |
 | `1` | Error | Read the message |
 
