@@ -199,7 +199,6 @@ class AnalysisPipeline:
         # --- Tier 1: Deterministic screen ---
 
         market_ctx = await _aio.to_thread(self._fetch_market_context)
-        self._bus.emit_sync("scan.context", {"regime": market_ctx.regime.value})
 
         instruments = await _aio.to_thread(self._fetch_universe)
         self._bus.emit_sync("scan.universe", {"total": len(instruments), "status": "fetching"})
@@ -212,18 +211,9 @@ class AnalysisPipeline:
         )
         self._bus.emit_sync("scan.universe", {"total": len(stock_metrics)})
 
-        if self._intelligent_screener is not None:
-            scored = self._intelligent_screener.screen(
-                stock_metrics,
-                regime=market_ctx.regime.value,
-                regime_confidence=0.7,
-            )
-        else:
-            scored = self._screener.screen(stock_metrics)
-        self._bus.emit_sync("scan.filtered", {"candidates": len(scored)})
-        await self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
-
-        # --- Tier 2: regime + sectors (Jev when available, Claude fallback) ---
+        # --- One regime for the whole run (Jev when available, the LLM otherwise) ---
+        # Decided before Tier 1 so the screener adapts to the SAME regime that the shortlist,
+        # deep analysis and the saved plan use. It once used a rule-based label instead.
         sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
         _regime_args = dict(
             nifty=market_ctx.nifty_level, banknifty=getattr(market_ctx, "banknifty_level", 0.0),
@@ -258,6 +248,23 @@ class AnalysisPipeline:
             llm_calls += 1
             if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
                 total_cost += sectors.pop("_usage").cost_usd()
+
+        self._bus.emit_sync("scan.context", {
+            "regime": regime.get("regime", "unknown"),
+            "regime_confidence": regime.get("regime_confidence", 0.5),
+        })
+
+        # --- Tier 1: deterministic screen, weighted for the regime above ---
+        if self._intelligent_screener is not None:
+            scored = self._intelligent_screener.screen(
+                stock_metrics,
+                regime=regime.get("regime", "range_bound"),
+                regime_confidence=float(regime.get("regime_confidence", 0.5)),
+            )
+        else:
+            scored = self._screener.screen(stock_metrics)
+        self._bus.emit_sync("scan.filtered", {"candidates": len(scored)})
+        await self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
 
         scored_dicts = [
             {
