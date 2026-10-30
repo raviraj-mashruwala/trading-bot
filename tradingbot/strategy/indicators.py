@@ -148,36 +148,52 @@ def adx(df: pd.DataFrame, period: int = 14) -> pd.Series:
 def supertrend(
     df: pd.DataFrame, period: int = 10, multiplier: float = 3.0,
 ) -> tuple[pd.Series, pd.Series, pd.Series]:
-    """Supertrend indicator. Returns (upper_band, lower_band, direction)."""
-    hl2 = (df["high"] + df["low"]) / 2
-    atr_val = atr(df, period)
+    """Supertrend indicator. Returns (upper_band, lower_band, direction).
 
-    upper = hl2 + multiplier * atr_val
-    lower = hl2 - multiplier * atr_val
+    direction is +1 (uptrend, the lower band is the line) or -1 (downtrend, the
+    upper band is the line). Rows before the ATR has enough history are NaN with
+    direction +1 by convention. The recursion starts at the first valid ATR, since
+    comparing against a NaN band is always False and would leave the bands NaN and
+    the direction frozen at its initial value.
+    """
+    high, low, close = df["high"].to_numpy(float), df["low"].to_numpy(float), df["close"].to_numpy(float)
+    atr_val = atr(df, period).to_numpy(float)
+    n = len(df)
 
-    final_upper = upper.copy()
-    final_lower = lower.copy()
-    direction = pd.Series(1, index=df.index, dtype=int)
+    final_upper = np.full(n, np.nan)
+    final_lower = np.full(n, np.nan)
+    direction = np.ones(n, dtype=int)
 
-    for i in range(1, len(df)):
-        if lower.iloc[i] > final_lower.iloc[i - 1]:
-            final_lower.iloc[i] = lower.iloc[i]
-        else:
-            final_lower.iloc[i] = final_lower.iloc[i - 1]
+    valid = np.flatnonzero(~np.isnan(atr_val))
+    if len(valid):
+        start = int(valid[0])
+        hl2 = (high + low) / 2.0
+        basic_upper = hl2 + multiplier * atr_val
+        basic_lower = hl2 - multiplier * atr_val
 
-        if upper.iloc[i] < final_upper.iloc[i - 1]:
-            final_upper.iloc[i] = upper.iloc[i]
-        else:
-            final_upper.iloc[i] = final_upper.iloc[i - 1]
+        final_upper[start] = basic_upper[start]
+        final_lower[start] = basic_lower[start]
+        for i in range(start + 1, n):
+            # A band only moves in its tightening direction, unless price broke through it.
+            if basic_upper[i] < final_upper[i - 1] or close[i - 1] > final_upper[i - 1]:
+                final_upper[i] = basic_upper[i]
+            else:
+                final_upper[i] = final_upper[i - 1]
+            if basic_lower[i] > final_lower[i - 1] or close[i - 1] < final_lower[i - 1]:
+                final_lower[i] = basic_lower[i]
+            else:
+                final_lower[i] = final_lower[i - 1]
 
-        if df["close"].iloc[i] <= final_upper.iloc[i]:
-            direction.iloc[i] = -1
-        elif df["close"].iloc[i] >= final_lower.iloc[i]:
-            direction.iloc[i] = 1
-        else:
-            direction.iloc[i] = direction.iloc[i - 1]
+            if direction[i - 1] == 1:
+                direction[i] = -1 if close[i] < final_lower[i] else 1
+            else:
+                direction[i] = 1 if close[i] > final_upper[i] else -1
 
-    return final_upper, final_lower, direction
+    return (
+        pd.Series(final_upper, index=df.index),
+        pd.Series(final_lower, index=df.index),
+        pd.Series(direction, index=df.index, dtype=int),
+    )
 
 
 def camarilla_pivots(df: pd.DataFrame) -> dict[str, float]:
