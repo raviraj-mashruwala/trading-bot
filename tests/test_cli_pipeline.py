@@ -211,6 +211,7 @@ def test_fetch_uses_shortlist_from_answered_request(env, monkeypatch):
 
     assert result.exit_code == 0, result.output
     assert fetched == ["INFY", "TCS"]
+    assert "fetched 2 stocks (20 rows)" in result.output  # fake returns 10 rows per stock
     assert f"next: rerun scripts/analysis/analyze.sh {TRADE_DATE}" in result.output
 
 

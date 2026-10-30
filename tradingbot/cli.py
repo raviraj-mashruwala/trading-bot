@@ -420,8 +420,8 @@ def _file_llm_config(config: Config) -> Config:
     return dataclasses.replace(config, llm=dataclasses.replace(config.llm, provider="file"))
 
 
-async def _run_with_progress(state, coro) -> None:
-    """Run a coroutine while printing pipeline events as they happen."""
+async def _run_with_progress(state, coro):
+    """Run a coroutine while printing pipeline events as they happen; returns its result."""
     def show(event: dict) -> None:
         data = event.get("data", {})
         message = data.get("message") or data.get("status") or ""
@@ -430,7 +430,7 @@ async def _run_with_progress(state, coro) -> None:
     subscription = state.event_bus.subscribe(show)
     pump = asyncio.create_task(state.event_bus.flush_loop())
     try:
-        await coro
+        return await coro
     finally:
         await asyncio.sleep(0.1)  # let queued events reach the subscriber
         await state.event_bus.shutdown()
