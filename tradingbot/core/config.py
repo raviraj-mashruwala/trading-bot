@@ -288,8 +288,11 @@ def _build_screening_config(screening_raw: dict, capital: float) -> ScreeningCon
     )
 
 
-def load_config(config_path: Path | None = None) -> Config:
-    """Read settings from TOML and secrets from the environment."""
+def load_config(config_path: Path | None = None, anthropic_key_optional: bool = False) -> Config:
+    """Read settings from TOML and secrets from the environment.
+
+    anthropic_key_optional: for callers that never use the Anthropic API.
+    """
     load_dotenv()
     path = Path(config_path) if config_path is not None else DEFAULT_CONFIG_PATH
     if not path.exists():
@@ -374,7 +377,7 @@ def load_config(config_path: Path | None = None) -> Config:
             # The file provider never calls Anthropic, so no key is needed.
             anthropic_api_key=(
                 os.environ.get("ANTHROPIC_API_KEY", "")
-                if llm_raw["provider"] == "file"
+                if llm_raw["provider"] == "file" or anthropic_key_optional
                 else _require_env("ANTHROPIC_API_KEY")
             ),
             kite_api_key=_require_env("KITE_API_KEY"),

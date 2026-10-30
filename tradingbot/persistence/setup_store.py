@@ -139,6 +139,16 @@ class SetupStore:
         )
         self._conn.commit()
 
+    def supersede_approved(self, trade_date: date, reason: str) -> int:
+        """Retire a date's approved setups (not active ones) so a rerun does not duplicate them."""
+        cursor = self._conn.execute(
+            "UPDATE setups SET status = 'superseded', rejection_reason = ?, updated_at = ? "
+            "WHERE trade_date = ? AND status = 'approved'",
+            (reason, datetime.now(tz=IST).isoformat(), str(trade_date)),
+        )
+        self._conn.commit()
+        return cursor.rowcount
+
     def mark_stale(self, regime: str, now: datetime) -> int:
         """Mark approved/active setups older than threshold as stale.
 

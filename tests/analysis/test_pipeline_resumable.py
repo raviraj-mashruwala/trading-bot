@@ -134,6 +134,33 @@ async def test_require_prefetched_raises_data_needed_for_new_symbol(deps):
     deps["tier3"].deep_analyze.assert_not_called()
 
 
+async def test_require_prefetched_treats_stale_candles_as_missing(deps):
+    # Last candle older than the previous trading day: analyze would otherwise
+    # silently use stale data, or re-download a year of candles inside analyze.
+    deps["tier2"].analyze_regime.return_value = dict(REGIME)
+    deps["tier2"].analyze_sectors.return_value = dict(SECTORS)
+    deps["tier2"].shortlist.return_value = shortlist_of("INFY", "TCS")
+    pipeline = make_pipeline(
+        deps,
+        duckdb_store=duckdb_with({"INFY": date(2026, 9, 18), "TCS": date(2026, 9, 25)}),
+        require_prefetched=True,
+    )
+
+    with pytest.raises(DataNeeded) as raised:
+        await pipeline.run(TRADE_DATE)
+
+    assert raised.value.symbols == ["INFY"]
+
+
+def test_missing_shortlist_data_accepts_the_previous_trading_day_across_a_weekend(deps):
+    # Monday 2026-09-28 analysis: Friday 09-25 is the previous trading day.
+    pipeline = make_pipeline(
+        deps, duckdb_store=duckdb_with({"A": date(2026, 9, 25), "B": date(2026, 9, 24), "C": None}),
+    )
+
+    assert pipeline.missing_shortlist_data(["A", "B", "C"], date(2026, 9, 28)) == ["B", "C"]
+
+
 async def test_require_prefetched_continues_when_data_is_present(deps):
     deps["tier2"].analyze_regime.return_value = dict(REGIME)
     deps["tier2"].analyze_sectors.return_value = dict(SECTORS)
@@ -263,3 +290,29 @@ async def test_reruns_converge_to_one_run_even_when_live_inputs_drift(deps, tmp_
     assert run.setups_approved == 1
     assert len(deps["run_store"].list_for_date(TRADE_DATE)) == 1
     assert len(deps["setup_store"].get_for_symbol("INFY", TRADE_DATE)) == 1
+
+
+async def test_rerunning_after_success_does_not_duplicate_approved_setups(deps, tmp_path):
+    queue_dir = tmp_path / "queue"
+    provider = FileAnswerProvider(queue_dir)
+    deps["tier2"] = Tier2Analyzer(provider)
+    deps["tier3"] = Tier3Analyzer(provider)
+    pipeline = make_pipeline(deps, duckdb_store=duckdb_with({"INFY": date(2026, 9, 26)}), require_prefetched=True)
+
+    async def run_to_completion():
+        for _ in range(8):
+            try:
+                return await pipeline.run(TRADE_DATE)
+            except AnswersNeeded:
+                answer_pending(queue_dir)
+        raise AssertionError("did not converge")
+
+    await run_to_completion()
+    await run_to_completion()  # user reruns analyze.sh: every answer already exists
+
+    approved = [
+        row for row in deps["setup_store"].get_for_symbol("INFY", TRADE_DATE)
+        if row["status"] == "approved"
+    ]
+    assert len(approved) == 1
+    assert len(deps["setup_store"].get_for_symbol("INFY", TRADE_DATE)) == 2  # old one kept as superseded

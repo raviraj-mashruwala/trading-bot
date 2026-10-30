@@ -65,6 +65,16 @@ class DataNeeded(Exception):
         super().__init__(f"candle data needed for: {', '.join(symbols)}")
 
 
+def _previous_trading_day(day: date) -> date:
+    from datetime import timedelta
+    from tradingbot.scanner.calendar import is_trading_day
+
+    previous = day - timedelta(days=1)
+    while not is_trading_day(previous):
+        previous -= timedelta(days=1)
+    return previous
+
+
 def _match_strategy(name: str) -> StrategyName | None:
     """Map Claude's strategy name to the closest generic strategy."""
     if not name or not name.strip():
@@ -254,7 +264,7 @@ class AnalysisPipeline:
         symbols = [s["symbol"] for s in shortlist]
         if symbols and getattr(self, '_duckdb', None) is not None:
             if self._require_prefetched:
-                missing = self.missing_shortlist_data(symbols)
+                missing = self.missing_shortlist_data(symbols, trade_date)
                 if missing:
                     raise DataNeeded(missing)
             else:
@@ -413,6 +423,8 @@ class AnalysisPipeline:
             if isinstance(validation.get("_usage") if isinstance(validation, dict) else None, LLMUsage):
                 total_cost += validation.pop("_usage").cost_usd()
 
+            self._retire_previous_approved(trade_date)
+
             for rejected in validation.get("rejected", []):
                 log.info(
                     "ADVERSARIAL REJECTED %s: %s",
@@ -482,6 +494,9 @@ class AnalysisPipeline:
                     self._approved_setup_ids[strategy_key] = row_id
                     setups_approved += 1
 
+        if not setups_with_data:
+            self._retire_previous_approved(trade_date)
+
         self._bus.emit_sync("strategy.sized", {
             "proposed": setups_proposed,
             "approved": setups_approved,
@@ -517,9 +532,29 @@ class AnalysisPipeline:
         )
         return analysis_run
 
-    def missing_shortlist_data(self, symbols: list[str]) -> list[str]:
-        """Symbols with no intraday candles at all (first-time stocks)."""
-        return [sym for sym in symbols if self._duckdb.last_date(sym, "15m") is None]
+    def _retire_previous_approved(self, trade_date: date) -> None:
+        """Staged runs are rerunnable by design, so a finished run replaces its predecessor.
+
+        The web path keeps its historical behaviour (every run adds rows).
+        """
+        if self._require_prefetched:
+            retired = self._setups.supersede_approved(trade_date, "replaced by a rerun")
+            if retired:
+                log.info("Superseded %d approved setups from an earlier run for %s", retired, trade_date)
+
+    def missing_shortlist_data(self, symbols: list[str], trade_date: date | None = None) -> list[str]:
+        """Symbols whose 15m candles are absent or older than the previous trading day.
+
+        Stale data would be analysed silently, and past 7 days _fetch_indicators_for_symbol
+        re-downloads a year of candles inside analyze, which must stay a separate script.
+        """
+        needed = _previous_trading_day(trade_date) if trade_date is not None else None
+        missing = []
+        for sym in symbols:
+            last = self._duckdb.last_date(sym, "15m")
+            if last is None or (needed is not None and last < needed):
+                missing.append(sym)
+        return missing
 
     async def fetch_shortlist(self, symbols: list[str], progress: Any = None) -> dict[str, int]:
         """Download intraday candles for the shortlist. Gap-aware, so safe to rerun."""

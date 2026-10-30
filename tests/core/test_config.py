@@ -155,3 +155,12 @@ def test_llm_queue_dir_defaults_and_overrides(tmp_path, monkeypatch):
 
     assert default.llm.queue_dir == "llm_queue"
     assert override.llm.queue_dir == "/tmp/q"
+
+
+def test_anthropic_key_is_optional_when_the_caller_never_uses_it(config_file, monkeypatch):
+    _no_anthropic_key(monkeypatch)
+
+    config = load_config(config_file, anthropic_key_optional=True)
+
+    assert config.llm.provider == "anthropic"
+    assert config.secrets.anthropic_api_key == ""

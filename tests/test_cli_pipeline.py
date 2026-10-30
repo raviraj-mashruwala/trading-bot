@@ -204,7 +204,7 @@ def test_fetch_uses_shortlist_from_answered_request(env, monkeypatch):
     monkeypatch.setattr("tradingbot.analysis.pipeline.AnalysisPipeline.fetch_shortlist", fake_fetch)
     monkeypatch.setattr(
         "tradingbot.analysis.pipeline.AnalysisPipeline.missing_shortlist_data",
-        lambda self, symbols: [],
+        lambda self, symbols, trade_date=None: [],
     )
 
     result = invoke(env, "pipeline", "fetch", "--date", TRADE_DATE)
@@ -229,13 +229,14 @@ def test_fetch_exits_1_when_data_is_still_missing_afterwards(env, monkeypatch):
     monkeypatch.setattr("tradingbot.analysis.pipeline.AnalysisPipeline.fetch_shortlist", fake_fetch)
     monkeypatch.setattr(
         "tradingbot.analysis.pipeline.AnalysisPipeline.missing_shortlist_data",
-        lambda self, symbols: ["INFY"],
+        lambda self, symbols, trade_date=None: ["INFY"],
     )
 
     result = invoke(env, "pipeline", "fetch", "--date", TRADE_DATE)
 
     assert result.exit_code == 1
     assert "INFY" in result.output
+    assert "tradingbot auth" in result.output  # an expired token is the usual cause
 
 
 # ----- sync --------------------------------------------------------------------
@@ -344,3 +345,28 @@ def test_sync_script_passes_flags_through():
     )
 
     assert result.stdout.strip() == "-m tradingbot pipeline sync --full"
+
+
+def test_pipeline_and_llm_commands_work_without_an_anthropic_key(tmp_path, monkeypatch):
+    # config.toml ships provider = "anthropic"; these commands never use it.
+    monkeypatch.setattr("tradingbot.core.config.load_dotenv", lambda *a, **k: None)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("KITE_API_KEY", "kite-key")
+    monkeypatch.setenv("KITE_API_SECRET", "kite-secret")
+
+    result = invoke(tmp_path, "llm", "pending", "--date", TRADE_DATE)
+
+    assert result.exit_code == 0, result.output
+    assert result.output.strip() == "none"
+
+
+def test_other_commands_still_require_the_anthropic_key(tmp_path, monkeypatch):
+    monkeypatch.setattr("tradingbot.core.config.load_dotenv", lambda *a, **k: None)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("KITE_API_KEY", "kite-key")
+    monkeypatch.setenv("KITE_API_SECRET", "kite-secret")
+
+    result = invoke(tmp_path, "history")
+
+    assert result.exit_code != 0
+    assert "ANTHROPIC_API_KEY" in result.output

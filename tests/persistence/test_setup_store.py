@@ -74,3 +74,20 @@ def test_migration_idempotent(tmp_path):
     s1.close()
     s2 = SetupStore(db)  # must not raise
     s2.close()
+
+
+def test_supersede_approved_retires_only_approved_rows_for_that_date(store):
+    from datetime import date
+
+    approved = store.save(_base_setup())
+    active = store.save(_base_setup(symbol="INFY", status="active"))
+    other_day = store.save(_base_setup(symbol="WIPRO", trade_date="2026-09-30"))
+
+    count = store.supersede_approved(date(2026, 9, 29), "replaced by rerun")
+
+    assert count == 1
+    assert store.get_by_id(approved)["status"] == "superseded"
+    assert store.get_by_id(approved)["rejection_reason"] == "replaced by rerun"
+    assert store.get_by_id(active)["status"] == "active"
+    assert store.get_by_id(other_day)["status"] == "approved"
+    assert [row["id"] for row in store.get_active(date(2026, 9, 29))] == [active]

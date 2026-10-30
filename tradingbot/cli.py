@@ -82,7 +82,10 @@ def build_broker(config: Config, mode: Mode) -> BrokerInterface:
 def cli(ctx: click.Context, config_path: Path, data_dir: Path) -> None:
     """Automated intraday equity trading bot for the Indian market."""
     try:
-        config = load_config(config_path)
+        # The staged-analysis commands answer LLM calls from files, so they work without a key.
+        config = load_config(
+            config_path, anthropic_key_optional=ctx.invoked_subcommand in {"pipeline", "llm"},
+        )
     except ConfigError as exc:
         _fail(str(exc))
 
@@ -500,9 +503,12 @@ def pipeline_fetch(obj: dict, target: str | None) -> None:
         _run_with_progress(state, pipeline.fetch_shortlist(symbols, progress=click.echo))
     )
 
-    missing = pipeline.missing_shortlist_data(symbols)
+    missing = pipeline.missing_shortlist_data(symbols, trade_date)
     if missing:
-        _fail(f"no candle data after fetch for: {', '.join(missing)}")
+        _fail(
+            f"no fresh candle data after fetch for: {', '.join(missing)}. "
+            "An expired Kite token is the usual cause: run `tradingbot auth` and retry."
+        )
     click.echo(f"fetched {len(symbols)} stocks ({sum((results or {}).values()):,} rows)")
 
 
