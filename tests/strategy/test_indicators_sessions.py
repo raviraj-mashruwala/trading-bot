@@ -130,3 +130,40 @@ def test_snapshot_vwap_is_inside_the_last_sessions_range_after_a_long_fall():
 
     assert snap.last_session_low <= snap.vwap <= snap.last_session_high
     assert abs(snap.vwap - snap.last_close) < 2.0
+
+
+def daily_frame(closes, volumes):
+    """One row per trading day, the shape Tier 1 passes (read_batch(..., 'day'))."""
+    days = pd.bdate_range("2026-06-01", periods=len(closes))
+    closes = np.asarray(closes, dtype=float)
+    return pd.DataFrame({
+        "timestamp": days, "open": closes, "high": closes + 1, "low": closes - 1,
+        "close": closes, "volume": np.asarray(volumes, dtype=float),
+    })
+
+
+def test_volume_profile_on_daily_frames_uses_every_row():
+    # A daily bar is its own session, so "last 10 sessions" would mean 10 days and silently
+    # change the Tier-1 volume-profile score, which has always looked at the whole frame.
+    closes = [300.0] * 50 + [100.0] * 10
+    volumes = [1_000_000.0] * 50 + [1000.0] * 10
+
+    profile = volume_profile(daily_frame(closes, volumes))
+
+    assert profile["poc"] > 250  # the 50 heavy days at 300 are still counted
+
+
+def test_support_resistance_on_daily_frames_uses_every_row():
+    closes = [300.0] * 50 + [100.0] * 10
+
+    supports, resistances = support_resistance(daily_frame(closes, [1000.0] * 60))
+
+    assert any(level > 250 for level in supports + resistances)
+
+
+def test_intraday_frames_are_still_windowed():
+    # Guard against the fix above disabling the window for the data it is meant for.
+    old = [{"close": 300.0, "volume": 1_000_000.0}] * 20
+    recent = [{"close": 100.0 + i * 0.1, "volume": 1000.0} for i in range(10)]
+
+    assert volume_profile(sessions_frame(old + recent))["poc"] < 150

@@ -88,9 +88,17 @@ def session_keys(df: pd.DataFrame) -> pd.Series:
 
 
 def recent_sessions(df: pd.DataFrame, sessions: int = PROFILE_SESSIONS) -> pd.DataFrame:
-    """Only the rows of the last `sessions` trading sessions."""
+    """Only the rows of the last `sessions` trading sessions.
+
+    Meant for intraday candles. A frame with one row per session (daily bars) is
+    returned whole: a daily bar is its own session, so windowing it would silently
+    shrink a 30-day Tier-1 profile to 10 days.
+    """
     keys = session_keys(df)
-    return df[keys.isin(sorted(keys.unique())[-sessions:])]
+    unique = keys.unique()
+    if len(unique) == len(df):
+        return df
+    return df[keys.isin(sorted(unique)[-sessions:])]
 
 
 def session_ohlc(df: pd.DataFrame) -> pd.DataFrame:
