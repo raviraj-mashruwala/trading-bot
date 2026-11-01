@@ -1,0 +1,116 @@
+{
+  "id": "5397b1db220bf4e1",
+  "tool_name": "submit_deep_analysis",
+  "tool_description": "Submit per-stock deep analysis",
+  "system_prompt": "You are an expert intraday trading strategist with 15 years of NSE experience. Design precise trade setups based on the multi-timeframe data provided.\n\nRules:\n1. Only propose setups with 3+ independent confirming signals across different timeframes or indicator types (confluence). Volume + RSI + VWAP = 3 signals. RSI + Stochastic = 1 signal (both momentum oscillators).\n2. Minimum reward:risk of 1.5:1 to target_1. If you cannot find that, return no_trade_reason instead of forcing a setup.\n3. Entry, stop loss, and targets MUST align with actual support/resistance, pivot, or VWAP levels from the data. Do NOT round to convenient numbers.\n4. Do NOT guess or invent price levels. Use ONLY levels visible in the data.\n\nThink step by step.\n\nConfidence calibration:\n- 0.8+ means you would bet your own capital\n- 0.6-0.8 means worth taking with reduced size\n- Below 0.6 means skip -- return no_trade_reason\n\nFor each setup, state the invalidation condition -- the specific price action that kills the trade thesis.\n\nState the strongest COUNTER-ARGUMENT against each setup.\n\nIf a <performance_context> block is provided, factor it into your confidence scoring. Strategies that underperform in the current regime deserve lower confidence. If your confidence calibration shows systematic overconfidence in a bucket, adjust downward.",
+  "user_prompt": "Stock: MARSONS | Shortlist direction: short (advisory \u2014 override if indicators disagree)\nMarket regime: range_bound\n\nTechnical Indicators (multi-timeframe):\n  symbol: MARSONS\n  last_close: 148.86\n  rsi_14: 77.22193499051903\n  macd: 3.741279633447249\n  macd_signal: 4.508852223386253\n  bb_upper: 149.5175400412411\n  bb_middle: 148.0815\n  bb_lower: 146.64545995875892\n  atr_14: 1.5983514490709323\n  sma_20: 148.0815\n  sma_50: 134.976\n  sma_200: 124.6434\n  ema_12: 147.8242109301156\n  ema_26: 144.08293129666836\n  vwap: 142.209930829039\n  pivot: 141.23666666666668\n  support_levels: [122.11535555555557, 143.13666666666666, 147.90075]\n  resistance_levels: []\n  adx_14: 53.976551749459894\n  supertrend: 144.18437782605116\n  supertrend_direction: 1\n  bb_bandwidth: 1.9395266002047322\n  vwap_upper_1: 147.68919613747542\n  vwap_lower_1: 136.73066552060257\n  poc: 148.05875000000003\n  vah: 148.05875000000003\n  val: 122.41875\n  ema_9: 148.27639404722143\n  sma_9: 148.14666666666665\n  pivot_r1: 156.48333333333335\n  pivot_s1: 133.61333333333334\n  last_session_high: 148.86\n  last_session_low: 125.99\n  last_session_close: 148.86\n  high_5d: 148.86\n  low_5d: 116.71\n  high_20d: 148.86\n  low_20d: 113.4\n\nBacktest Results:\n  No prior backtest data \u2014 propose setups based on indicator confluence.\n\nRecent Price Action:\nMARSONS last 5 candles (15m): [{'open': 148.41, 'high': 148.86, 'low': 147.5, 'close': 148.15, 'volume': 1174671}, {'open': 148.15, 'high': 148.64, 'low': 148.07, 'close': 148.41, 'volume': 223362}, {'open': 148.41, 'high': 148.86, 'low': 148.41, 'close': 148.6, 'volume': 201455}, {'open': 148.6, 'high': 148.86, 'low': 146.41, 'close': 148.86, 'volume': 1393566}, {'open': 148.86, 'high': 148.86, 'low': 147.8, 'close': 148.86, 'volume': 709690}]\nVWAP (last session): 142.21 | RSI14: 77.2 | ATR14: 1.60 | ADX14: 54.0\nBB: [146.65, 148.08, 149.52] BW: 1.940\nLast session: H 148.86 L 125.99 C 148.86 | 5d H/L: 148.86 / 116.71 | 20d H/L: 148.86 / 113.40\nPivot 141.24 (R1 156.48, S1 133.61) | Volume profile (10 sessions): POC 148.06 VAH 148.06 VAL 122.42\nSupport: [122.11535555555557, 143.13666666666666, 147.90075] | Resistance: []\nSupertrend: 144.18 (up)\n\nDesign 1-3 precise trade setups with exact entry, stop loss, and target levels. Only propose if you find 3+ confluence signals and 1.5:1 minimum R:R. The shortlist direction is advisory. If indicators strongly favor the opposite direction (e.g., overbought RSI + MACD bearish cross + extreme VWAP extension = short, even if shortlist said long), propose the direction the data supports.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "symbol": {
+        "type": "string"
+      },
+      "setups": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "strategy": {
+              "type": "string"
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "long",
+                "short"
+              ]
+            },
+            "entry_trigger": {
+              "type": "string"
+            },
+            "entry_price": {
+              "type": "number"
+            },
+            "stop_loss": {
+              "type": "number"
+            },
+            "target_1": {
+              "type": "number"
+            },
+            "target_2": {
+              "type": "number"
+            },
+            "position_size_hint": {
+              "type": "string",
+              "enum": [
+                "0.5x",
+                "1x",
+                "1.5x"
+              ]
+            },
+            "entry_window": {
+              "type": "string"
+            },
+            "exit_deadline": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "edge_description": {
+              "type": "string"
+            },
+            "invalidation": {
+              "type": "string"
+            },
+            "bear_case": {
+              "type": "string"
+            },
+            "confluence_count": {
+              "type": "integer"
+            },
+            "timeframe_alignment": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "strategy",
+            "direction",
+            "entry_trigger",
+            "entry_price",
+            "stop_loss",
+            "target_1",
+            "target_2",
+            "position_size_hint",
+            "entry_window",
+            "exit_deadline",
+            "confidence",
+            "edge_description",
+            "invalidation",
+            "bear_case",
+            "confluence_count",
+            "timeframe_alignment"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "no_trade_reason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "symbol",
+      "setups",
+      "no_trade_reason"
+    ],
+    "additionalProperties": false
+  },
+  "created_at": "2026-11-02T00:22:54.744918+05:30",
+  "step": "deep:MARSONS"
+}

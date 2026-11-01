@@ -1,0 +1,116 @@
+{
+  "id": "66adf7a43a766859",
+  "tool_name": "submit_deep_analysis",
+  "tool_description": "Submit per-stock deep analysis",
+  "system_prompt": "You are an expert intraday trading strategist with 15 years of NSE experience. Design precise trade setups based on the multi-timeframe data provided.\n\nRules:\n1. Only propose setups with 3+ independent confirming signals across different timeframes or indicator types (confluence). Volume + RSI + VWAP = 3 signals. RSI + Stochastic = 1 signal (both momentum oscillators).\n2. Minimum reward:risk of 1.5:1 to target_1. If you cannot find that, return no_trade_reason instead of forcing a setup.\n3. Entry, stop loss, and targets MUST align with actual support/resistance, pivot, or VWAP levels from the data. Do NOT round to convenient numbers.\n4. Do NOT guess or invent price levels. Use ONLY levels visible in the data.\n\nThink step by step.\n\nConfidence calibration:\n- 0.8+ means you would bet your own capital\n- 0.6-0.8 means worth taking with reduced size\n- Below 0.6 means skip -- return no_trade_reason\n\nFor each setup, state the invalidation condition -- the specific price action that kills the trade thesis.\n\nState the strongest COUNTER-ARGUMENT against each setup.\n\nIf a <performance_context> block is provided, factor it into your confidence scoring. Strategies that underperform in the current regime deserve lower confidence. If your confidence calibration shows systematic overconfidence in a bucket, adjust downward.",
+  "user_prompt": "Stock: EPACK | Shortlist direction: short (advisory \u2014 override if indicators disagree)\nMarket regime: range_bound\n\nTechnical Indicators (multi-timeframe):\n  symbol: EPACK\n  last_close: 154.0\n  rsi_14: 20.011006870764476\n  macd: -2.8385858455186224\n  macd_signal: -2.65220008972001\n  bb_upper: 163.09809339697952\n  bb_middle: 159.0575\n  bb_lower: 155.0169066030205\n  atr_14: 1.7989735239606062\n  sma_20: 159.0575\n  sma_50: 166.36939999999998\n  sma_200: 163.1327\n  ema_12: 157.85237200020453\n  ema_26: 160.69095784572315\n  vwap: 159.2052219709235\n  pivot: 158.28333333333333\n  support_levels: []\n  resistance_levels: [164.85552]\n  adx_14: 55.58274690815754\n  supertrend: 160.12223017015518\n  supertrend_direction: -1\n  bb_bandwidth: 5.0806700683457455\n  vwap_upper_1: 162.30614835502163\n  vwap_lower_1: 156.10429558682537\n  poc: 165.45125000000002\n  vah: 172.69025\n  val: 154.59275\n  ema_9: 157.15923151950656\n  sma_9: 157.80777777777777\n  pivot_r1: 165.36666666666667\n  pivot_s1: 146.91666666666666\n  last_session_high: 169.65\n  last_session_low: 151.2\n  last_session_close: 154.0\n  high_5d: 175.0\n  low_5d: 150.55\n  high_20d: 179.7\n  low_20d: 150.0\n\nBacktest Results:\n  No prior backtest data \u2014 propose setups based on indicator confluence.\n\nRecent Price Action:\nEPACK last 5 candles (15m): [{'open': 159.75, 'high': 160.92, 'low': 158.0, 'close': 160.1, 'volume': 179367}, {'open': 160.2, 'high': 160.58, 'low': 159.42, 'close': 159.79, 'volume': 30644}, {'open': 159.79, 'high': 159.9, 'low': 151.2, 'close': 154.1, 'volume': 252422}, {'open': 154.1, 'high': 155.68, 'low': 154.1, 'close': 154.92, 'volume': 127729}, {'open': 154.7, 'high': 155.48, 'low': 153.09, 'close': 154.0, 'volume': 116326}]\nVWAP (last session): 159.21 | RSI14: 20.0 | ATR14: 1.80 | ADX14: 55.6\nBB: [155.02, 159.06, 163.10] BW: 5.081\nLast session: H 169.65 L 151.20 C 154.00 | 5d H/L: 175.00 / 150.55 | 20d H/L: 179.70 / 150.00\nPivot 158.28 (R1 165.37, S1 146.92) | Volume profile (10 sessions): POC 165.45 VAH 172.69 VAL 154.59\nSupport: [] | Resistance: [164.85552]\nSupertrend: 160.12 (down)\n\nDesign 1-3 precise trade setups with exact entry, stop loss, and target levels. Only propose if you find 3+ confluence signals and 1.5:1 minimum R:R. The shortlist direction is advisory. If indicators strongly favor the opposite direction (e.g., overbought RSI + MACD bearish cross + extreme VWAP extension = short, even if shortlist said long), propose the direction the data supports.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "symbol": {
+        "type": "string"
+      },
+      "setups": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "strategy": {
+              "type": "string"
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "long",
+                "short"
+              ]
+            },
+            "entry_trigger": {
+              "type": "string"
+            },
+            "entry_price": {
+              "type": "number"
+            },
+            "stop_loss": {
+              "type": "number"
+            },
+            "target_1": {
+              "type": "number"
+            },
+            "target_2": {
+              "type": "number"
+            },
+            "position_size_hint": {
+              "type": "string",
+              "enum": [
+                "0.5x",
+                "1x",
+                "1.5x"
+              ]
+            },
+            "entry_window": {
+              "type": "string"
+            },
+            "exit_deadline": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "edge_description": {
+              "type": "string"
+            },
+            "invalidation": {
+              "type": "string"
+            },
+            "bear_case": {
+              "type": "string"
+            },
+            "confluence_count": {
+              "type": "integer"
+            },
+            "timeframe_alignment": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "strategy",
+            "direction",
+            "entry_trigger",
+            "entry_price",
+            "stop_loss",
+            "target_1",
+            "target_2",
+            "position_size_hint",
+            "entry_window",
+            "exit_deadline",
+            "confidence",
+            "edge_description",
+            "invalidation",
+            "bear_case",
+            "confluence_count",
+            "timeframe_alignment"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "no_trade_reason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "symbol",
+      "setups",
+      "no_trade_reason"
+    ],
+    "additionalProperties": false
+  },
+  "created_at": "2026-11-02T00:22:54.699365+05:30",
+  "step": "deep:EPACK"
+}

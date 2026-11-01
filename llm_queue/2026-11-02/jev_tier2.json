@@ -1,0 +1,71 @@
+{
+  "regime": {
+    "regime": "range_bound",
+    "regime_confidence": 0.28,
+    "bias": "bullish",
+    "key_levels": {},
+    "sectors_in_play": [],
+    "sectors_to_avoid": [],
+    "risk_appetite": "defensive",
+    "reasoning": "jev: regime=range_bound(conf=0.28), bias=bullish, risk=defensive, trend=0.59, institutional=0.75"
+  },
+  "sectors": {
+    "sectors": [
+      {
+        "name": "fmcg",
+        "intraday_bias": "bullish",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.35, rotation=0.41"
+      },
+      {
+        "name": "pharma",
+        "intraday_bias": "bullish",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.36, rotation=0.36"
+      },
+      {
+        "name": "auto",
+        "intraday_bias": "bullish",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.36, rotation=0.35"
+      },
+      {
+        "name": "infra",
+        "intraday_bias": "neutral",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.36, rotation=0.34"
+      },
+      {
+        "name": "metal",
+        "intraday_bias": "neutral",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.34, rotation=0.37"
+      },
+      {
+        "name": "banking",
+        "intraday_bias": "neutral",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.35, rotation=0.34"
+      },
+      {
+        "name": "realty",
+        "intraday_bias": "bearish",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.34, rotation=0.34"
+      },
+      {
+        "name": "energy",
+        "intraday_bias": "bearish",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.34, rotation=0.32"
+      },
+      {
+        "name": "it",
+        "intraday_bias": "bearish",
+        "theme": "sector rotation",
+        "catalyst": "jev: momentum=0.33, rotation=0.32"
+      }
+    ],
+    "reasoning": "jev: 9 sectors scored, ranked by composite"
+  }
+}

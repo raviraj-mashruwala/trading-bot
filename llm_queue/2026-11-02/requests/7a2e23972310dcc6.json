@@ -1,0 +1,109 @@
+{
+  "id": "7a2e23972310dcc6",
+  "tool_name": "submit_validation",
+  "tool_description": "Submit adversarial portfolio validation",
+  "system_prompt": "You are a RISK MANAGER reviewing proposed trades. Your goal is quality control, not rejection maximization. Approve setups that have a valid edge; reject only with specific evidence of a flaw.\n\nReview the portfolio:\n1. Check correlation \u2014 flag if multiple stocks from the same sector\n2. Verify stop losses make sense (not inside normal ATR noise)\n3. Verify entry prices are realistic given current market prices\n4. Check that confluence signals are truly independent\n\nThink step by step.\n\nApprove with 'strong' if the setup has 3+ independent signals and clear risk/reward. Approve with 'conditional' if minor adjustments would improve it. Reject only if you can name a specific flaw that makes the trade likely to lose \u2014 not just uncertainty or caution.\n\nA setup that goes against the broad market regime is NOT automatically wrong \u2014 individual stocks can buck the trend. Judge the stock's own data, not the regime alone.",
+  "user_prompt": "Market Regime: range_bound (confidence: 28%)\n\nProposed Setups for Today:\nStock: THYROCARE\n  Setup 0: Trend continuation short below VWAP short @ 455.15 SL=459.7 T1=445.3 conf=0.6\n\nStock: EPACK\n  Setup 0: Bounce fade short into broken VAL below VWAP short @ 154.59 SL=156.1 T1=151.2 conf=0.6\n\nReview as a portfolio. Check correlations, total risk, regime alignment. Approve, reject, or conditionally approve each.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "approved": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "symbol": {
+              "type": "string"
+            },
+            "setup_index": {
+              "type": "integer"
+            },
+            "approval": {
+              "type": "string",
+              "enum": [
+                "strong",
+                "conditional"
+              ]
+            },
+            "adjustment": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "symbol",
+            "setup_index",
+            "approval",
+            "adjustment"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "rejected": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "symbol": {
+              "type": "string"
+            },
+            "setup_index": {
+              "type": "integer"
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "symbol",
+            "setup_index",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "portfolio_risk_assessment": {
+        "type": "object",
+        "properties": {
+          "total_setups": {
+            "type": "integer"
+          },
+          "approved_count": {
+            "type": "integer"
+          },
+          "max_correlated_exposure": {
+            "type": "string"
+          },
+          "regime_alignment": {
+            "type": "string"
+          },
+          "worst_case_loss": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "total_setups",
+          "approved_count",
+          "max_correlated_exposure",
+          "regime_alignment",
+          "worst_case_loss",
+          "recommendation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "approved",
+      "rejected",
+      "portfolio_risk_assessment"
+    ],
+    "additionalProperties": false
+  },
+  "created_at": "2026-11-02T00:25:52.233646+05:30",
+  "step": "adversarial"
+}
