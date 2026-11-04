@@ -25,3 +25,4 @@ logs/
 
 # git worktrees
 .worktrees/
+research/output/entry_comparison/candles.json
