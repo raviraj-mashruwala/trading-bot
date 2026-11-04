@@ -32,3 +32,18 @@ Why this is not yet tradable:
 
 Next: forward paper trade with real pre-open indicative prices and measured fills; design a stop and sizing rule on
 train+valid only.
+
+## 1-minute execution check (research/harness/gapfade_1m.py)
+
+Same gap-fade selection on the ~65 long-history 1m names (n = 62-94 per split, so noisy), fixed variants, no grid:
+
+| Entry | train net@10bps | valid | holdout |
+|---|---|---|---|
+| 09:15 open, no stop | +59 | +13 | +19 |
+| 09:16 open, no stop | +2 | -63 | -43 |
+| 09:20 open, no stop | +5 | -67 | -65 |
+| 09:15 open, 1 ADR stop | +28 | +21 | +44 |
+
+The edge is the 09:15 opening print itself reverting. One minute later, and it is gone or negative in 2 of 3 splits.
+Only a pre-open auction fill could capture it, and historical pre-open data to backtest that is not available.
+Same reason universe intraday drift is -13 bps/day: the open print sits above the trading that follows.
