@@ -29,3 +29,14 @@ def test_gap_picks_top_five_by_score_and_fade_inverts_follow():
 def test_reversal_shorts_winners_and_longs_losers():
     t = D.pick(_el(), 'reversal')
     assert (t.loc[t['prev_ret'] > 0, 'side'] == -1).all() and (t.loc[t['prev_ret'] < 0, 'side'] == 1).all()
+
+
+def test_missing_ranges_resume_logic():
+    from datetime import date
+    from research.harness.fetch_fno_1m import missing_ranges
+    s, today = date(2019, 1, 1), date(2026, 11, 4)
+    assert missing_ranges(None, None, s, today) == [(s, today)]
+    full = missing_ranges(date(2019, 1, 1), date(2026, 11, 3), s, today)
+    assert full == []
+    both = missing_ranges(date(2026, 1, 1), date(2026, 10, 30), s, today)
+    assert both == [(s, date(2025, 12, 31)), (date(2026, 10, 31), today)]
