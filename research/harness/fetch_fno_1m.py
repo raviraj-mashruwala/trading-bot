@@ -40,6 +40,24 @@ def missing_ranges(first: date | None, last: date | None, start: date, today: da
     return out
 
 
+def fast_write(store, symbol: str, df) -> int:
+    """Bulk INSERT OR IGNORE. CandleStore.write counts rows with two full-table scans per call,
+    which is minutes per chunk on a 78M-row table."""
+    if df.empty:
+        return 0
+    if getattr(df['timestamp'].dt, 'tz', None) is not None:
+        df = df.assign(timestamp=df['timestamp'].dt.tz_localize(None))  # keep IST wall clock
+    df = df.assign(symbol=symbol, interval='1m')[
+        ['symbol', 'interval', 'timestamp', 'open', 'high', 'low', 'close', 'volume']]
+    con = store._ensure_connected()
+    con.register('incoming', df)
+    try:
+        con.execute('INSERT OR IGNORE INTO candles SELECT * FROM incoming')
+    finally:
+        con.unregister('incoming')
+    return len(df)
+
+
 def resolve_universe(kite, only_indices: bool) -> list[tuple[str, int, str]]:
     """(symbol, token, kind) for indices and F&O underlyings."""
     nse = kite.instruments('NSE')
@@ -106,7 +124,7 @@ def main() -> None:
             for attempt in range(3):
                 try:
                     rows = client.fetch_historical(tok, 'minute', c_lo, c_hi)
-                    written += store.write(sym, '1m', _kite_rows_to_df(rows))
+                    written += fast_write(store, sym, _kite_rows_to_df(rows))
                     break
                 except Exception as exc:  # noqa: BLE001
                     if 'token' in str(exc).lower() or 'api_key' in str(exc).lower():
@@ -115,6 +133,7 @@ def main() -> None:
             else:
                 log.warning('%s %s..%s failed after retries; rerun to fill it', sym, c_lo, c_hi)
         done_symbols.add(sym)
+        store._ensure_connected().execute('CHECKPOINT')
         log.info('%s %s..%s +%d rows (%d/%d symbols, %.0f min elapsed)', sym, lo, hi, written,
                  len(done_symbols), len({p[0] for p in plan}), (time.time() - t0) / 60)
 
