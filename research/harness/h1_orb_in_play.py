@@ -30,6 +30,7 @@ import numpy as np
 
 from . import stats
 from .bars import Session, hhmm, load_sessions
+from .costs import futures_cost_bps
 from .sim import Sizing, quantity, settle, walk_exit
 
 K_GRID = (0.25, 0.5, 1.0)
@@ -76,8 +77,28 @@ def day_features(sessions: list[Session]) -> list[dict]:
     return feats
 
 
+FNO_FILE = Path(__file__).with_name('fno_universe.txt')
+
+
+def fno_universe(con, min_days: int = 1000) -> list[str]:
+    names = [n for n in FNO_FILE.read_text().split() if n]
+    q = ','.join("'" + n.replace("'", "''") + "'" for n in names)
+    rows = con.execute(f"SELECT symbol FROM (SELECT symbol, COUNT(DISTINCT timestamp::DATE) d FROM candles "
+                       f"WHERE interval='1m' AND symbol IN ({q}) GROUP BY 1) WHERE d>={min_days} ORDER BY 1").fetchall()
+    return [s for (s,) in rows]
+
+
+def settle_futures(side: int, entry: float, exit_price: float, stop: float, slippage_bps: float) -> dict:
+    """Per-unit settle with futures costs (fractional lots; brokerage assumes a Rs 6L lot)."""
+    gross_bps = (exit_price - entry) * side / entry * 1e4
+    cost = futures_cost_bps(entry, exit_price, side, slippage_bps, lot_notional=600_000.0)
+    risk_bps = abs(entry - stop) / entry * 1e4
+    return {'qty': 1, 'gross': gross_bps, 'cost': cost, 'net': gross_bps - cost,
+            'gross_r': gross_bps / risk_bps, 'r': (gross_bps - cost) / risk_bps, 'net_bps': gross_bps - cost}
+
+
 def simulate_day(s: Session, side: int, k: float, adr: float, slippage_bps: float,
-                 sizing: Sizing) -> dict | None:
+                 sizing: Sizing, futures: bool = False) -> dict | None:
     hi, lo = float(s.high[:5].max()), float(s.low[:5].min())
     for j in range(5, len(s.minute)):
         if s.minute[j] > ENTRY_UNTIL:
@@ -95,16 +116,18 @@ def simulate_day(s: Session, side: int, k: float, adr: float, slippage_bps: floa
         ex = walk_exit(s.open, s.high, s.low, s.minute, j, side, stop, None, EXIT_AT)
         if ex is None:
             return None
-        return {'entry': fill, 'exit': ex.price, 'reason': ex.reason,
-                **settle(side, fill, ex.price, stop, qty, slippage_bps)}
+        done = (settle_futures(side, fill, ex.price, stop, slippage_bps) if futures
+                else settle(side, fill, ex.price, stop, qty, slippage_bps))
+        return {'entry': fill, 'exit': ex.price, 'reason': ex.reason, **done}
     return None
 
 
-def run(con, start: str, end: str, slippage_bps: float, liquid_cr: float, sizing: Sizing) -> list[dict]:
+def run(con, start: str, end: str, slippage_bps: float, liquid_cr: float, sizing: Sizing,
+        futures: bool = False) -> list[dict]:
     warm = (dt.date.fromisoformat(start) - dt.timedelta(days=120)).isoformat()
     lo_d, hi_d = dt.date.fromisoformat(start), dt.date.fromisoformat(end)
     rows: list[dict] = []
-    for sym in universe(con):
+    for sym in (fno_universe(con) if futures else universe(con)):
         sessions, _ = load_sessions(con, sym, '1m', warm, end)
         for f in day_features(sessions):
             if lo_d <= f['day'] < hi_d and f['first_dir'] != 0 and f['open_price'] >= MIN_PRICE \
@@ -129,7 +152,7 @@ def run(con, start: str, end: str, slippage_bps: float, liquid_cr: float, sizing
                 continue
             for mode, side in (('with', r['first_dir']), ('against', -r['first_dir'])):
                 for k in K_GRID:
-                    t = simulate_day(s, side, k, r['adr'], slippage_bps, sizing)
+                    t = simulate_day(s, side, k, r['adr'], slippage_bps, sizing, futures)
                     if t:
                         out.append({'date': d, 'symbol': sym, 'mode': mode, 'k': k,
                                     'rvol': r['rvol'], 'side': side, **t})
@@ -166,18 +189,19 @@ def main() -> None:
     ap.add_argument('--slippage-bps', type=float, default=5.0)
     ap.add_argument('--liquid-cr', type=float, default=25.0)
     ap.add_argument('--database', default='candles.duckdb')
+    ap.add_argument('--futures', action='store_true', help='F&O universe, futures cost model (use --slippage-bps 3)')
     a = ap.parse_args()
     if a.split == 'holdout':
         if not a.confirm_holdout:
             raise SystemExit('holdout is single-use: pass --confirm-holdout to spend it')
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         with (OUT_DIR / 'holdout_log.txt').open('a') as f:
-            f.write(f'{dt.datetime.now().isoformat()} h1 slippage={a.slippage_bps} liquid_cr={a.liquid_cr}\n')
+            f.write(f'{dt.datetime.now().isoformat()} h1{"-futures" if a.futures else ""} slippage={a.slippage_bps} liquid_cr={a.liquid_cr}\n')
     con = duckdb.connect(a.database, read_only=True)
     start, end = stats.SPLITS[a.split]
-    trades = run(con, start, end, a.slippage_bps, a.liquid_cr, Sizing())
+    trades = run(con, start, end, a.slippage_bps, a.liquid_cr, Sizing(), a.futures)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    path = OUT_DIR / f'h1_{a.split}.csv'
+    path = OUT_DIR / f'h1{"f" if a.futures else ""}_{a.split}.csv'
     if trades:
         with path.open('w', newline='') as f:
             w = csv.DictWriter(f, fieldnames=list(trades[0]))
