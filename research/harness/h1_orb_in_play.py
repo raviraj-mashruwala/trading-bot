@@ -94,7 +94,8 @@ def settle_futures(side: int, entry: float, exit_price: float, stop: float, slip
     cost = futures_cost_bps(entry, exit_price, side, slippage_bps, lot_notional=600_000.0)
     risk_bps = abs(entry - stop) / entry * 1e4
     return {'qty': 1, 'gross': gross_bps, 'cost': cost, 'net': gross_bps - cost,
-            'gross_r': gross_bps / risk_bps, 'r': (gross_bps - cost) / risk_bps, 'net_bps': gross_bps - cost}
+            'gross_r': gross_bps / risk_bps, 'r': (gross_bps - cost) / risk_bps, 'net_bps': gross_bps - cost,
+            'risk_bps': risk_bps}
 
 
 def simulate_day(s: Session, side: int, k: float, adr: float, slippage_bps: float,
@@ -118,7 +119,8 @@ def simulate_day(s: Session, side: int, k: float, adr: float, slippage_bps: floa
             return None
         done = (settle_futures(side, fill, ex.price, stop, slippage_bps) if futures
                 else settle(side, fill, ex.price, stop, qty, slippage_bps))
-        return {'entry': fill, 'exit': ex.price, 'reason': ex.reason, **done}
+        return {'entry': fill, 'exit': ex.price, 'reason': ex.reason,
+                'entry_min': int(s.minute[j]), 'exit_min': int(s.minute[ex.idx]), **done}
     return None
 
 
