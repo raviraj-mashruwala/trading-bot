@@ -306,6 +306,7 @@ def create_app(
     from tradingbot.api.review_routes import router as review_router
     from tradingbot.api.calendar_routes import router as calendar_router
     from tradingbot.api.sync_routes import router as sync_router
+    from tradingbot.api.rule_routes import router as rule_router
 
     app.include_router(health_router)
     app.include_router(config_router)
@@ -316,6 +317,7 @@ def create_app(
     app.include_router(review_router)
     app.include_router(calendar_router)
     app.include_router(sync_router)
+    app.include_router(rule_router)
 
     return app
 
