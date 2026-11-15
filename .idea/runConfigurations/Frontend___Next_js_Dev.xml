@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Frontend — Next.js Dev" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="cd $PROJECT_DIR$/web &amp;&amp; npm run dev" />
+    <option name="SCRIPT_TEXT" value="npm run dev" />
     <option name="INDEPENDENT_SCRIPT_TEXT" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />

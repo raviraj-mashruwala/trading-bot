@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Backend — API Server" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="$PROJECT_DIR$/.venv/bin/python -m tradingbot serve" />
+    <option name="SCRIPT_TEXT" value="&amp; &quot;$PROJECT_DIR$/.venv/Scripts/python.exe&quot; -m tradingbot serve" />
     <option name="INDEPENDENT_SCRIPT_TEXT" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />

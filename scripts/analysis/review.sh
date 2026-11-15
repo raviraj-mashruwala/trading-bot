@@ -3,4 +3,5 @@
 # Exit codes: 0 review saved, 10 LLM answer needed, 1 error.
 cd "$(dirname "$0")/../.." || exit 1
 if [ $# -gt 0 ] && [[ "$1" != -* ]]; then set -- --date "$@"; fi
-exec "${PYTHON:-.venv/bin/python}" -m tradingbot pipeline review "$@"
+PY=.venv/bin/python; [ -x "$PY" ] || PY=.venv/Scripts/python.exe
+exec "${PYTHON:-$PY}" -m tradingbot pipeline review "$@"
