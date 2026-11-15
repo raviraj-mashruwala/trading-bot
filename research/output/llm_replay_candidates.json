@@ -1,0 +1,782 @@
+[
+  {
+    "date": "2026-06-01",
+    "symbol": "SUPRIYA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "WOCKPHARMA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "TIMEX",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "KOPRAN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "RAIN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "VIDYAWIRES",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "ATGL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "HARIOMPIPE",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "REFEX",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-01",
+    "symbol": "OMNI",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "PANACEABIO",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "WELSPLSOL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "GRMOVER",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "JNKINDIA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "NRBBEARING",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "THOMASCOOK",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "PARAS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "MSTCLTD",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "GULPOLY",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-10",
+    "symbol": "CEMPRO",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "DECNGOLD",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "RPTECH",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "BLUSPRING",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "PARAS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "ICIL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "WALCHANNAG",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "NIBE",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "NIACL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "SONATSOFTW",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-06-19",
+    "symbol": "AEROENTER",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "RAMCOSYS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "SAKSOFT",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "PPL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "ATHERENERG",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "MOREPENLAB",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "SPAL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "ARVIND",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "EBGNG",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "GUFICBIO",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-01",
+    "symbol": "ASTRAL",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "UNICHEMLAB",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "SHAREINDIA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "MASTERTR",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "ITDC",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "IKIO",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "AZAD",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "LODHA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "MAPMYINDIA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "FILATEX",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-10",
+    "symbol": "SUVEN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "LANDMARK",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "BECTORFOOD",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "DYCL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "BEPL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "JAYBARMARU",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "SDBL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "TIMETECHNO",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "ECLERX",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "KROSS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-21",
+    "symbol": "GANDHAR",
+    "direction": "long",
+    "regime_tag": "trend_continuation"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "ASIANTILES",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "TFCILTD",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "SHK",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "COFORGE",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "J&KBANK",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "KPITTECH",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "SKMEGGPROD",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "LXCHEM",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "PCBL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-07-30",
+    "symbol": "TDPOWERSYS",
+    "direction": "short",
+    "regime_tag": "trend_continuation"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "RBA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "MOREPENLAB",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "EMIL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "SOTL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "SBCL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "SAPPHIRE",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "VARROC",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "DEVYANI",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "TFCILTD",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-10",
+    "symbol": "JAYBARMARU",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "EMIL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "INDSWFTLAB",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "AARTIPHARM",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "FINCABLES",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "TDPOWERSYS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "PNGSREVA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "RICOAUTO",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "ELLEN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "CAMLINFINE",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-13",
+    "symbol": "CUPID",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "DWARKESH",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "WELCORP",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "SOLARA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "INDOBORAX",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "MANINDS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "DALMIASUG",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "BALRAMCHIN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "KIRIINDUS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "BLUSPRING",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-08-24",
+    "symbol": "HSCL",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "DYCL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "SSWL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "DIFFNKG",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "ATHERENERG",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "HAPPSTMNDS",
+    "direction": "long",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "TNPETRO",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "MARINE",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "SOTL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "MANALIPETC",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-02",
+    "symbol": "ENGINERSIN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "WHEELS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "GENESYS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "PAISALO",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "SHAREINDIA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "GRAPHITE",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "EXCELSOFT",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "ELLEN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "RIR",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "SOLARA",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-11",
+    "symbol": "FINCABLES",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "PROTEAN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "KPIGREEN",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "REGAAL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "CHEMPLASTS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "JAYKAY",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "ROSSTECH",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "ASTEC",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "JASH",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "TRANSRAILL",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  },
+  {
+    "date": "2026-09-23",
+    "symbol": "OPTIEMUS",
+    "direction": "short",
+    "regime_tag": "overextended_fade"
+  }
+]

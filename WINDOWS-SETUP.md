@@ -62,9 +62,6 @@ pip show fastapi duckdb kiteconnect
 
 # Config loads
 python -c "from tradingbot.core.config import load_config; c=load_config(); print('Mode:', c.general.mode.value)"
-
-# MotherDuck connection (if using cloud DB)
-python -c "import duckdb; c=duckdb.connect('md:candles'); print('Rows:', c.execute('SELECT COUNT(*) FROM candles').fetchone()[0]); c.close()"
 ```
 
 ## Run Manually (for testing)
@@ -158,23 +155,6 @@ nssm stop TradingBotFrontend
 nssm remove TradingBotFrontend confirm
 ```
 
-## Switch Between Local and MotherDuck
-
-**Use MotherDuck (cloud):** Set in `.env`:
-```
-CANDLE_STORE_URL=md:candles
-```
-
-**Use local DuckDB:** Set in `.env`:
-```
-CANDLE_STORE_URL=
-```
-
-**Download MotherDuck data to local file:**
-```powershell
-python scripts/download-from-motherduck.py
-```
-
 ## Kill Stuck Processes
 
 ```powershell
@@ -192,7 +172,6 @@ taskkill /F /PID <PID>
 |---------|-----|
 | `Activate.ps1` blocked | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | `pip install` fails on kiteconnect | `winget install Microsoft.VisualStudio.2022.BuildTools` then retry |
-| MotherDuck connection error | Check `MOTHERDUCK_TOKEN` in `.env`, no trailing spaces |
 | Telegram duplicate responses | Only one instance should run Telegram polling at a time |
 | Port 8000 in use | `netstat -ano \| findstr :8000` then `taskkill /F /PID <PID>` |
 | Service won't start | Check `logs\backend.log` for errors |

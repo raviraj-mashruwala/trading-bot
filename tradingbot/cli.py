@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import logging
 import sys
 import time as time_module
@@ -11,6 +12,9 @@ from pathlib import Path
 
 import click
 
+from tradingbot.api.headless import (
+    build_headless_state, default_review_date, default_trade_date, queue_dir_for,
+)
 from tradingbot.core.broker import BrokerInterface
 from tradingbot.core.config import Config, ConfigError, load_config
 from tradingbot.core.database import Database
@@ -21,7 +25,7 @@ from tradingbot.data.ws_ticker import AsyncKiteTicker as LiveTickManager
 from tradingbot.executor.execution_intelligence import ExecutionIntelligence
 from tradingbot.executor.executor import Executor
 from tradingbot.paper.virtual_broker import VirtualBroker
-from tradingbot.scanner.calendar import NotATradingDayError, next_trading_day
+from tradingbot.scanner.calendar import NotATradingDayError, is_trading_day, next_trading_day
 from tradingbot.strategy.backtester import Backtester
 from tradingbot.strategy.strategies import STRATEGY_REGISTRY
 
@@ -38,7 +42,6 @@ def build_risk_manager(config: Config) -> RiskManager:
         config.risk,
         config.strategy,
         capital=config.general.capital,
-        plan_max_age_hours=config.execution.plan_max_age_hours,
         max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
     )
 
@@ -80,7 +83,10 @@ def build_broker(config: Config, mode: Mode) -> BrokerInterface:
 def cli(ctx: click.Context, config_path: Path, data_dir: Path) -> None:
     """Automated intraday equity trading bot for the Indian market."""
     try:
-        config = load_config(config_path)
+        # The staged-analysis commands answer LLM calls from files, so they work without a key.
+        config = load_config(
+            config_path, anthropic_key_optional=ctx.invoked_subcommand in {"pipeline", "llm"},
+        )
     except ConfigError as exc:
         _fail(str(exc))
 
@@ -339,6 +345,298 @@ def sync(obj: dict, daily_days: int, intraday_days: int) -> None:
     click.echo("Go to Settings → Data Cache → Start Initial Fill.")
 
 
+# ----- Staged manual analysis -----------------------------------------------------
+# Heavy work (sync, candle fetch) runs as plain commands; LLM answers come from a
+# Claude Code session via files. Nothing here waits for the conversation: a command
+# that needs an answer exits with a code that says so.
+
+EXIT_ANSWERS_NEEDED = 10
+EXIT_DATA_NEEDED = 11
+
+
+def _require_kite_token() -> None:
+    if not (Path.home() / ".tradingbot" / "kite_token").exists():
+        _fail("no Kite access token found. Run `tradingbot auth` first.")
+
+
+def _resolve_trade_date(target: str | None) -> date:
+    if target is None:
+        return default_trade_date()
+    try:
+        trade_date = date.fromisoformat(target)
+    except ValueError:
+        _fail(f"invalid --date {target!r}; expected YYYY-MM-DD")
+    if not is_trading_day(trade_date):
+        _fail(f"{trade_date} is not a trading day")
+    return trade_date
+
+
+def _announce(step: str, label: str, chosen: date, explicit: bool, default_hint: str) -> None:
+    """Say which date a step is about to use, so a defaulted date is never a surprise."""
+    source = "from --date" if explicit else f"default: {default_hint}"
+    click.echo(f"{step}: {label} {chosen} ({source})")
+
+
+_ROUND_LABELS = {
+    "submit_regime_analysis": "regime",
+    "submit_sector_analysis": "sectors",
+    "submit_shortlist": "shortlist",
+    "submit_deep_analysis": "deep analysis",
+    "submit_validation": "adversarial review",
+    "nightly_review": "nightly review",
+}
+
+
+def _chat_prompt(day: date) -> str:
+    """The exact prompt to paste into Claude Code when the next step is the conversation."""
+    return f"/answer-llm-requests {day} - answer only. Don't run any scripts, I'll run them myself."
+
+
+def _echo_paste_prompt(day: date, then: str) -> None:
+    click.echo("")
+    click.echo("next: paste this into Claude Code (opened in this repo):")
+    click.echo("")
+    click.echo(f"  {_chat_prompt(day)}")
+    click.echo("")
+    click.echo(then)
+
+
+def _echo_pending(pending: list, day: date, rerun: str) -> None:
+    labels = sorted({_ROUND_LABELS.get(request.tool_name, request.tool_name) for request in pending})
+    click.echo(f"{len(pending)} LLM requests pending for {day} (round: {', '.join(labels)}):")
+    for request in pending:
+        click.echo(f"  {request.id}  {request.tool_name}  {request.path}")
+    if {request.tool_name for request in pending} == {"submit_shortlist"}:
+        # The shortlist decides which candles are needed; fetch is gap-aware, so it is
+        # quick when they are already fresh.
+        then = f"then run: scripts/analysis/fetch.sh {day}, then rerun {rerun} {day}"
+    else:
+        then = f"then rerun: {rerun} {day}"
+    _echo_paste_prompt(day, then)
+
+
+def _file_llm_config(config: Config) -> Config:
+    """These commands never call the Anthropic API, whatever config.toml says."""
+    return dataclasses.replace(config, llm=dataclasses.replace(config.llm, provider="file"))
+
+
+async def _run_with_progress(state, coro):
+    """Run a coroutine while printing pipeline events as they happen; returns its result."""
+    def show(event: dict) -> None:
+        data = event.get("data", {})
+        message = data.get("message") or data.get("status") or ""
+        click.echo(f"  [{event['type']}] {message}".rstrip())
+
+    subscription = state.event_bus.subscribe(show)
+    pump = asyncio.create_task(state.event_bus.flush_loop())
+    try:
+        return await coro
+    finally:
+        await asyncio.sleep(0.1)  # let queued events reach the subscriber
+        await state.event_bus.shutdown()
+        await pump
+        state.event_bus.unsubscribe(subscription)
+
+
+@cli.group("pipeline")
+def pipeline_group() -> None:
+    """Run the analysis pipeline in stages, without the web server."""
+
+
+@pipeline_group.command("sync")
+@click.option("--full", "force_full", is_flag=True, help="Force a full initial fill.")
+@click.pass_obj
+def pipeline_sync(obj: dict, force_full: bool) -> None:
+    """Sync market data from Kite into the local candle cache. No LLM."""
+    from tradingbot.api import sync_routes
+
+    _require_kite_token()
+    state = build_headless_state(obj["config"], obj["data_dir"])
+    asyncio.run(_run_with_progress(state, sync_routes._run_sync(state, force_full=force_full)))
+
+    status = state.sync_status
+    if status.get("status") == "error":
+        _fail(status.get("error", "sync failed"))
+    click.echo(f"sync: {status}")
+
+
+@pipeline_group.command("analyze")
+@click.option("--date", "target", default=None, help="Trade date YYYY-MM-DD. Defaults to the next session.")
+@click.pass_obj
+def pipeline_analyze(obj: dict, target: str | None) -> None:
+    """Advance the analysis as far as it can go, then exit.
+
+    Exit 0: plan written. 10: LLM answers needed. 11: run `pipeline fetch`. 1: error.
+    """
+    from tradingbot.analysis.pipeline import DataNeeded
+    from tradingbot.api import analysis_routes
+    from tradingbot.core.llm.file_provider import AnswersNeeded
+    from tradingbot.core.llm.queue_status import pending_requests
+
+    _require_kite_token()
+    trade_date = _resolve_trade_date(target)
+    _announce("analyze", "trade date", trade_date, target is not None, "next session")
+    state = build_headless_state(
+        _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=trade_date.isoformat(),
+    )
+    state.require_prefetched = True
+
+    started = now_ist()
+    asyncio.run(_run_with_progress(state, analysis_routes._run_analysis(state, trade_date)))
+
+    blocked = state.analysis_blocked
+    if isinstance(blocked, AnswersNeeded):
+        pending = pending_requests(Path(state.config.llm.queue_dir))
+        _echo_pending(pending, trade_date, "scripts/analysis/analyze.sh")
+        sys.exit(EXIT_ANSWERS_NEEDED)
+    if isinstance(blocked, DataNeeded):
+        click.echo(f"shortlist candle data needed for: {', '.join(blocked.symbols)}")
+        click.echo(f"next: run scripts/analysis/fetch.sh {trade_date}, then rerun analyze.sh {trade_date}")
+        sys.exit(EXIT_DATA_NEEDED)
+    if state.analysis_status == "failed":
+        _fail(state.analysis_error or "analysis failed")
+
+    plan_path = state.plan_store.path_for(trade_date.isoformat())
+    try:
+        plan = state.plan_store.load(trade_date.isoformat())
+    except (PlanNotFoundError, PlanCorruptError):
+        plan = None
+    if plan is None or plan.generated_at < started:
+        _fail(f"analysis finished but no plan was written for {trade_date} (see log above)")
+    click.echo(f"plan: {plan_path} ({len(plan.legs)} legs)")
+
+
+@pipeline_group.command("fetch")
+@click.option("--date", "target", default=None, help="Trade date YYYY-MM-DD. Defaults to the next session.")
+@click.pass_obj
+def pipeline_fetch(obj: dict, target: str | None) -> None:
+    """Download candles for the stocks Claude shortlisted. Heavy; no LLM."""
+    from tradingbot.analysis.pipeline import AnalysisPipeline
+    from tradingbot.core.llm.queue_status import answered_payload
+    from tradingbot.data.instrument_cache import InstrumentCache
+
+    _require_kite_token()
+    trade_date = _resolve_trade_date(target)
+    _announce("fetch", "trade date", trade_date, target is not None, "next session")
+    state = build_headless_state(
+        _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=trade_date.isoformat(),
+    )
+
+    shortlist = answered_payload(Path(state.config.llm.queue_dir), "submit_shortlist")
+    if shortlist is None:
+        click.echo(f"fetch: no answered shortlist for {trade_date} yet.")
+        click.echo(
+            f"If analyze.sh has not run, run scripts/analysis/analyze.sh {trade_date} first. "
+            "If it exited 10, the shortlist still needs answering:"
+        )
+        _echo_paste_prompt(trade_date, f"then rerun: scripts/analysis/fetch.sh {trade_date}")
+        sys.exit(1)
+    symbols = [pick["symbol"] for pick in shortlist.get("shortlist", [])]
+    if not symbols:
+        click.echo("shortlist is empty; nothing to fetch")
+        return
+
+    pipeline = AnalysisPipeline(
+        data_sync=None, candle_store=None, screener=None, tier2=None, tier3=None,
+        backtest_engine=None, monte_carlo=None, run_store=None, setup_store=None,
+        event_bus=state.event_bus, capital=0.0,
+        instrument_cache=InstrumentCache(Path(obj["data_dir"]) / "instruments.db"),
+        duckdb_store=state.candle_store,
+    )
+    results = asyncio.run(
+        _run_with_progress(state, pipeline.fetch_shortlist(symbols, progress=click.echo))
+    )
+
+    missing = pipeline.missing_shortlist_data(symbols, trade_date)
+    if missing:
+        _fail(
+            f"no fresh candle data after fetch for: {', '.join(missing)}. "
+            "An expired Kite token is the usual cause: run `tradingbot auth` and retry."
+        )
+    click.echo(f"fetched {len(symbols)} stocks ({sum((results or {}).values()):,} rows)")
+    click.echo(f"next: rerun scripts/analysis/analyze.sh {trade_date}")
+
+
+@pipeline_group.command("review")
+@click.option("--date", "target", default=None, help="Session date YYYY-MM-DD. Defaults to the latest finished session.")
+@click.pass_obj
+def pipeline_review(obj: dict, target: str | None) -> None:
+    """Grade a finished session. Answered in Claude Code like the analysis, no API billing.
+
+    Exit 0: review saved (or nothing to review). 10: LLM answer needed. 1: error.
+    """
+    from tradingbot.analysis import nightly_reviewer
+    from tradingbot.api import analysis_routes
+    from tradingbot.core.llm.anthropic_provider import build_provider
+    from tradingbot.core.llm.file_provider import AnswersNeeded, llm_step
+    from tradingbot.core.llm.queue_status import pending_requests
+
+    review_date = default_review_date() if target is None else _resolve_trade_date(target)
+    _announce("review", "session", review_date, target is not None, "latest finished session")
+    state = build_headless_state(
+        _file_llm_config(obj["config"]), obj["data_dir"], llm_queue_subdir=review_date.isoformat(),
+    )
+    analysis_routes._ensure_stores(state)
+    provider = build_provider(state.config.llm, state.config.secrets)
+
+    jev_client = None
+    if state.config.jev and state.config.jev.enabled:
+        try:
+            from tradingbot.core.jev_client import JevClient
+
+            candidate = JevClient(state.config.jev)
+            jev_client = candidate if candidate.available else None
+        except Exception:  # noqa: BLE001 - Jev pre-grades are optional
+            jev_client = None
+
+    async def run_review() -> dict:
+        with llm_step("review"):
+            return await nightly_reviewer.run_nightly_review(
+                state.database, provider, trade_date=review_date.isoformat(),
+                setup_store=state.setup_store, candle_store=state.candle_store,
+                jev_client=jev_client,
+            )
+
+    try:
+        review = asyncio.run(run_review())
+    except AnswersNeeded:
+        pending = pending_requests(Path(state.config.llm.queue_dir))
+        _echo_pending(pending, review_date, "scripts/analysis/review.sh")
+        sys.exit(EXIT_ANSWERS_NEEDED)
+    except Exception as exc:  # noqa: BLE001
+        _fail(f"review failed: {exc}")
+
+    if review.get("skipped"):
+        click.echo(f"review {review_date}: {review.get('reason', 'skipped')}; nothing to review")
+        return
+    click.echo(
+        f"review {review_date}: grade {review.get('grade', '?')}, "
+        f"{review.get('trades_count', 0)} trades, P&L {review.get('total_pnl', 0):,.2f}"
+    )
+
+
+@cli.group("llm")
+def llm_group() -> None:
+    """Inspect LLM requests waiting for a Claude Code session."""
+
+
+@llm_group.command("pending")
+@click.option("--date", "target", default=None, help="Trade date YYYY-MM-DD. Defaults to the next session.")
+@click.pass_obj
+def llm_pending(obj: dict, target: str | None) -> None:
+    """List requests that have no valid answer yet."""
+    from tradingbot.core.llm.queue_status import pending_requests
+
+    trade_date = _resolve_trade_date(target)
+    queue_dir = queue_dir_for(obj["config"], obj["data_dir"], trade_date.isoformat())
+    pending = pending_requests(queue_dir)
+    if not pending:
+        click.echo("none")
+        return
+    for request in pending:
+        click.echo(f"{request.id}  {request.tool_name}  {request.path}")
+
+
 @cli.command()
 @click.option("--port", default=8000, type=int, help="Port to listen on.")
 @click.option("--reload", "use_reload", is_flag=True, help="Enable auto-reload for development.")
@@ -356,11 +654,11 @@ def serve(obj: dict, port: int, use_reload: bool) -> None:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpx2").setLevel(logging.WARNING)
 
-    uvicorn.run(
-        "tradingbot.api.app:create_app",
-        factory=True,
-        host="0.0.0.0",
-        port=port,
-        reload=use_reload,
-        log_level="warning",
-    )
+    options = dict(factory=True, host="0.0.0.0", port=port, log_level="warning")
+    if use_reload:
+        uvicorn.run("tradingbot.api.app:create_app", reload=True, **options)
+    else:
+        # A second Ctrl+C / SIGTERM force-exits even when the event loop is wedged.
+        from tradingbot.api.server import ForceExitServer
+
+        ForceExitServer(uvicorn.Config("tradingbot.api.app:create_app", **options)).run()

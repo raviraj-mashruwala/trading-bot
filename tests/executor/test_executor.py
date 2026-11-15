@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import date, datetime, time
 
 import pytest
@@ -65,7 +66,6 @@ def make_execution_config() -> ExecutionConfig:
         square_off_time=time(15, 10),
         connection_timeout_sec=30,
         heartbeat_interval_sec=60,
-        plan_max_age_hours=14.0,
         max_entry_price_drift_pct=10.0,
     )
 
@@ -138,14 +138,25 @@ def test_start_skips_a_leg_whose_price_has_gapped_away(tmp_path):
     assert executor.states[0].entry_order_id is None
 
 
-def test_a_stale_plan_prevents_any_order(tmp_path):
-    stale = make_plan([make_leg()], generated_at=datetime(2026, 9, 21, 8, 0, tzinfo=IST))
-    executor, broker, _, _ = build(tmp_path, [make_leg()], plan=stale)
+def test_a_plan_for_another_day_prevents_any_order(tmp_path):
+    other_day = dataclasses.replace(make_plan([make_leg()]), trade_date="2026-09-23")
+    executor, broker, _, _ = build(tmp_path, [make_leg()], plan=other_day)
 
     executor.start()
 
     assert executor.blocked is True
     assert executor.states == []
+
+
+def test_an_old_plan_for_today_still_executes(tmp_path):
+    # Generated days ago (e.g. Friday for a Monday session): age does not matter.
+    old = make_plan([make_leg()], generated_at=datetime(2026, 9, 18, 8, 0, tzinfo=IST))
+    executor, broker, _, _ = build(tmp_path, [make_leg()], price=105.0, plan=old)
+
+    executor.start()
+
+    assert executor.blocked is False
+    assert executor.states[0].entry_order_id is not None
 
 
 def test_a_filled_entry_gets_a_protective_stop(tmp_path):
@@ -347,3 +358,105 @@ async def test_executor_emits_events_when_event_bus_provided(tmp_path):
     assert "exec.entry_filled" in types
 
     database.close()
+
+
+def _reject_orders(broker, message="IP is not allowed to place orders for this app"):
+    from tradingbot.core.broker import BrokerError
+
+    def place_order(*args, **kwargs):
+        raise BrokerError(message)
+
+    broker.place_order = place_order
+
+
+def test_a_rejected_entry_order_fails_that_leg_without_raising(tmp_path):
+    executor, broker, _, _ = build(tmp_path, [make_leg("RELIANCE"), make_leg("INFY")], price=105.0)
+    _reject_orders(broker)
+
+    executor.start()
+
+    assert [s.entry_order_id for s in executor.states] == [None, None]
+    assert all(s.is_finished for s in executor.states)
+    assert all("IP is not allowed" in s.skipped_reason for s in executor.states)
+    assert executor.is_done
+
+
+def test_a_rejected_entry_order_sends_a_telegram_alert(tmp_path):
+    from unittest.mock import MagicMock
+
+    executor, broker, _, _ = build(tmp_path, [make_leg()], price=105.0)
+    executor._telegram = MagicMock()
+    _reject_orders(broker)
+
+    executor.start()
+
+    executor._telegram.notify_critical.assert_called_once()
+    message = executor._telegram.notify_critical.call_args.args[0]
+    assert "RELIANCE" in message
+    assert "IP is not allowed" in message
+
+
+def test_one_rejected_leg_does_not_stop_the_next_leg(tmp_path):
+    from tradingbot.core.broker import BrokerError
+
+    executor, broker, _, _ = build(tmp_path, [make_leg("RELIANCE"), make_leg("INFY")], price=105.0)
+    real_place_order = broker.place_order
+
+    def place_order(*args, **kwargs):
+        if kwargs.get("symbol") == "RELIANCE":
+            raise BrokerError("rejected")
+        return real_place_order(*args, **kwargs)
+
+    broker.place_order = place_order
+
+    executor.start()
+
+    reliance, infy = executor.states
+    assert reliance.entry_order_id is None and reliance.is_finished
+    assert infy.entry_order_id is not None
+
+
+async def _answer(value=42):
+    return value
+
+
+def test_run_async_works_without_a_running_loop(tmp_path):
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    assert executor._run_async(_answer()) == 42
+
+
+async def test_run_async_does_not_deadlock_inside_a_running_loop(tmp_path):
+    # tick() runs on the API's event loop thread; blocking on a coroutine
+    # scheduled onto that same loop would freeze it until the timeout.
+    import time as _time
+
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    started = _time.monotonic()
+    assert executor._run_async(_answer(7), timeout=3) == 7
+    assert _time.monotonic() - started < 1.0
+
+
+def test_run_async_reuses_one_loop_across_calls(tmp_path):
+    import asyncio
+
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    async def current_loop():
+        return asyncio.get_running_loop()
+
+    assert executor._run_async(current_loop()) is executor._run_async(current_loop())
+
+
+def test_run_async_times_out(tmp_path):
+    import asyncio
+    import concurrent.futures
+
+    executor, _, _, _ = build(tmp_path, [make_leg()])
+
+    async def slow():
+        await asyncio.sleep(5)
+
+    with pytest.raises(concurrent.futures.TimeoutError):
+        executor._run_async(slow(), timeout=0.2)

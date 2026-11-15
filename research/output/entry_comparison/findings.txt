@@ -1,0 +1,65 @@
+Saved-plan entry comparison — 2026-10-30
+
+Scope: 24 planned legs across nine trading sessions, October 8–30, 2026.
+The November 2 plan was excluded. Every leg has continuous minute data from
+09:15 through the planned 15:10 exit. candles.json preserves the input data;
+summary.json records candle and plan hashes and the exact experimental rules.
+
+Frozen experiments (no parameter search):
+1. Fixed limit: original entry, stop and first target.
+2. Confirmed fixed: completed five-minute directional candle beyond the planned
+   entry and session VWAP; enter at the next minute open, retain original exits.
+3. Opening range: completed five-minute close beyond the first five-minute
+   range and session VWAP; enter next minute open, reset stop to the opposite
+   range edge with a 0.5% minimum distance, retain the plan's reward/risk ratio.
+Both confirmation variants stop searching at 10:30. One attempt per leg.
+
+Each variant uses the same maximum planned rupee risk and notional exposure
+per leg. Actual deployed risk can be lower after whole-share sizing. Short
+and long trades use their correct buy/sell sides for charges. No capital is
+reallocated between legs. These sums are NOT account returns.
+
+Net results with estimated fees and 0.05% slippage per side:
+                           Resolved trades   Net winners   Net P&L
+Fixed limit                       11              4        +Rs 820.68
+Confirmed fixed                   10              4        -Rs 1,100.77
+Opening range                     11              5        -Rs 580.26
+
+At 0.10% slippage per side:
+Fixed limit: +Rs 118.80; confirmed fixed: -Rs 1,397.79;
+opening range: -Rs 796.51.
+
+Fixed-limit exclusions: eight invalid stop/target configurations at attempted
+fill, four unfilled entries, and one ambiguous entry bar. Confirmation changes
+which legs trade; the resolved subsets are not identical. Skipped legs use no
+capital and earn zero. Ambiguous outcomes remain unknown and are not in P&L.
+
+The fixed-limit result without its strongest trade (SHANTIGOLD, October 12)
+is -Rs 918.52. This concentration weakens the apparent positive result.
+
+The earlier Rs 1,011.60 replay is not directly comparable: it retained original
+quantities and favorable target gap fills. This controlled comparison caps
+actual stop risk and notional exposure and caps target fills at the target.
+
+Conclusion: neither tested morning-entry alternative improved the sample.
+This does not reject all morning confirmation rules or establish a profitable
+baseline. The data was already inspected, the sample is small, and the methods
+do not simulate live guards, partial exits, latency, order queues or portfolio
+constraints. Fixed future rules need independent historical and forward tests.
+
+Next research priority: correct indicator/backtest measurement, then compare
+stock-selection methods using one frozen entry/exit rule on independent data.
+Do not tune additional entry rules against these same 24 legs.
+
+Verification: focused synthetic checks covered intrabar stops, invalid levels,
+ambiguous bars, missing minutes, next-bar execution, risk sizing, opening-range
+levels, square-off timing and increased slippage costs. No live orders placed.
+
+Cost source, checked 2026-10-30: https://zerodha.com/charges/
+Brokerage/taxes are schedule estimates; slippage is an assumption, not a
+measurement. Contract-note rounding and all incidental charges are not modeled.
+
+Reproduce from repository root:
+.venv/bin/python research/compare_saved_plan_entries.py
+
+The existing candle cache is reused, so no broker requests are needed.

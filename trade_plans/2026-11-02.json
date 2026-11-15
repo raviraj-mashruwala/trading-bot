@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "trade_date": "2026-11-02",
+  "generated_at": "2026-11-02T00:27:45.957628+05:30",
+  "capital": 73704,
+  "max_risk_per_trade_pct": 0.01,
+  "max_daily_loss_pct": 0.025,
+  "market_regime": "range_bound",
+  "market_summary": "Auto-generated after run_20261102_002722_c961c4",
+  "legs": [
+    {
+      "symbol": "THYROCARE",
+      "exchange": "NSE",
+      "strategy": "momentum",
+      "direction": "short",
+      "entry_price": 455.15,
+      "entry_type": "limit",
+      "stop_loss": 459.7,
+      "target_1": 445.3,
+      "target_2": 432.47,
+      "quantity": 161,
+      "risk_amount": 732.5500000000018,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.6,
+      "reasoning": "Confluence: (1) price 455.15 below VWAP 464.59 and below the 453.48-476.11 VWAP band midline; (2) supertrend 466.70 direction down; (3) MACD -9.18 below signal -10.86 with price below EMA26 465.77 and SMA50 488.48; (4) ADX 56.5 shows strong trend. Reward to target_1 (5d/20d low 445.30) is 9.85 vs risk 4.55 = 2.16:1; target_2 is pivot S1 432.47.",
+      "setup_id": 50
+    },
+    {
+      "symbol": "EPACK",
+      "exchange": "NSE",
+      "strategy": "mean_reversion",
+      "direction": "short",
+      "entry_price": 154.59,
+      "entry_type": "limit",
+      "stop_loss": 156.1,
+      "target_1": 151.2,
+      "target_2": 150.55,
+      "quantity": 488,
+      "risk_amount": 736.8799999999956,
+      "entry_window_start": "09:16",
+      "entry_window_end": "14:00",
+      "max_entry_wait": "14:30",
+      "exit_before": "15:10",
+      "confidence": 0.6,
+      "reasoning": "Confluence: (1) Supertrend down at 160.12 with price below it, (2) MACD -2.84 below signal -2.65 with EMA9/12 below EMA26 and price below SMA20/50/200 (trend structure), (3) price well below VWAP 159.21 and below VWAP lower band 156.10, (4) ADX 55.6 shows a strong trend, (5) heavy-volume breakdown candle (252k) through the 15m range to 151.20 and rejection at VAL 154.59. R:R to target_1 = 3.39/1.51 = 2.2:1. Target_1 is last-session low 151.20, target_2 is 5d low 150.55. Stop is the VWAP lower band 156.10, above the 155.68 recent bounce high.",
+      "setup_id": 51
+    }
+  ]
+}

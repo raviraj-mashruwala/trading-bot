@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime
 import pytest
 from tradingbot.executor.candle_aggregator import CandleAggregator, LiveCandle
@@ -121,3 +122,38 @@ def test_multiple_symbols_independent():
     assert agg.last_price("INFY") == 1800.0
     assert agg.get_current("RELIANCE", "1min").open == 2450.0
     assert agg.get_current("INFY", "1min").open == 1800.0
+
+
+def _finishes_within(fn, timeout: float = 2.0) -> bool:
+    """Run fn in a daemon thread; False means it was still blocked after timeout."""
+    t = threading.Thread(target=fn, daemon=True)
+    t.start()
+    t.join(timeout)
+    return not t.is_alive()
+
+
+def test_close_callback_can_read_candles_without_deadlock():
+    agg = CandleAggregator()
+    seen = []
+    agg.subscribe("1min_close", lambda sym, c: seen.append(agg.get_candles(sym, "1min")))
+
+    def feed():
+        agg.on_tick("RELIANCE", 2450.0, 100, datetime(2026, 9, 29, 9, 15, 10))
+        agg.on_tick("RELIANCE", 2455.0, 100, datetime(2026, 9, 29, 9, 16, 5))
+
+    assert _finishes_within(feed), "on_tick deadlocked: close callback re-entered the symbol lock"
+    assert len(seen) == 1
+    assert seen[0][-1].close == 2450.0
+
+
+def test_stale_close_callback_can_read_candles_without_deadlock():
+    agg = CandleAggregator()
+    seen = []
+    agg.subscribe("1min_close", lambda sym, c: seen.append(agg.get_candles(sym, "1min")))
+    agg.on_tick("RELIANCE", 2450.0, 100, datetime(2026, 9, 29, 9, 15, 10))
+
+    def close_stale():
+        agg.close_stale_candles("RELIANCE", datetime(2026, 9, 29, 9, 17, 0))
+
+    assert _finishes_within(close_stale), "close_stale_candles deadlocked: callback re-entered the symbol lock"
+    assert len(seen) == 1

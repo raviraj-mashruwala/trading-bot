@@ -481,6 +481,17 @@ def build_shortlist_user_prompt(
             f"    candlestick_pattern={fs.get('candlestick_pattern', 'N/A')}, "
             f"volume_profile={fs.get('volume_profile', 'N/A')}",
         ]
+        sig = s.get("signals")
+        if sig:
+            parts.append(
+                f"    change_1d={sig.get('change_1d_pct', 0):+.1f}%, "
+                f"change_5d={sig.get('change_5d_pct', 0):+.1f}%, "
+                f"rsi14={sig.get('rsi_14', 50):.0f}, "
+                f"vs_sma20={sig.get('vs_sma20_pct', 0):+.1f}%, "
+                f"from_20d_high={sig.get('from_20d_high_pct', 0):+.1f}%, "
+                f"gap={sig.get('gap_pct', 0):+.1f}%, "
+                f"vol_ratio={sig.get('vol_ratio', 0):.1f}"
+            )
         parts.append("  </stock>")
         stock_lines.append("\n".join(parts))
 
@@ -492,6 +503,10 @@ def build_shortlist_user_prompt(
         "  Higher factor scores mean stronger signal magnitude in EITHER direction — a stock\n"
         "  with high scores may be a strong long OR a strong short candidate. Evaluate the\n"
         "  indicators to determine which direction makes sense, not just the score value.\n"
+        "  The signed lines (change_*, rsi14, vs_sma20, from_20d_high, gap) give direction and how\n"
+        "  far a stock has already moved; the factor scores give strength only. A stock already extended\n"
+        "  far down (RSI under 30, far below its 20-day high) is not a long just because its scores are\n"
+        "  high: pick it only if you can say why it keeps falling or reverses today.\n"
         "  Note: factor scores of exactly 50.0 may indicate unavailable data — treat as neutral, not as signal.\n"
         "</task>"
     )

@@ -221,15 +221,27 @@ def test_a_fresh_plan_passes_pre_execution_vetting():
     assert blockers == []
 
 
-def test_a_stale_plan_is_blocked():
+def test_a_plan_is_never_rejected_for_its_age():
+    # Plans are built the evening before, or days before for a Monday: age is irrelevant.
     manager = make_manager()
-    plan = make_plan([], generated_at=datetime(2026, 9, 22, 8, 0, tzinfo=IST))
+    plan = make_plan([], generated_at=datetime(2026, 9, 18, 8, 0, tzinfo=IST))
 
     blockers = manager.vet_plan_for_execution(
         plan, now=datetime(2026, 9, 24, 9, 0, tzinfo=IST), available_capital=400000.0
     )
 
-    assert any("stale" in reason for reason in blockers)
+    assert blockers == []
+
+
+def test_a_plan_for_another_day_is_blocked():
+    manager = make_manager()
+    plan = make_plan([])  # trade_date 2026-09-24
+
+    blockers = manager.vet_plan_for_execution(
+        plan, now=datetime(2026, 9, 25, 9, 0, tzinfo=IST), available_capital=400000.0
+    )
+
+    assert any("2026-09-24" in reason and "not today" in reason for reason in blockers)
 
 
 def test_insufficient_capital_blocks_the_plan():

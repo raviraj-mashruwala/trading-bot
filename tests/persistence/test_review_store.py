@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -17,6 +17,9 @@ from tradingbot.core.models import (
 )
 from tradingbot.persistence.review_store import TradeReviewStore
 from tradingbot.persistence.setup_store import SetupStore
+
+# Relative to today so the 30-day lookback in these tests never ages the data out.
+TRADE_DAY = (date.today() - timedelta(days=1)).isoformat()
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -36,7 +39,7 @@ def stores(tmp_path):
 
 def _save_setup(ss, **overrides) -> int:
     base = {
-        "run_id": "run_001", "trade_date": "2026-09-30", "symbol": "TCS",
+        "run_id": "run_001", "trade_date": TRADE_DAY, "symbol": "TCS",
         "strategy": "breakout", "direction": "long", "entry_price": 3500.0,
         "stop_loss": 3450.0, "target_1": 3600.0, "target_2": 3680.0,
         "confidence": 0.78, "status": "approved", "reasoning": "test",
@@ -49,7 +52,7 @@ def _save_setup(ss, **overrides) -> int:
 
 def _save_trade(db, setup_id, **overrides) -> int:
     base = dict(
-        trade_date="2026-09-30", symbol="TCS", strategy=StrategyName.BREAKOUT,
+        trade_date=TRADE_DAY, symbol="TCS", strategy=StrategyName.BREAKOUT,
         direction=Direction.LONG, quantity=100, entry_price=3502.0,
         exit_price=3598.0, stop_loss=3450.0, target_1=3600.0, target_2=3680.0,
         entered_at=datetime(2026, 9, 30, 9, 35, tzinfo=IST),
@@ -84,7 +87,7 @@ def test_scorecard_excludes_trades_without_setup_id(stores):
     db, _, rs = stores
     _save_trade(db, setup_id=None)
 
-    cards = rs.get_scorecards_for_date("2026-09-30")
+    cards = rs.get_scorecards_for_date(TRADE_DAY)
     assert len(cards) == 0
 
 
@@ -95,7 +98,7 @@ def test_get_scorecards_for_date(stores):
     _save_trade(db, s1, symbol="TCS")
     _save_trade(db, s2, symbol="INFY", pnl=-2000.0, exit_reason="stop_hit")
 
-    cards = rs.get_scorecards_for_date("2026-09-30")
+    cards = rs.get_scorecards_for_date(TRADE_DAY)
     assert len(cards) == 2
     symbols = {c.symbol for c in cards}
     assert symbols == {"TCS", "INFY"}

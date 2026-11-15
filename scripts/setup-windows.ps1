@@ -69,27 +69,8 @@ New-Item -ItemType Directory -Force -Path "trade_plans" | Out-Null
 New-Item -ItemType Directory -Force -Path "logs" | Out-Null
 Write-Host "  Created: ~\.tradingbot, trade_plans, logs" -ForegroundColor Green
 
-# --- Step 6: Verify MotherDuck connection ---
-Write-Host "`n[6/8] Verifying MotherDuck connection..." -ForegroundColor Yellow
-
-$mdCheck = python -c "
-import duckdb, os
-os.environ.setdefault('MOTHERDUCK_TOKEN', open('.env').read().split('MOTHERDUCK_TOKEN=')[1].split('\n')[0])
-c = duckdb.connect('md:candles')
-rows = c.execute('SELECT COUNT(*) FROM candles').fetchone()[0]
-print(f'OK:{rows}')
-c.close()
-" 2>&1
-
-if ($mdCheck -match "OK:(\d+)") {
-    Write-Host "  MotherDuck connected: $($Matches[1]) rows" -ForegroundColor Green
-} else {
-    Write-Host "  WARNING: MotherDuck connection failed: $mdCheck" -ForegroundColor Red
-    Write-Host "  Check MOTHERDUCK_TOKEN in .env" -ForegroundColor Red
-}
-
-# --- Step 7: Verify config loads ---
-Write-Host "`n[7/8] Verifying application config..." -ForegroundColor Yellow
+# --- Step 6: Verify config loads ---
+Write-Host "`n[6/7] Verifying application config..." -ForegroundColor Yellow
 
 $cfgCheck = python -c "
 from tradingbot.core.config import load_config
@@ -103,8 +84,8 @@ if ($cfgCheck -match "OK:(.+)") {
     Write-Host "  WARNING: Config load failed: $cfgCheck" -ForegroundColor Red
 }
 
-# --- Step 8: Create startup shortcut ---
-Write-Host "`n[8/8] Creating startup script..." -ForegroundColor Yellow
+# --- Step 7: Create startup shortcut ---
+Write-Host "`n[7/7] Creating startup script..." -ForegroundColor Yellow
 
 $batContent = @"
 @echo off

@@ -1,0 +1,128 @@
+{
+  "shortlist": [
+    {
+      "symbol": "HUBTOWN",
+      "direction": "short",
+      "conviction": "high",
+      "primary_strategy": "mean_reversion",
+      "reasoning": "change_5d=+29.9%, rsi14=66, vs_sma20=+13.3%, gap=+4.3%, vol_ratio=4.6 on only 14.3% delivery. A volume-heavy run that is mostly speculative, not institutional. Realty sector bias is bearish. Regime is range_bound, so stretched names tend to revert toward the SMA20.",
+      "key_levels": {"support": 160.6, "resistance": 195.9, "vwap": 182},
+      "risk_flag": "Support and resistance are derived from the SMA20 and 20d high implied by vs_sma20 and from_20d_high; vwap is the last price (no VWAP in input). Stock is only 7.1% below its 20d high with change_1d about flat, so it may keep drifting up.",
+      "counter_argument": "Bull case: RS=100 and ATR expansion=100 show real momentum, the 20d high is only 7% away and breakouts can squeeze shorts."
+    },
+    {
+      "symbol": "THYROCARE",
+      "direction": "short",
+      "conviction": "medium",
+      "primary_strategy": "breakdown_continuation",
+      "reasoning": "change_1d=-11.9% on vol_ratio=8.9 after a -4.0% gap down. RSI14 is 37, so it is not yet oversold and has room to fall. Heavy-volume gap-down that held through the day reads as distribution. Delivery 40.9% is decent, so the selling is not just retail panic.",
+      "key_levels": {"support": 455, "resistance": 494.0, "vwap": 455},
+      "risk_flag": "Resistance is the derived SMA20; support and vwap are the last price (no lower level in input). Pharma sector bias is bullish, a headwind to the short.",
+      "counter_argument": "Bull case: sector bias is bullish, vs_sma20 is only -7.9% and a bounce toward the SMA20 after an -11.9% day is common."
+    },
+    {
+      "symbol": "PARADEEP",
+      "direction": "short",
+      "conviction": "medium",
+      "primary_strategy": "breakdown_continuation",
+      "reasoning": "change_1d=-7.7% with gap=-4.8% on vol_ratio=9.0 and delivery only 25.6%. Gap down that was not bought on 9x volume. RSI14=28 is oversold so the short is a continuation play, justified by the gap not being filled and weak delivery.",
+      "key_levels": {"support": 129, "resistance": 143.7, "vwap": 129},
+      "risk_flag": "RSI under 30 raises bounce risk. Resistance is the derived SMA20; support and vwap are the last price (no lower level in input).",
+      "counter_argument": "Bull case: RSI 28 and -18% from the 20d high make a relief bounce likely; a reclaim of the gap-down open would invalidate the short."
+    },
+    {
+      "symbol": "SPORTKING",
+      "direction": "short",
+      "conviction": "medium",
+      "primary_strategy": "breakdown_continuation",
+      "reasoning": "change_1d=-12.9% on vol_ratio=9.2, delivery 20.1%. RSI14=39 leaves room to fall. Large-volume drop with weak delivery, no sign of institutional absorption.",
+      "key_levels": {"support": 187, "resistance": 206.9, "vwap": 187},
+      "risk_flag": "Resistance is the derived SMA20; support and vwap are the last price (no lower level in input). Gap is only +0.4%, so the drop was intraday and may already be priced.",
+      "counter_argument": "Bull case: after a -12.9% day on 9x volume, a dead-cat bounce to the SMA20 is typical and may stop out an early short."
+    },
+    {
+      "symbol": "EPACK",
+      "direction": "short",
+      "conviction": "medium",
+      "primary_strategy": "breakdown_continuation",
+      "reasoning": "change_1d=-11.6% after gap=-4.1%, RSI14=37, delivery 17.4% (weak). Gap-down with no delivery support and RSI not yet oversold.",
+      "key_levels": {"support": 154, "resistance": 169.0, "vwap": 154},
+      "risk_flag": "vol_ratio is only 2.5, a weaker volume confirmation than the other shorts. Resistance is the derived SMA20; support and vwap are the last price.",
+      "counter_argument": "Bull case: change_5d is only -0.1%, so the drop may be a one-day overreaction that mean-reverts in a range_bound market."
+    },
+    {
+      "symbol": "BOROLTD",
+      "direction": "short",
+      "conviction": "medium",
+      "primary_strategy": "mean_reversion",
+      "reasoning": "change_1d=+20.3% with gap=+7.3% and vol_ratio=15.8, but delivery is only 7.2%. Near-total speculative participation after a 20% spike; vs_sma20=+8.9% and RSI 63. Spikes with this little delivery often give back part of the move.",
+      "key_levels": {"support": 262.6, "resistance": 293.9, "vwap": 286},
+      "risk_flag": "Only 2.7% below its 20d high, so a push to new highs is possible; shorts need a failed breakout first. Levels derived from SMA20 and 20d high; vwap is the last price.",
+      "counter_argument": "Bull case: RS=100 and 15.8x volume show strong demand; momentum names with this volume can keep running."
+    },
+    {
+      "symbol": "MARSONS",
+      "direction": "short",
+      "conviction": "medium",
+      "primary_strategy": "mean_reversion",
+      "reasoning": "change_1d=+19.5%, change_5d=+25.7%, rsi14=70, vs_sma20=+18.9%, at its 20d high, with delivery 19.3%. Extended, overbought and weakly held. Wait for a failure at the high.",
+      "key_levels": {"support": 125.3, "resistance": 149, "vwap": 149},
+      "risk_flag": "Trading at the 20d high; shorting without a failed-high signal fights momentum. Support is the derived SMA20; resistance and vwap are the last price.",
+      "counter_argument": "Bull case: new 20d high on 5.5x volume is a breakout and can extend further."
+    },
+    {
+      "symbol": "EQUITASBNK",
+      "direction": "long",
+      "conviction": "medium",
+      "primary_strategy": "capitulation_reversal",
+      "reasoning": "gap=-5.6% yet change_1d=+1.4%: the stock opened sharply lower and closed higher on vol_ratio=13.6. rsi14=22 and change_5d=-19.7% mark a washed-out stock where the gap-down was absorbed. That is the reason it reverses today, not just the oversold score.",
+      "key_levels": {"support": 53, "resistance": 66.1, "vwap": 53},
+      "risk_flag": "Delivery is 31.6%. Resistance is the derived SMA20, far above price; support and vwap are the last price. Candlestick and volume_profile read 50.0, which is likely unavailable data.",
+      "counter_argument": "Bear case: -25.4% from the 20d high and a falling trend; one up day on a gap down can still be a dead-cat bounce."
+    },
+    {
+      "symbol": "NOCIL",
+      "direction": "long",
+      "conviction": "medium",
+      "primary_strategy": "oversold_bounce",
+      "reasoning": "rsi14=26, vs_sma20=-13.9%, change_5d=-7.6%, with vol_ratio=3.6 and the highest delivery of the oversold group (51.9%). High delivery on a selloff points to institutional buying rather than panic exit. Composite is top in the list (86).",
+      "key_levels": {"support": 136, "resistance": 158.0, "vwap": 136},
+      "risk_flag": "change_1d=-6.4% after a +2.9% gap up: the open was sold hard, which is bearish intraday behavior. Resistance is the derived SMA20; support and vwap are the last price.",
+      "counter_argument": "Bear case: gap up then -6.4% shows sellers in control; oversold can stay oversold in a stock 22.6% off its high."
+    },
+    {
+      "symbol": "TRENT",
+      "direction": "long",
+      "conviction": "medium",
+      "primary_strategy": "breakout_momentum",
+      "reasoning": "change_1d=+5.1% with gap=+5.2% and vol_ratio=3.3, rsi14=61, only 1.5% below its 20d high. Not overextended (vs_sma20=+5.6%), with room to break the 20d high. Gap held through the day.",
+      "key_levels": {"support": 2855, "resistance": 3061, "vwap": 3015},
+      "risk_flag": "Delivery 28.97% is mediocre. ATR expansion only 45.6, so range may be limited. Levels derived from SMA20 and 20d high; vwap is the last price.",
+      "counter_argument": "Bear case: a gap up that already ran +10.5% in 5 days can fade to fill the gap; failure at the 20d high traps longs."
+    },
+    {
+      "symbol": "SANGHVIMOV",
+      "direction": "long",
+      "conviction": "medium",
+      "primary_strategy": "breakout_momentum",
+      "reasoning": "change_1d=+6.9%, gap=+3.7%, vol_ratio=3.3, rsi14=47. The stock just reclaimed its SMA20 (vs_sma20=-0.2%) and is 19.7% below its 20d high, so there is room to run without being extended.",
+      "key_levels": {"support": 367, "resistance": 457.0, "vwap": 367},
+      "risk_flag": "Delivery 29.5% is middling. price_structure and volume_profile read near 50, likely incomplete data. Resistance is the derived 20d high; support and vwap are the last price.",
+      "counter_argument": "Bear case: a +14.5% 5-day run into the SMA20 can stall there; the 20d high is far, so the first test is the SMA20."
+    }
+  ],
+  "avoid_list": [
+    {"symbol": "KRN", "reason": "vol_surge=0.0 and vol_ratio=0.1; no volume participation despite high delivery."},
+    {"symbol": "MVGJL", "reason": "vol_surge=0.0 and vol_ratio=0.5; no volume participation."},
+    {"symbol": "YATRA", "reason": "rsi14=14 and -34% from 20d high with only 2.0x volume and no reversal evidence; neither a long nor a short has an edge."},
+    {"symbol": "VAIBHAVGBL", "reason": "rsi14=18, vol_ratio 1.6, no reversal or continuation catalyst."},
+    {"symbol": "GENESYS", "reason": "rsi14=22 and -43.6% from 20d high with vol_ratio 1.9; too extended to short, no evidence for a bounce."},
+    {"symbol": "INTELLECT", "reason": "-17.4% day with rsi14=26 in a bearish IT sector: continuation short has bounce risk and a long has no evidence. No clean edge."},
+    {"symbol": "SMSPHARMA", "reason": "Overbought (rsi14=70, +23% in 5d) but pharma sector bias is bullish; extension and sector tailwind conflict."},
+    {"symbol": "ATHERENERG", "reason": "Extended (+27.7% in 5d, rsi14=66) but auto sector bias is bullish; conflicting signals."},
+    {"symbol": "LAURUSLABS", "reason": "rsi14=79 overbought but pharma sector bias is bullish; no clear edge."},
+    {"symbol": "CARTRADE", "reason": "rsi14=25 and -23.2% in 5d with vol_ratio 2.5; oversold with no reversal evidence."}
+  ],
+  "max_positions_today": 4,
+  "reasoning": "Regime is range_bound with only 28% confidence and defensive risk appetite, so cap at 4 positions. Direction comes from the signed fields. Shorts: names that ran far above their SMA20 on thin delivery in a range_bound market (HUBTOWN, BOROLTD, MARSONS), plus heavy-volume gap-downs with weak delivery that still have RSI room (THYROCARE, PARADEEP, SPORTKING, EPACK). Longs: EQUITASBNK (gap down of -5.6% closed up on 13.6x volume), NOCIL (oversold with the highest delivery), TRENT and SANGHVIMOV (gap-up holds with room to the 20d high or SMA20). Deeply oversold names (RSI under 25) with low volume ratios and no reversal evidence are excluded. key_levels: no VWAP, support or resistance is in the input. Resistance or support is derived from the SMA20 and 20d high implied by vs_sma20 and from_20d_high; vwap and any missing level are set to the last price. Replace these with intraday candle levels once the candles are fetched."
+}

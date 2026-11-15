@@ -57,7 +57,7 @@ class MarketContextFetcher:
     def fetch(self) -> MarketContext:
         fii_net, dii_net = self._fetch_fii_dii()
         nifty_level, above_sma20, above_sma50 = self._fetch_index_trend("NIFTY 50")
-        _, bank_above_sma20, bank_above_sma50 = self._fetch_index_trend("NIFTY BANK")
+        bank_level, bank_above_sma20, bank_above_sma50 = self._fetch_index_trend("NIFTY BANK")
         vix = self._fetch_vix()
 
         return MarketContext(
@@ -71,6 +71,7 @@ class MarketContextFetcher:
             sector_leaders=[],
             sector_laggards=[],
             regime=self.classify_regime(vix, above_sma20, above_sma50),
+            banknifty_level=bank_level,
         )
 
     def classify_regime(
@@ -136,8 +137,8 @@ class MarketContextFetcher:
 
         if self._candles is not None:
             try:
-                from_dt = datetime.now(tz=IST) - timedelta(days=days)
-                return self._candles.read(symbol, "day", from_dt, datetime.now(tz=IST))
+                # CandleStore.read(symbol, interval, days=N): the last N daily rows.
+                return self._candles.read(symbol, "day", days=days)
             except Exception as exc:
                 logger.warning("CandleStore index fetch failed for %s: %s", symbol, exc)
         return pd.DataFrame()

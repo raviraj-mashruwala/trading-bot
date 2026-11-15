@@ -30,20 +30,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_candles_pk
 
 
 class CandleStore:
-    """Read/write OHLCV candles in DuckDB or MotherDuck (via md: URL)."""
+    """Read/write OHLCV candles in DuckDB. Thread-safe for concurrent reads."""
 
-    def __init__(self, db_url: str | Path) -> None:
-        self._url = str(db_url)
-        self._conn = duckdb.connect(self._url)
+    def __init__(self, db_path: Path) -> None:
+        self._path = str(db_path)
+        self._conn = duckdb.connect(self._path)
         self._conn.execute(_SCHEMA)
 
     def _ensure_connected(self) -> duckdb.DuckDBPyConnection:
         try:
             self._conn.execute("SELECT 1")
         except Exception:
-            log.warning("DuckDB connection lost, reconnecting to %s",
-                        "md:***" if self._url.startswith("md:") else self._url)
-            self._conn = duckdb.connect(self._url)
+            log.warning("DuckDB connection lost, reconnecting to %s", self._path)
+            self._conn = duckdb.connect(self._path)
             self._conn.execute(_SCHEMA)
         return self._conn
 

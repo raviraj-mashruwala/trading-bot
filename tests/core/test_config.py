@@ -36,7 +36,6 @@ entry_slippage_pct = 0.05
 square_off_time = "15:10"
 connection_timeout_sec = 30
 heartbeat_interval_sec = 60
-plan_max_age_hours = 14
 max_entry_price_drift_pct = 2.0
 
 [llm]
@@ -115,3 +114,52 @@ def test_secrets_are_not_present_in_repr(config_file, monkeypatch):
 
     assert "sk-ant-super-secret" not in repr(config)
     assert "kite-secret" not in repr(config)
+
+
+def _file_provider_config(tmp_path, extra=""):
+    path = tmp_path / "config.toml"
+    path.write_text(CONFIG_TEXT.replace('provider = "anthropic"', 'provider = "file"' + extra))
+    return path
+
+
+def _no_anthropic_key(monkeypatch):
+    # load_config re-reads the repo .env, which may carry a real key.
+    monkeypatch.setattr("tradingbot.core.config.load_dotenv", lambda *args, **kwargs: None)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("KITE_API_KEY", "kite-key")
+    monkeypatch.setenv("KITE_API_SECRET", "kite-secret")
+
+
+def test_file_provider_config_loads_without_anthropic_key(tmp_path, monkeypatch):
+    _no_anthropic_key(monkeypatch)
+
+    config = load_config(_file_provider_config(tmp_path))
+
+    assert config.llm.provider == "file"
+    assert config.secrets.anthropic_api_key == ""
+
+
+def test_anthropic_provider_config_still_requires_key(config_file, monkeypatch):
+    _no_anthropic_key(monkeypatch)
+
+    with pytest.raises(ConfigError, match="ANTHROPIC_API_KEY"):
+        load_config(config_file)
+
+
+def test_llm_queue_dir_defaults_and_overrides(tmp_path, monkeypatch):
+    _no_anthropic_key(monkeypatch)
+
+    default = load_config(_file_provider_config(tmp_path))
+    override = load_config(_file_provider_config(tmp_path, '\nqueue_dir = "/tmp/q"'))
+
+    assert default.llm.queue_dir == "llm_queue"
+    assert override.llm.queue_dir == "/tmp/q"
+
+
+def test_anthropic_key_is_optional_when_the_caller_never_uses_it(config_file, monkeypatch):
+    _no_anthropic_key(monkeypatch)
+
+    config = load_config(config_file, anthropic_key_optional=True)
+
+    assert config.llm.provider == "anthropic"
+    assert config.secrets.anthropic_api_key == ""

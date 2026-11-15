@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime, time
 from unittest.mock import MagicMock, patch
 import pytest
@@ -192,3 +193,203 @@ def test_mark_degraded_accumulates_gap():
     intel.mark_degraded(45)
     assert intel.health.gap_seconds_today == 75
     assert intel.health.status == "degraded"
+
+
+def test_first_minute_close_does_not_freeze_tick_processing():
+    """Regression: the 1-minute close callback re-reads candles from the aggregator
+    while on_tick still held its symbol lock, freezing the ticker thread for good."""
+    ticker = FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    with patch.object(intel, '_fetch_historical_candles', return_value=[]):
+        intel.start(["RELIANCE"])
+
+    def tick(second_of_day: tuple[int, int, int], price: float) -> dict:
+        return {"instrument_token": "RELIANCE", "last_price": price, "volume_traded": 100,
+                "exchange_timestamp": datetime(2026, 9, 29, *second_of_day)}
+
+    def feed():
+        intel._on_ticks(None, [tick((9, 15, 10), 2450.0)])
+        intel._on_ticks(None, [tick((9, 16, 5), 2455.0)])   # closes the 09:15 candle
+        intel._on_ticks(None, [tick((9, 16, 20), 2457.0)])  # must still be processed
+
+    worker = threading.Thread(target=feed, daemon=True)
+    worker.start()
+    worker.join(2.0)
+
+    assert not worker.is_alive(), "tick processing froze at the first 1-minute candle close"
+    assert intel.aggregator.last_price("RELIANCE") == 2457.0
+    assert len(intel.aggregator.get_candles("RELIANCE", "1min")) == 1
+
+
+class WatchdogTicker(FakeTicker):
+    """FakeTicker with the liveness and reconnect surface the watchdog uses."""
+
+    def __init__(self, responsive: bool = True, last_tick_time: datetime | None = None):
+        super().__init__()
+        self.responsive = responsive
+        self.last_tick_time = last_tick_time
+        self.probes = 0
+        self.restarts = 0
+        self.reconnects = 0
+
+    def is_loop_responsive(self, timeout: float = 1.0) -> bool:
+        self.probes += 1
+        return self.responsive
+
+    def restart(self) -> None:
+        self.restarts += 1
+
+    def force_reconnect(self) -> None:
+        self.reconnects += 1
+
+
+def _watchdog_intel(ticker, alerts: list | None = None) -> ExecutionIntelligence:
+    intel = ExecutionIntelligence(ticker, _make_config())
+    if alerts is not None:
+        intel.alert = alerts.append
+    return intel
+
+
+def test_watchdog_restarts_wedged_ticker_even_before_market_open():
+    ticker = WatchdogTicker(responsive=False)
+    alerts: list[str] = []
+    intel = _watchdog_intel(ticker, alerts)
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5)) is True
+
+    assert ticker.restarts == 1
+    assert intel.health.status == "reconnecting"
+    assert intel.health.reconnect_count == 1
+    assert len(alerts) == 1 and "frozen" in alerts[0]
+
+
+def test_watchdog_probes_liveness_at_most_every_interval():
+    ticker = WatchdogTicker(responsive=True)
+    intel = _watchdog_intel(ticker)
+
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5))
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5, 5))
+
+    assert ticker.probes == 1
+
+
+def test_watchdog_leaves_healthy_ticker_alone():
+    ticker = WatchdogTicker(responsive=True, last_tick_time=datetime(2026, 9, 29, 9, 20, 0))
+    intel = _watchdog_intel(ticker)
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 20, 30)) is False
+
+    assert ticker.restarts == 0 and ticker.reconnects == 0
+
+
+def test_stale_ticks_force_reconnect_and_alert_once_per_episode():
+    ticker = WatchdogTicker(responsive=True, last_tick_time=datetime(2026, 9, 29, 9, 3, 2))
+    alerts: list[str] = []
+    intel = _watchdog_intel(ticker, alerts)
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 15, 1)) is True
+    intel._last_reconnect_at = 0.0  # let the reconnect cooldown pass
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 17, 2)) is True
+
+    assert ticker.reconnects == 2
+    assert len(alerts) == 1 and "No ticks" in alerts[0]
+
+
+def test_stale_alert_rearms_after_ticks_resume():
+    ticker = WatchdogTicker(responsive=True, last_tick_time=datetime(2026, 9, 29, 9, 3, 2))
+    alerts: list[str] = []
+    intel = _watchdog_intel(ticker, alerts)
+
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 15, 1))
+    ticker.last_tick_time = datetime(2026, 9, 29, 9, 16, 0)
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 16, 10))  # ticks are back
+    intel._last_reconnect_at = 0.0
+    ticker.last_tick_time = datetime(2026, 9, 29, 9, 20, 0)
+    intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 30, 0))  # stale again
+
+    assert len(alerts) == 2
+
+
+def test_alert_failure_does_not_break_the_watchdog():
+    ticker = WatchdogTicker(responsive=False)
+    intel = _watchdog_intel(ticker)
+
+    def broken_alert(message: str) -> None:
+        raise RuntimeError("telegram down")
+
+    intel.alert = broken_alert
+
+    assert intel.check_and_reconnect(now=datetime(2026, 9, 29, 9, 5)) is True
+    assert ticker.restarts == 1
+
+
+class FullTickTicker(FakeTicker):
+    """Ticker that, like AsyncKiteTicker, can deliver whole ticks (with volume)."""
+
+    def __init__(self):
+        super().__init__()
+        self.full_tick_callback = None
+        self.per_token_callback_used = False
+
+    def subscribe(self, tokens, callback=None):
+        self.subscribed.extend(tokens)
+        if callback is not None:
+            self.per_token_callback_used = True
+
+    def set_full_tick_callback(self, callback):
+        self.full_tick_callback = callback
+
+
+def _volume_tick(cumulative: int, second: int, price: float = 2450.0) -> dict:
+    return {"instrument_token": "RELIANCE", "last_price": price, "volume_traded": cumulative,
+            "exchange_timestamp": datetime(2026, 9, 29, 9, 15, second)}
+
+
+def _started_intel(ticker=None):
+    ticker = ticker or FakeTicker()
+    intel = ExecutionIntelligence(ticker, _make_config())
+    with patch.object(intel, '_fetch_historical_candles', return_value=[]):
+        intel.start(["RELIANCE"])
+    return intel
+
+
+def test_start_routes_whole_ticks_to_intelligence_when_ticker_supports_it():
+    ticker = FullTickTicker()
+    intel = _started_intel(ticker)
+
+    assert ticker.full_tick_callback == intel._on_ticks
+    assert ticker.per_token_callback_used is False
+
+
+def test_candle_volume_is_the_delta_of_cumulative_day_volume():
+    intel = _started_intel()
+
+    intel._on_ticks(None, [_volume_tick(10_000, 1)])   # first sighting: baseline only
+    intel._on_ticks(None, [_volume_tick(10_300, 20)])
+    intel._on_ticks(None, [_volume_tick(10_800, 40)])
+
+    candle = intel.aggregator.get_current("RELIANCE", "1min")
+    assert candle.volume == 800
+
+
+def test_cumulative_volume_reset_does_not_go_negative():
+    intel = _started_intel()
+
+    intel._on_ticks(None, [_volume_tick(10_000, 1)])
+    intel._on_ticks(None, [_volume_tick(500, 20)])     # counter restarted
+    intel._on_ticks(None, [_volume_tick(900, 40)])
+
+    candle = intel.aggregator.get_current("RELIANCE", "1min")
+    assert candle.volume == 400
+
+
+def test_ticks_without_volume_leave_candle_volume_alone():
+    intel = _started_intel()
+
+    intel._on_ticks(None, [_volume_tick(10_000, 1)])
+    intel._on_ticks(None, [{"instrument_token": "RELIANCE", "last_price": 2451.0,
+                            "exchange_timestamp": datetime(2026, 9, 29, 9, 15, 20)}])
+    intel._on_ticks(None, [_volume_tick(10_250, 40)])
+
+    candle = intel.aggregator.get_current("RELIANCE", "1min")
+    assert candle.volume == 250

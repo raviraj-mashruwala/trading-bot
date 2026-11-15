@@ -166,7 +166,6 @@ class ExecutionConfig:
     square_off_time: time
     connection_timeout_sec: int
     heartbeat_interval_sec: int
-    plan_max_age_hours: float
     max_entry_price_drift_pct: float
     max_position_loss_pct: float = 3.0
     mode: str = "paper"
@@ -180,6 +179,7 @@ class LLMConfig:
     timeout_sec: int
     max_retries: int
     base_url: str = ""
+    queue_dir: str = "llm_queue"
 
 
 @dataclass(frozen=True)
@@ -287,8 +287,11 @@ def _build_screening_config(screening_raw: dict, capital: float) -> ScreeningCon
     )
 
 
-def load_config(config_path: Path | None = None) -> Config:
-    """Read settings from TOML and secrets from the environment."""
+def load_config(config_path: Path | None = None, anthropic_key_optional: bool = False) -> Config:
+    """Read settings from TOML and secrets from the environment.
+
+    anthropic_key_optional: for callers that never use the Anthropic API.
+    """
     load_dotenv()
     path = Path(config_path) if config_path is not None else DEFAULT_CONFIG_PATH
     if not path.exists():
@@ -348,7 +351,6 @@ def load_config(config_path: Path | None = None) -> Config:
             ),
             connection_timeout_sec=int(execution_raw["connection_timeout_sec"]),
             heartbeat_interval_sec=int(execution_raw["heartbeat_interval_sec"]),
-            plan_max_age_hours=float(execution_raw["plan_max_age_hours"]),
             max_entry_price_drift_pct=float(execution_raw["max_entry_price_drift_pct"]),
             max_position_loss_pct=float(execution_raw.get("max_position_loss_pct", 3.0)),
             mode=execution_raw.get("mode", "paper"),
@@ -363,13 +365,19 @@ def load_config(config_path: Path | None = None) -> Config:
             timeout_sec=int(llm_raw["timeout_sec"]),
             max_retries=int(llm_raw["max_retries"]),
             base_url=llm_raw.get("base_url", ""),
+            queue_dir=str(llm_raw.get("queue_dir", "llm_queue")),
         ),
         paper=PaperConfig(
             slippage_pct=float(paper_raw["slippage_pct"]),
             initial_capital=float(paper_raw["initial_capital"]),
         ),
         secrets=Secrets(
-            anthropic_api_key=_require_env("ANTHROPIC_API_KEY"),
+            # The file provider never calls Anthropic, so no key is needed.
+            anthropic_api_key=(
+                os.environ.get("ANTHROPIC_API_KEY", "")
+                if llm_raw["provider"] == "file" or anthropic_key_optional
+                else _require_env("ANTHROPIC_API_KEY")
+            ),
             kite_api_key=_require_env("KITE_API_KEY"),
             kite_api_secret=_require_env("KITE_API_SECRET"),
         ),

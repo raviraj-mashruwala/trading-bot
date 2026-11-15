@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 import pytest
 
@@ -6,6 +6,11 @@ from tradingbot.core.database import Database
 from tradingbot.core.models import (
     IST, Direction, ExecutedTrade, Mode, StrategyName, TradeStatus,
 )
+
+
+# Relative to today so the 30-day history window never ages out of the fixtures.
+RECENT_DAY = (date.today() - timedelta(days=1)).isoformat()
+PREVIOUS_DAY = (date.today() - timedelta(days=2)).isoformat()
 
 
 def make_trade(trade_date, symbol, pnl):
@@ -24,9 +29,9 @@ def seed_trades(api_client):
     tmp = api_client._tmp_path
     db = Database(tmp / "tradingbot.db")
     db.initialise()
-    db.record_trade(make_trade("2026-09-24", "RELIANCE", 1040.0))
-    db.record_trade(make_trade("2026-09-24", "TCS", -400.0))
-    db.record_trade(make_trade("2026-09-23", "INFY", 500.0))
+    db.record_trade(make_trade(RECENT_DAY, "RELIANCE", 1040.0))
+    db.record_trade(make_trade(RECENT_DAY, "TCS", -400.0))
+    db.record_trade(make_trade(PREVIOUS_DAY, "INFY", 500.0))
     db.close()
 
 
@@ -37,7 +42,7 @@ async def test_get_trades_returns_recent_history(api_client):
 
 
 async def test_get_trades_filters_by_date(api_client):
-    response = await api_client.get("/api/trades?date=2026-09-24")
+    response = await api_client.get(f"/api/trades?date={RECENT_DAY}")
     assert response.status_code == 200
     assert len(response.json()) == 2
 

@@ -18,10 +18,6 @@ import pandas as pd
 
 log = logging.getLogger(__name__)
 
-_MONTHS = {
-    1: "JAN", 2: "FEB", 3: "MAR", 4: "APR", 5: "MAY", 6: "JUN",
-    7: "JUL", 8: "AUG", 9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC",
-}
 _BHAV_URL = (
     "https://archives.nseindia.com/products/content/sec_bhavdata_full_{date}.csv"
 )
@@ -34,24 +30,29 @@ _HEADERS = {
     "Referer": "https://www.nseindia.com/",
 }
 _TIMEOUT = 15.0
-_MAX_LOOKBACK_DAYS = 5  # try up to 5 days back for weekends/holidays
+_MAX_LOOKBACK_DAYS = 7  # calendar days back, enough for a weekend plus holidays
 
 
 def _date_str(d: date) -> str:
-    return f"{d.day:02d}{_MONTHS[d.month]}{d.year}"
+    """NSE names the file sec_bhavdata_full_DDMMYYYY.csv (numeric month)."""
+    return f"{d.day:02d}{d.month:02d}{d.year}"
 
 
 def fetch_delivery_pct(
     trade_date: date | None = None,
     http_client: httpx.Client | None = None,
+    today: date | None = None,
 ) -> dict[str, float]:
     """Return {symbol: delivery_pct} for NSE equities from bhav copy.
 
-    Tries trade_date first, walks back up to _MAX_LOOKBACK_DAYS for
-    weekends/holidays. Returns {} on failure — caller uses 50.0 neutral.
+    Starts at trade_date, or today when trade_date is in the future (an analysis
+    for Monday has no Monday file yet, so the newest possible file is today's),
+    and walks back up to _MAX_LOOKBACK_DAYS calendar days, skipping weekends.
+    Returns {} on failure: the caller uses 50.0 neutral.
     """
     client = http_client or httpx.Client(headers=_HEADERS, timeout=_TIMEOUT)
-    target = trade_date or date.today()
+    today = today or date.today()
+    target = min(trade_date or today, today)
 
     for days_back in range(_MAX_LOOKBACK_DAYS):
         candidate = target - timedelta(days=days_back)

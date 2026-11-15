@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, time
 from typing import TYPE_CHECKING
 
-from tradingbot.core.broker import BrokerInterface, OrderStatus
+from tradingbot.core.broker import BrokerError, BrokerInterface, OrderStatus
 from tradingbot.core.config import ExecutionConfig
 from tradingbot.core.database import Database
 from tradingbot.core.models import (
@@ -120,6 +122,33 @@ class Executor:
         self.states: list[LegState] = []
         self.blocked = False
         self.kill_switch_tripped = False
+        self._async_loop: asyncio.AbstractEventLoop | None = None
+        self._async_loop_lock = threading.Lock()
+
+    # ----- Async bridge -----------------------------------------------------------
+
+    def _run_async(self, coro, timeout: float = 12):
+        """Run a coroutine to completion from sync code and return its result.
+
+        tick() is sync but the API calls it on the event loop's own thread, so
+        scheduling the coroutine onto that loop and waiting would freeze the loop
+        until the timeout. Always run on a private loop in a daemon thread
+        instead. One long-lived loop (not asyncio.run per call) so clients cached
+        by the escalators stay bound to a live loop.
+        """
+        with self._async_loop_lock:
+            if self._async_loop is None:
+                loop = asyncio.new_event_loop()
+                threading.Thread(
+                    target=loop.run_forever, name="executor-async", daemon=True
+                ).start()
+                self._async_loop = loop
+        future = asyncio.run_coroutine_threadsafe(coro, self._async_loop)
+        try:
+            return future.result(timeout=timeout)
+        except BaseException:
+            future.cancel()
+            raise
 
     # ----- Lifecycle --------------------------------------------------------------
 
@@ -170,6 +199,7 @@ class Executor:
                 self._submit_entry(state, current_price=price)
 
     _MARKET_START = time(9, 0)
+    _CONTINUOUS_TRADING_START = time(9, 15)  # 09:00-09:15 is the pre-open call auction
     _MARKET_END = time(15, 30)
 
     def tick(self) -> None:
@@ -402,6 +432,10 @@ class Executor:
 
     def _evaluate_entry(self, state: LegState, now: datetime) -> None:
         """Consult EntryGuard before placing an order. ENTER / WAIT / VETO."""
+        if now.timetz().replace(tzinfo=None) < self._CONTINUOUS_TRADING_START:
+            # Pre-open: ticks are sparse and orders would join the call auction.
+            state.waiting = True
+            return
         intel = self._intelligence
         symbol_state = intel.scorer.get_state(state.leg.symbol)
         if symbol_state is None:
@@ -494,7 +528,6 @@ class Executor:
             if verdict.confidence < 0.4:
                 # Gray zone: attempt LLM escalation (best-effort, async-safe)
                 try:
-                    import asyncio
                     coro = intel.escalator.evaluate_entry(
                         state.leg,
                         symbol_state,
@@ -502,15 +535,7 @@ class Executor:
                         intel.aggregator.get_candles(state.leg.symbol, "5min"),
                         ticker_degraded=intel.is_degraded,
                     )
-                    try:
-                        loop = asyncio.get_running_loop()
-                        # API path: already in an async context
-                        import concurrent.futures
-                        future = asyncio.run_coroutine_threadsafe(coro, loop)
-                        result = future.result(timeout=12)
-                    except RuntimeError:
-                        # CLI path: no running loop
-                        result = asyncio.run(coro)
+                    result = self._run_async(coro)
 
                     if result.action == "VETO":
                         state.skipped_reason = f"LLM veto: {result.reasoning}"
@@ -595,10 +620,22 @@ class Executor:
                         f"Price {current_price:.2f} gapped through entry {leg.entry_price:.2f} ({gap_pct:.2f}%) — market order",
                     )
 
-        if use_market:
-            state.entry_order_id = self.orders.submit_entry_market(leg)
-        else:
-            state.entry_order_id = self.orders.submit_entry(leg)
+        try:
+            if use_market:
+                state.entry_order_id = self.orders.submit_entry_market(leg)
+            else:
+                state.entry_order_id = self.orders.submit_entry(leg)
+        except BrokerError as exc:
+            # One rejected order must not take the other legs down with it.
+            logger.error("entry order rejected for %s: %s", leg.symbol, exc)
+            reason = f"Order rejected: {exc}"
+            state.skipped_reason = reason
+            state.cancelled = True
+            state.waiting = False
+            self._emit_decision(leg.symbol, "ENTRY_VETO", reason)
+            if self._telegram:
+                self._telegram.notify_critical(f"Entry order failed for <b>{leg.symbol}</b>\n<i>{reason}</i>")
+            return
         state.entry_submitted_at = self.clock()
 
     def _poll_entry(self, state: LegState, now: datetime) -> None:
@@ -864,14 +901,8 @@ class Executor:
         if intel is None or not hasattr(intel.escalator, "evaluate_exit"):
             return
         try:
-            import asyncio
             coro = intel.escalator.evaluate_exit(state, symbol_state, candles_1m, candles_5m)
-            try:
-                loop = asyncio.get_running_loop()
-                future = asyncio.run_coroutine_threadsafe(coro, loop)
-                result = future.result(timeout=12)
-            except RuntimeError:
-                result = asyncio.run(coro)
+            result = self._run_async(coro)
         except Exception:
             logger.debug("Jev exit check failed", exc_info=True)
             return

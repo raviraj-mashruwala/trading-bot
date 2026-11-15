@@ -170,6 +170,7 @@ class IntelligentScreener:
                     composite_score=composite,
                     factor_scores=factor_scores,
                     instrument_token=stock.get("token", 0),
+                    signals=stock.get("signals", {}),
                 )
             )
 

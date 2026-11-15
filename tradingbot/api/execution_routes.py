@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 TICK_SECONDS_NORMAL = 5
-TICK_SECONDS_FAST = 1
+TICK_SECONDS_FAST = 3
 FAST_TICK_START = (9, 10)
 FAST_TICK_END = (9, 25)
 
@@ -36,6 +36,8 @@ def _tick_interval() -> int:
 
 
 async def _run_execution(state: AppState, mode: Mode, plan) -> None:
+    intelligence = None
+    watchdog = None
     try:
         config = state.config
 
@@ -106,7 +108,6 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
         risk_manager = RiskManager(
             config.risk, config.strategy, capital=live_capital,
-            plan_max_age_hours=config.execution.plan_max_age_hours,
             max_entry_price_drift_pct=config.execution.max_entry_price_drift_pct,
             margin_fetcher=margin_fetcher,
         )
@@ -135,6 +136,9 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
             kite_client=data_kite_client,
             jev_config=config.jev,
         )
+        telegram_for_alerts = getattr(state, "_telegram", None)
+        if telegram_for_alerts is not None:
+            intelligence.alert = telegram_for_alerts.notify_critical
 
         regime_monitor = None
         if config.jev and config.jev.enabled:
@@ -169,10 +173,43 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
 
         executor.start()
 
+        # Late-start catch-up: if market open > 15 min, fetch morning context
+        from tradingbot.executor.session_catchup import SessionCatchup, apply_catchup_decisions
+        from tradingbot.core.models import now_ist
+        catchup = SessionCatchup(
+            kite_client=data_kite_client,
+            instrument_cache=instrument_cache,
+            jev_client=getattr(intelligence.escalator, "_jev", None),
+        )
+        current_time = now_ist().time()
+        if catchup.should_run(current_time):
+            logger.info("Late start detected (%s) — running morning catch-up", current_time.strftime("%H:%M"))
+            symbols = [leg.symbol for leg in plan.legs]
+            contexts = catchup.fetch_morning_context(symbols)
+            decisions = catchup.evaluate(contexts, plan.legs)
+            apply_catchup_decisions(executor.states, decisions)
+
+            telegram = getattr(state, "_telegram", None)
+            if telegram:
+                telegram.notify_catchup_summary(decisions)
+
+            await state.event_bus.emit("exec.catchup", {
+                "decisions": {s: d.action for s, d in decisions.items()},
+            })
+        else:
+            logger.info("On-time start (%s) — skipping catch-up", current_time.strftime("%H:%M"))
+
         ws_mgr: ConnectionManager | None = getattr(state, "ws_manager", None)
         last_decision_count = 0
 
+        from tradingbot.executor.loop_watchdog import LoopWatchdog
+        tg_for_watchdog = getattr(state, "_telegram", None)
+        watchdog = LoopWatchdog(alert=tg_for_watchdog.notify_critical if tg_for_watchdog else None)
+        watchdog.beat()
+        watchdog.start()
+
         while not executor.is_done:
+            watchdog.beat()
             executor.tick()
 
             # Watchdog: force-reconnect ticker if ticks are stale
@@ -285,6 +322,21 @@ async def _run_execution(state: AppState, mode: Mode, plan) -> None:
     except Exception as exc:  # noqa: BLE001
         logger.error("execution failed: %s", exc, exc_info=True)
         state.executor_status = "idle"
+        tg = getattr(state, "_telegram", None)
+        if tg:
+            try:
+                tg.notify_critical(f"Execution crashed and stopped: {exc}")
+            except Exception:
+                logger.warning("crash alert delivery failed", exc_info=True)
+    finally:
+        if watchdog is not None:
+            watchdog.stop()
+        # Never leave a ticker thread behind: a restart would run two side by side.
+        if intelligence is not None:
+            try:
+                intelligence.stop()
+            except Exception:
+                logger.warning("ticker stop failed", exc_info=True)
 
 
 async def _verify_squareoff(state: AppState, broker, plan) -> None:
@@ -476,6 +528,18 @@ async def execution_status(request: Request):
         "decision_log": decision_log,
         "scout_alerts": scout_alerts,
     }
+
+
+@router.get("/decisions")
+async def get_decisions(request: Request, date: str | None = None):
+    state: AppState = request.app.state.app_state
+    if state.database is None:
+        return []
+    if date:
+        return state.database.get_decisions_for_date(date)
+    from tradingbot.core.models import now_ist
+    today = now_ist().strftime("%Y-%m-%d")
+    return state.database.get_decisions_for_date(today)
 
 
 @router.get("/scout/stats")

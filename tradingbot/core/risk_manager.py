@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 # would produce an absurd quantity.
 MIN_STOP_DISTANCE = 0.01
 
-DEFAULT_PLAN_MAX_AGE_HOURS = 14.0
 DEFAULT_MAX_ENTRY_DRIFT_PCT = 2.0
 
 
@@ -32,14 +31,12 @@ class RiskManager:
         risk_config: RiskConfig,
         strategy_config: StrategyConfig,
         capital: float,
-        plan_max_age_hours: float = DEFAULT_PLAN_MAX_AGE_HOURS,
         max_entry_price_drift_pct: float = DEFAULT_MAX_ENTRY_DRIFT_PCT,
         margin_fetcher: Any = None,
     ) -> None:
         self.risk = risk_config
         self.strategy = strategy_config
         self.capital = capital
-        self.plan_max_age_hours = plan_max_age_hours
         self.max_entry_price_drift_pct = max_entry_price_drift_pct
         self._margin_fetcher = margin_fetcher
 
@@ -169,11 +166,10 @@ class RiskManager:
         """Return every reason this plan must not be executed. Empty means go."""
         blockers: list[str] = []
 
-        age = plan.age_hours(now)
-        if age > self.plan_max_age_hours:
-            blockers.append(
-                f"plan is stale: generated {age:.1f}h ago, limit is {self.plan_max_age_hours:.0f}h"
-            )
+        # A plan is valid for its own trade date however long ago it was generated.
+        today = now.date().isoformat()
+        if plan.trade_date != today:
+            blockers.append(f"plan is for {plan.trade_date}, not today ({today})")
 
         required_margin = 0.0
         for leg in plan.legs:

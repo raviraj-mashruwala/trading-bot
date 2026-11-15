@@ -122,10 +122,12 @@ class MarketContext:
     sector_leaders: list[str]
     sector_laggards: list[str]
     regime: MarketRegime
+    banknifty_level: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "nifty_level": self.nifty_level,
+            "banknifty_level": self.banknifty_level,
             "nifty_trend": self.nifty_trend,
             "banknifty_trend": self.banknifty_trend,
             "india_vix": self.india_vix,
@@ -199,6 +201,15 @@ class IndicatorSnapshot:
     val: float = 0.0
     ema_9: float = 0.0
     sma_9: float = 0.0
+    pivot_r1: float = 0.0
+    pivot_s1: float = 0.0
+    last_session_high: float = 0.0
+    last_session_low: float = 0.0
+    last_session_close: float = 0.0
+    high_5d: float = 0.0
+    low_5d: float = 0.0
+    high_20d: float = 0.0
+    low_20d: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -231,6 +242,15 @@ class IndicatorSnapshot:
             "val": self.val,
             "ema_9": self.ema_9,
             "sma_9": self.sma_9,
+            "pivot_r1": self.pivot_r1,
+            "pivot_s1": self.pivot_s1,
+            "last_session_high": self.last_session_high,
+            "last_session_low": self.last_session_low,
+            "last_session_close": self.last_session_close,
+            "high_5d": self.high_5d,
+            "low_5d": self.low_5d,
+            "high_20d": self.high_20d,
+            "low_20d": self.low_20d,
         }
 
 
@@ -613,6 +633,7 @@ class ScoredStock:
     composite_score: float
     factor_scores: dict[str, float]
     instrument_token: int
+    signals: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

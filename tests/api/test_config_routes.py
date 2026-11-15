@@ -67,7 +67,6 @@ entry_slippage_pct = 0.05
 square_off_time = "15:10"
 connection_timeout_sec = 30
 heartbeat_interval_sec = 60
-plan_max_age_hours = 14
 max_entry_price_drift_pct = 2.0
 
 [llm]

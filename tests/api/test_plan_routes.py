@@ -42,6 +42,19 @@ async def test_list_plans_returns_all_dates(api_client):
     assert "2026-09-26" in dates
 
 
+async def test_list_plans_ignores_non_plan_json_in_same_directory(api_client):
+    tmp = api_client._tmp_path
+    scratch = tmp / "trade_plans" / "llm_dossiers.json"
+    scratch.write_text("[]")
+
+    response = await api_client.get("/api/plans")
+
+    assert response.status_code == 200
+    dates = [p["trade_date"] for p in response.json()]
+    assert "2026-09-28" in dates
+    assert "2026-09-26" in dates
+
+
 async def test_get_plan_by_date(api_client):
     response = await api_client.get("/api/plans/2026-09-28")
     assert response.status_code == 200

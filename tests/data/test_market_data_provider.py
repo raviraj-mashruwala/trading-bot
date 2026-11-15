@@ -41,3 +41,44 @@ class TestGetUniverse:
         result = p.get_universe()
         symbols = [r["symbol"] for r in result]
         assert symbols == ["GOOD"]
+
+
+class TestEtfExclusion:
+    @staticmethod
+    def _provider(rows):
+        instruments = [
+            {"instrument_type": "EQ", "segment": "NSE", "tradingsymbol": sym, "name": name,
+             "instrument_token": i, "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "last_price": 100}
+            for i, (sym, name) in enumerate(rows)
+        ]
+        kite = type("K", (), {"kite": type("KK", (), {"instruments": staticmethod(lambda ex: instruments)})()})()
+        return MarketDataProvider(kite_client=kite)
+
+    def test_etfs_and_funds_are_dropped(self):
+        provider = self._provider([
+            ("SILVERBEES", "NIPPON INDIA SILVER ETF"),
+            ("SILVER", "ADITYA BIRLA SUN LIFE SILVER ETF"),
+            ("GOLDBEES", "NIPPON INDIA GOLD BEES ETF"),
+            ("LIQUIDBEES", "NIPPON INDIA NIFTY 1D RATE LIQUID BEES ETF"),
+            ("QGOLDHALF", "QUANTUM GOLD FUND ETF"),
+            ("NIFTYBEES", "NIPPON INDIA ETF NIFTY 50 BEES"),
+            ("RELIANCE", "RELIANCE INDUSTRIES"),
+        ])
+
+        assert [r["symbol"] for r in provider.get_universe()] == ["RELIANCE"]
+
+    def test_symbols_ending_in_bees_or_etf_are_dropped_even_without_a_name(self):
+        provider = self._provider([("CONSUMBEES", ""), ("CPSEETF", ""), ("TCS", "TATA CONSULTANCY SERVICES")])
+
+        assert [r["symbol"] for r in provider.get_universe()] == ["TCS"]
+
+    def test_operating_companies_with_fund_like_words_are_kept(self):
+        provider = self._provider([
+            ("SBIFUNDS", "SBI FUNDS MANAGEMENT"),
+            ("NOCIL", "NOCIL"),
+            ("BEESLTD", "BEES AGRO LIMITED"),
+        ])
+
+        symbols = [r["symbol"] for r in provider.get_universe()]
+
+        assert "SBIFUNDS" in symbols and "NOCIL" in symbols

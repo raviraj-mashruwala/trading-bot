@@ -9,7 +9,8 @@ venv/
 logs/
 .pytest_cache/
 *.egg-info/
-.claude/
+.claude/*
+!.claude/skills/
 .superpowers/
 .DS_Store
 :memory:*
@@ -21,3 +22,8 @@ logs/
 *.db-info
 :memory:
 :memory:-info
+
+# git worktrees
+.worktrees/
+research/output/entry_comparison/candles.json
+research/output/harness/

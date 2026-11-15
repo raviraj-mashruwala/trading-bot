@@ -299,6 +299,14 @@ class TelegramNotifier:
         )
 
 
+    def notify_catchup_summary(self, decisions: dict) -> None:
+        lines = ["\U0001f504 <b>LATE-START CATCH-UP</b>\n"]
+        for sym, d in decisions.items():
+            emoji = "✅" if d.action == "proceed" else "❌"
+            lines.append(f"{emoji} <b>{sym}</b>: {d.reason}")
+        self.send_sync("\n".join(lines))
+
+
 def build_notifier() -> TelegramNotifier:
     """Build from environment variables."""
     import os

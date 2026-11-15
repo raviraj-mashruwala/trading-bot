@@ -12,9 +12,10 @@ from tradingbot.data.delivery_fetcher import fetch_delivery_pct, _date_str
 # ── date string helper ────────────────────────────────────────────────────────
 
 def test_date_str_format():
-    assert _date_str(date(2026, 9, 29)) == "29SEP2026"
-    assert _date_str(date(2026, 1, 5)) == "05JAN2026"
-    assert _date_str(date(2026, 12, 31)) == "31DEC2026"
+    # NSE names the file sec_bhavdata_full_DDMMYYYY.csv (numeric month), not 29SEP2026.
+    assert _date_str(date(2026, 9, 29)) == "29092026"
+    assert _date_str(date(2026, 1, 5)) == "05012026"
+    assert _date_str(date(2026, 12, 31)) == "31122026"
 
 
 # ── Successful fetch ──────────────────────────────────────────────────────────
@@ -72,12 +73,74 @@ def test_skips_weekends():
 
     def handler(request: httpx.Request) -> httpx.Response:
         results_seen.append(str(request.url))
-        if "25SEP2026" in str(request.url):  # Friday before the weekend
+        if "25092026" in str(request.url):  # Friday before the weekend
             return httpx.Response(200, text=_SAMPLE_CSV)
         return httpx.Response(404, text="")
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
-    # 27SEP2026 = Sunday, 26SEP2026 = Saturday → both skipped → tries 25SEP (Friday)
+    # 2026-09-27 is a Sunday and 09-26 a Saturday: both skipped, so it tries Friday 09-25
     result = fetch_delivery_pct(date(2026, 9, 27), http_client=client)
     assert "RELIANCE" in result
-    assert any("25SEP2026" in u for u in results_seen)
+    assert any("25092026" in u for u in results_seen)
+
+
+# ── Which URLs are requested ──────────────────────────────────────────────────
+
+def _recording_client(available: set[str]):
+    """404 for everything except file names in `available`; records requested names."""
+    requested: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        name = request.url.path.rsplit("_", 1)[-1].removesuffix(".csv")
+        requested.append(name)
+        if name in available:
+            return httpx.Response(200, text=_SAMPLE_CSV)
+        return httpx.Response(404, text="")
+
+    return httpx.Client(transport=httpx.MockTransport(handler)), requested
+
+
+def test_url_uses_the_numeric_date():
+    client, requested = _recording_client({"29092026"})
+
+    result = fetch_delivery_pct(date(2026, 9, 29), http_client=client)
+
+    assert requested == ["29092026"]
+    assert "RELIANCE" in result
+
+
+def test_walks_back_over_trading_days_not_calendar_days():
+    # Monday target; only Friday's file exists (Sat and Sun are skipped).
+    client, requested = _recording_client({"25092026"})
+
+    result = fetch_delivery_pct(date(2026, 9, 28), http_client=client, today=date(2026, 9, 28))
+
+    assert requested == ["28092026", "25092026"]
+    assert "RELIANCE" in result
+
+
+def test_never_requests_a_date_after_today():
+    # Analysing for Monday 11-02 on Friday evening: the newest file that can exist is today's.
+    client, requested = _recording_client({"30102026"})
+
+    result = fetch_delivery_pct(date(2026, 11, 2), http_client=client, today=date(2026, 10, 30))
+
+    assert requested == ["30102026"]
+    assert "RELIANCE" in result
+
+
+def test_lookback_covers_a_long_weekend():
+    # Tuesday target; the last file is Thursday's (Fri holiday, then a weekend, then Mon holiday).
+    client, requested = _recording_client({"24092026"})
+
+    result = fetch_delivery_pct(date(2026, 9, 29), http_client=client, today=date(2026, 9, 29))
+
+    assert "24092026" in requested
+    assert "RELIANCE" in result
+
+
+def test_returns_empty_when_nothing_is_published_in_the_window():
+    client, requested = _recording_client(set())
+
+    assert fetch_delivery_pct(date(2026, 9, 29), http_client=client, today=date(2026, 9, 29)) == {}
+    assert len(requested) >= 4  # it really looked back, not just once

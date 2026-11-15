@@ -214,3 +214,28 @@ def test_tier1_screener_end_to_end():
     assert len(result) == 2
     symbols = {s.symbol for s in result}
     assert "C" not in symbols
+
+
+def test_signals_survive_the_deterministic_screener():
+    from tradingbot.core.config import ScreeningConfig
+    from tradingbot.screening.screener import Tier1Screener
+
+    config = ScreeningConfig(
+        min_volume=100_000, min_price=50.0, max_price=5000.0, min_market_cap_cr=500.0,
+        min_atr_pct=0.5, min_trading_days=10, max_per_sector=3,
+        volume_surge_weight=15, relative_strength_weight=15, atr_expansion_weight=10,
+        price_structure_weight=15, delivery_pct_weight=10, sector_momentum_weight=10,
+        gap_analysis_weight=10, candlestick_pattern_weight=10, volume_profile_weight=5,
+    )
+    stock = {
+        "symbol": "X", "token": 1, "last_price": 500.0, "avg_volume": 2_000_000.0,
+        "market_cap_cr": 5000.0, "trading_days": 20, "atr_pct": 2.0, "sector": "it",
+        "factor_scores": {k: 60.0 for k in (
+            "volume_surge", "relative_strength", "atr_expansion", "price_structure", "delivery_pct",
+            "sector_momentum", "gap_analysis", "candlestick_pattern", "volume_profile")},
+        "signals": {"change_1d_pct": 3.3},
+    }
+
+    scored = Tier1Screener(config).screen([stock])
+
+    assert scored and scored[0].signals == {"change_1d_pct": 3.3}

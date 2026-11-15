@@ -76,6 +76,10 @@ def _parse_binary(data: bytes) -> list[dict]:
     return ticks
 
 
+async def _noop() -> None:
+    return None
+
+
 class AsyncKiteTicker:
     """Async WebSocket ticker for Kite — works on all platforms."""
 
@@ -91,6 +95,7 @@ class AsyncKiteTicker:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._thread: threading.Thread | None = None
         self._running = False
+        self._generation = 0
         self._tick_count = 0
 
     @property
@@ -115,6 +120,10 @@ class AsyncKiteTicker:
             if int_tokens:
                 asyncio.run_coroutine_threadsafe(self._send_subscribe(int_tokens), self._loop)
 
+    def set_full_tick_callback(self, callback: Callable[[Any, list[dict]], None]) -> None:
+        """Receive whole ticks (price and cumulative volume), not just (token, ltp)."""
+        self._full_tick_callback = callback
+
     def unsubscribe(self, tokens: list[int]) -> None:
         for t in tokens:
             self._callbacks.pop(t, None)
@@ -130,10 +139,50 @@ class AsyncKiteTicker:
 
     def start(self) -> None:
         self._running = True
-        self._loop = asyncio.new_event_loop()
-        self._thread = threading.Thread(target=self._run_loop, daemon=True)
+        self._generation += 1
+        loop = asyncio.new_event_loop()
+        self._loop = loop
+        self._thread = threading.Thread(
+            target=self._run_loop, args=(loop, self._generation), daemon=True,
+        )
         self._thread.start()
         log.info("AsyncKiteTicker started")
+
+    def is_loop_responsive(self, timeout: float = 1.0) -> bool:
+        """True if the ticker thread's event loop runs a trivial task within timeout.
+
+        A loop blocked inside a callback never answers, which is exactly the state
+        in which force_reconnect() (it schedules work on that loop) cannot help.
+        """
+        loop = self._loop
+        if loop is None or not loop.is_running():
+            return False
+        try:
+            future = asyncio.run_coroutine_threadsafe(_noop(), loop)
+        except RuntimeError:
+            return False
+        try:
+            future.result(timeout=timeout)
+            return True
+        except TimeoutError:
+            future.cancel()
+            return False
+
+    def restart(self) -> None:
+        """Replace the ticker thread and loop; keeps subscriptions and callbacks.
+
+        The old thread may be stuck for good, so it is abandoned instead of closed.
+        The generation bump makes it exit rather than reconnect if it ever wakes up.
+        """
+        log.warning("Restarting AsyncKiteTicker: replacing unresponsive loop thread")
+        old_loop = self._loop
+        self._ws = None
+        self.start()
+        if old_loop is not None:
+            try:
+                old_loop.call_soon_threadsafe(old_loop.stop)
+            except RuntimeError:
+                pass
 
     def force_reconnect(self) -> None:
         log.warning("Force-reconnecting AsyncKiteTicker")
@@ -142,15 +191,25 @@ class AsyncKiteTicker:
 
     def stop(self) -> None:
         self._running = False
-        if self._ws and self._loop:
-            asyncio.run_coroutine_threadsafe(self._close_ws(), self._loop)
-        if self._loop:
+        if self._ws and self._loop and self._loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(self._close_ws(), self._loop)
+            try:
+                future.result(timeout=3)
+            except Exception:
+                pass
+        if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=3)
         log.info("AsyncKiteTicker stopped")
 
-    def _run_loop(self) -> None:
-        asyncio.set_event_loop(self._loop)
-        self._loop.run_until_complete(self._connect_loop())
+    def _run_loop(self, loop: asyncio.AbstractEventLoop | None = None, gen: int | None = None) -> None:
+        loop = loop or self._loop
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(self._connect_loop(gen))
+        except RuntimeError:
+            log.debug("Ticker loop stopped", exc_info=True)
 
     async def _close_ws(self) -> None:
         if self._ws:
@@ -160,10 +219,10 @@ class AsyncKiteTicker:
                 pass
             self._ws = None
 
-    async def _connect_loop(self) -> None:
+    async def _connect_loop(self, gen: int | None = None) -> None:
         import websockets
 
-        while self._running:
+        while self._running and (gen is None or gen == self._generation):
             url = (
                 f"{KITE_WS_URL}?api_key={self._api_key}"
                 f"&access_token={self._access_token}"
@@ -176,7 +235,8 @@ class AsyncKiteTicker:
                     ping_timeout=10,
                     max_size=2**20,
                 ) as ws:
-                    self._ws = ws
+                    if gen is None or gen == self._generation:
+                        self._ws = ws
                     log.info("AsyncKiteTicker connected to Kite WebSocket")
 
                     int_tokens = [t for t in self._subscribed if isinstance(t, int)]
@@ -192,6 +252,8 @@ class AsyncKiteTicker:
                             pass
 
                     async for message in ws:
+                        if gen is not None and gen != self._generation:
+                            break
                         if isinstance(message, bytes) and len(message) > 2:
                             ticks = _parse_binary(message)
                             if ticks:
@@ -212,7 +274,8 @@ class AsyncKiteTicker:
                     except Exception:
                         pass
 
-            self._ws = None
+            if gen is None or gen == self._generation:
+                self._ws = None
             if self._running:
                 await asyncio.sleep(5)
 
@@ -225,10 +288,17 @@ class AsyncKiteTicker:
     async def _send_set_mode(self, tokens: list[int]) -> None:
         if self._ws:
             import json
-            msg = json.dumps({"a": "mode", "v": [MODE_LTP, tokens]})
+            msg = json.dumps({"a": "mode", "v": [MODE_QUOTE, tokens]})
             await self._ws.send(msg)
 
+    @property
+    def last_tick_time(self) -> datetime | None:
+        return self._last_tick_time
+
+    _last_tick_time: datetime | None = None
+
     def _dispatch_ticks(self, ticks: list[dict]) -> None:
+        self._last_tick_time = datetime.now()
         if self._full_tick_callback is not None:
             try:
                 self._full_tick_callback(None, ticks)

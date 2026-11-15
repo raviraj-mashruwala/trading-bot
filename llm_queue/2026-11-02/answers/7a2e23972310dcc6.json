@@ -1,0 +1,25 @@
+{
+  "approved": [
+    {
+      "symbol": "THYROCARE",
+      "setup_index": 0,
+      "approval": "conditional",
+      "adjustment": "Stop is 4.55 (about 1.0%) above entry with T1 at 445.3, roughly 2.2R. The prompt has no ATR, so I cannot confirm the stop is outside normal noise: check ATR before entry and widen the stop if 4.55 is under about one 5-minute-to-15-minute ATR. Enter only on the below-VWAP condition holding; skip if price reclaims VWAP."
+    },
+    {
+      "symbol": "EPACK",
+      "setup_index": 0,
+      "approval": "conditional",
+      "adjustment": "Stop is 1.51 (about 1.0%) above entry with T1 at 151.2, roughly 2.2R. ATR is not given, so confirm the stop clears normal noise before entry. Fade only while price stays below the broken value-area low and VWAP; cancel if it reclaims that level. Entry 154.59 is close to the current price in the setup, so no repricing needed."
+    }
+  ],
+  "rejected": [],
+  "portfolio_risk_assessment": {
+    "total_setups": 2,
+    "approved_count": 2,
+    "max_correlated_exposure": "Both setups are shorts, so they share directional exposure to a market bounce. Sector is not stated for either; they appear to be different businesses, so sector correlation is not evidenced. Treat the pair as one correlated short book.",
+    "regime_alignment": "Regime is range_bound at only 28% confidence. Shorts off VWAP after a gap-down day fit a range-bound tape, and the regime is not a reason to reject; each stock is judged on its own data.",
+    "worst_case_loss": "Both stops hit: about 1.0% adverse move on each position's notional (4.55 on THYROCARE, 1.51 on EPACK). Position sizes are not given, so the rupee figure cannot be computed. Size so the combined stop loss stays within the daily risk budget.",
+    "recommendation": "Approve both conditionally. Reward is about 2.2R on each. Missing ATR is the only unchecked item, so verify stops against it before entry. Treat the pair as one correlated short position and take no more risk than a single-trade budget in combination if a broad bounce starts."
+  }
+}

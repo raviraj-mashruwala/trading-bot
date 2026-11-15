@@ -32,6 +32,9 @@ class AppState:
     analysis_task: asyncio.Task | None = None
     analysis_error: str | None = None
     analysis_trade_date: str | None = None
+    # Headless runs: stop at shortlist data / LLM answers instead of fetching or waiting.
+    require_prefetched: bool = False
+    analysis_blocked: Exception | None = None
     pipeline_steps: dict = field(default_factory=dict)
     pipeline_started_at: float | None = None
 

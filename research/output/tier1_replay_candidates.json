@@ -1,0 +1,3482 @@
+[
+  {
+    "date": "2026-06-01 00:00:00",
+    "symbol": "PRAJIND",
+    "direction": "short",
+    "composite_score": 85.73,
+    "rs_excess": -9.32,
+    "last_price": 352.3
+  },
+  {
+    "date": "2026-06-01 00:00:00",
+    "symbol": "WOCKPHARMA",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 27.43,
+    "last_price": 2031.4
+  },
+  {
+    "date": "2026-06-01 00:00:00",
+    "symbol": "ASHAPURMIN",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 16.65,
+    "last_price": 739.5
+  },
+  {
+    "date": "2026-06-01 00:00:00",
+    "symbol": "SUPRIYA",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 32.45,
+    "last_price": 968.7
+  },
+  {
+    "date": "2026-06-01 00:00:00",
+    "symbol": "TIMEX",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 23.88,
+    "last_price": 449.35
+  },
+  {
+    "date": "2026-06-02 00:00:00",
+    "symbol": "JSLL",
+    "direction": "short",
+    "composite_score": 86.04,
+    "rs_excess": -22.83,
+    "last_price": 492.2
+  },
+  {
+    "date": "2026-06-02 00:00:00",
+    "symbol": "SDBL",
+    "direction": "short",
+    "composite_score": 85.82,
+    "rs_excess": -9.71,
+    "last_price": 75.06
+  },
+  {
+    "date": "2026-06-02 00:00:00",
+    "symbol": "SAREGAMA",
+    "direction": "long",
+    "composite_score": 85.0,
+    "rs_excess": 15.7,
+    "last_price": 459.75
+  },
+  {
+    "date": "2026-06-02 00:00:00",
+    "symbol": "ICIL",
+    "direction": "long",
+    "composite_score": 83.57,
+    "rs_excess": 11.93,
+    "last_price": 334.75
+  },
+  {
+    "date": "2026-06-02 00:00:00",
+    "symbol": "SPORTKING",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 14.97,
+    "last_price": 185.67
+  },
+  {
+    "date": "2026-06-03 00:00:00",
+    "symbol": "RUBICON",
+    "direction": "long",
+    "composite_score": 83.61,
+    "rs_excess": 40.19,
+    "last_price": 1302.6
+  },
+  {
+    "date": "2026-06-03 00:00:00",
+    "symbol": "SUPRIYA",
+    "direction": "long",
+    "composite_score": 83.45,
+    "rs_excess": 22.0,
+    "last_price": 917.25
+  },
+  {
+    "date": "2026-06-03 00:00:00",
+    "symbol": "INFY",
+    "direction": "long",
+    "composite_score": 82.42,
+    "rs_excess": 11.03,
+    "last_price": 1243.9
+  },
+  {
+    "date": "2026-06-03 00:00:00",
+    "symbol": "RHIM",
+    "direction": "short",
+    "composite_score": 81.67,
+    "rs_excess": -12.23,
+    "last_price": 344.65
+  },
+  {
+    "date": "2026-06-03 00:00:00",
+    "symbol": "JSLL",
+    "direction": "short",
+    "composite_score": 81.11,
+    "rs_excess": -4.76,
+    "last_price": 590.6
+  },
+  {
+    "date": "2026-06-04 00:00:00",
+    "symbol": "SERVOTECH",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 21.28,
+    "last_price": 112.24
+  },
+  {
+    "date": "2026-06-04 00:00:00",
+    "symbol": "CARTRADE",
+    "direction": "long",
+    "composite_score": 81.69,
+    "rs_excess": 17.49,
+    "last_price": 1961.7
+  },
+  {
+    "date": "2026-06-04 00:00:00",
+    "symbol": "RUBICON",
+    "direction": "long",
+    "composite_score": 81.0,
+    "rs_excess": 32.22,
+    "last_price": 1272.0
+  },
+  {
+    "date": "2026-06-04 00:00:00",
+    "symbol": "MANALIPETC",
+    "direction": "long",
+    "composite_score": 80.88,
+    "rs_excess": 9.96,
+    "last_price": 64.14
+  },
+  {
+    "date": "2026-06-04 00:00:00",
+    "symbol": "GOCOLORS",
+    "direction": "long",
+    "composite_score": 80.15,
+    "rs_excess": 11.74,
+    "last_price": 376.7
+  },
+  {
+    "date": "2026-06-05 00:00:00",
+    "symbol": "PNBGILTS",
+    "direction": "long",
+    "composite_score": 82.23,
+    "rs_excess": 19.67,
+    "last_price": 87.97
+  },
+  {
+    "date": "2026-06-05 00:00:00",
+    "symbol": "CEMPRO",
+    "direction": "long",
+    "composite_score": 82.16,
+    "rs_excess": 15.58,
+    "last_price": 1127.3
+  },
+  {
+    "date": "2026-06-05 00:00:00",
+    "symbol": "SOTL",
+    "direction": "long",
+    "composite_score": 81.71,
+    "rs_excess": 36.47,
+    "last_price": 564.3
+  },
+  {
+    "date": "2026-06-05 00:00:00",
+    "symbol": "ANANTRAJ",
+    "direction": "long",
+    "composite_score": 81.71,
+    "rs_excess": 18.0,
+    "last_price": 589.35
+  },
+  {
+    "date": "2026-06-05 00:00:00",
+    "symbol": "JBMA",
+    "direction": "long",
+    "composite_score": 81.47,
+    "rs_excess": 10.17,
+    "last_price": 692.8
+  },
+  {
+    "date": "2026-06-08 00:00:00",
+    "symbol": "JNKINDIA",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 14.7,
+    "last_price": 421.3
+  },
+  {
+    "date": "2026-06-08 00:00:00",
+    "symbol": "ITDC",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 24.06,
+    "last_price": 669.95
+  },
+  {
+    "date": "2026-06-08 00:00:00",
+    "symbol": "ZEEL",
+    "direction": "long",
+    "composite_score": 81.79,
+    "rs_excess": 21.34,
+    "last_price": 109.65
+  },
+  {
+    "date": "2026-06-08 00:00:00",
+    "symbol": "PANACEABIO",
+    "direction": "long",
+    "composite_score": 81.58,
+    "rs_excess": 31.62,
+    "last_price": 540.2
+  },
+  {
+    "date": "2026-06-08 00:00:00",
+    "symbol": "UTLSOLAR",
+    "direction": "long",
+    "composite_score": 81.07,
+    "rs_excess": 3.38,
+    "last_price": 328.3
+  },
+  {
+    "date": "2026-06-09 00:00:00",
+    "symbol": "FILATEX",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 17.53,
+    "last_price": 52.48
+  },
+  {
+    "date": "2026-06-09 00:00:00",
+    "symbol": "WIPRO",
+    "direction": "short",
+    "composite_score": 83.07,
+    "rs_excess": -10.83,
+    "last_price": 181.76
+  },
+  {
+    "date": "2026-06-09 00:00:00",
+    "symbol": "JAYBARMARU",
+    "direction": "long",
+    "composite_score": 82.63,
+    "rs_excess": 23.85,
+    "last_price": 140.76
+  },
+  {
+    "date": "2026-06-09 00:00:00",
+    "symbol": "SILVERBETA",
+    "direction": "short",
+    "composite_score": 81.19,
+    "rs_excess": -7.65,
+    "last_price": 229.97
+  },
+  {
+    "date": "2026-06-09 00:00:00",
+    "symbol": "BLUSPRING",
+    "direction": "long",
+    "composite_score": 81.01,
+    "rs_excess": 12.19,
+    "last_price": 91.0
+  },
+  {
+    "date": "2026-06-10 00:00:00",
+    "symbol": "JNKINDIA",
+    "direction": "long",
+    "composite_score": 85.59,
+    "rs_excess": 34.97,
+    "last_price": 484.05
+  },
+  {
+    "date": "2026-06-10 00:00:00",
+    "symbol": "CEMPRO",
+    "direction": "long",
+    "composite_score": 84.16,
+    "rs_excess": 16.59,
+    "last_price": 1203.8
+  },
+  {
+    "date": "2026-06-10 00:00:00",
+    "symbol": "PANACEABIO",
+    "direction": "long",
+    "composite_score": 83.65,
+    "rs_excess": 42.17,
+    "last_price": 607.75
+  },
+  {
+    "date": "2026-06-10 00:00:00",
+    "symbol": "BELRISE",
+    "direction": "long",
+    "composite_score": 83.33,
+    "rs_excess": 8.76,
+    "last_price": 234.73
+  },
+  {
+    "date": "2026-06-10 00:00:00",
+    "symbol": "MASTERTR",
+    "direction": "short",
+    "composite_score": 83.03,
+    "rs_excess": -6.65,
+    "last_price": 75.04
+  },
+  {
+    "date": "2026-06-11 00:00:00",
+    "symbol": "CEMPRO",
+    "direction": "long",
+    "composite_score": 85.0,
+    "rs_excess": 21.52,
+    "last_price": 1237.1
+  },
+  {
+    "date": "2026-06-11 00:00:00",
+    "symbol": "HDFCSILVER",
+    "direction": "short",
+    "composite_score": 84.32,
+    "rs_excess": -9.93,
+    "last_price": 220.26
+  },
+  {
+    "date": "2026-06-11 00:00:00",
+    "symbol": "SILVERAG",
+    "direction": "short",
+    "composite_score": 83.85,
+    "rs_excess": -9.69,
+    "last_price": 224.77
+  },
+  {
+    "date": "2026-06-11 00:00:00",
+    "symbol": "SILVERIETF",
+    "direction": "short",
+    "composite_score": 83.4,
+    "rs_excess": -9.69,
+    "last_price": 230.82
+  },
+  {
+    "date": "2026-06-11 00:00:00",
+    "symbol": "OIL",
+    "direction": "short",
+    "composite_score": 82.3,
+    "rs_excess": -12.14,
+    "last_price": 427.35
+  },
+  {
+    "date": "2026-06-12 00:00:00",
+    "symbol": "UNICHEMLAB",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 25.28,
+    "last_price": 462.6
+  },
+  {
+    "date": "2026-06-12 00:00:00",
+    "symbol": "INOXINDIA",
+    "direction": "long",
+    "composite_score": 81.02,
+    "rs_excess": 23.93,
+    "last_price": 1848.8
+  },
+  {
+    "date": "2026-06-12 00:00:00",
+    "symbol": "CARTRADE",
+    "direction": "long",
+    "composite_score": 80.01,
+    "rs_excess": 25.76,
+    "last_price": 2385.4
+  },
+  {
+    "date": "2026-06-12 00:00:00",
+    "symbol": "INDOCO",
+    "direction": "long",
+    "composite_score": 79.43,
+    "rs_excess": 15.02,
+    "last_price": 243.0
+  },
+  {
+    "date": "2026-06-12 00:00:00",
+    "symbol": "GRMOVER",
+    "direction": "short",
+    "composite_score": 79.03,
+    "rs_excess": -41.16,
+    "last_price": 87.6
+  },
+  {
+    "date": "2026-06-15 00:00:00",
+    "symbol": "SENORES",
+    "direction": "long",
+    "composite_score": 85.31,
+    "rs_excess": 23.58,
+    "last_price": 1290.0
+  },
+  {
+    "date": "2026-06-15 00:00:00",
+    "symbol": "AEGISLOG",
+    "direction": "long",
+    "composite_score": 84.25,
+    "rs_excess": 21.49,
+    "last_price": 944.4
+  },
+  {
+    "date": "2026-06-15 00:00:00",
+    "symbol": "APTECHT",
+    "direction": "long",
+    "composite_score": 84.19,
+    "rs_excess": 8.13,
+    "last_price": 114.66
+  },
+  {
+    "date": "2026-06-15 00:00:00",
+    "symbol": "EPACKPEB",
+    "direction": "long",
+    "composite_score": 83.57,
+    "rs_excess": 14.35,
+    "last_price": 241.17
+  },
+  {
+    "date": "2026-06-15 00:00:00",
+    "symbol": "SMCGLOBAL",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 19.54,
+    "last_price": 72.24
+  },
+  {
+    "date": "2026-06-16 00:00:00",
+    "symbol": "DECNGOLD",
+    "direction": "long",
+    "composite_score": 84.71,
+    "rs_excess": 16.07,
+    "last_price": 192.61
+  },
+  {
+    "date": "2026-06-16 00:00:00",
+    "symbol": "AEGISVOPAK",
+    "direction": "long",
+    "composite_score": 84.42,
+    "rs_excess": 22.58,
+    "last_price": 231.69
+  },
+  {
+    "date": "2026-06-16 00:00:00",
+    "symbol": "HINDWAREAP",
+    "direction": "long",
+    "composite_score": 84.25,
+    "rs_excess": 15.49,
+    "last_price": 255.01
+  },
+  {
+    "date": "2026-06-16 00:00:00",
+    "symbol": "PARAS",
+    "direction": "long",
+    "composite_score": 83.65,
+    "rs_excess": 11.7,
+    "last_price": 1108.15
+  },
+  {
+    "date": "2026-06-16 00:00:00",
+    "symbol": "EPACKPEB",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 23.65,
+    "last_price": 254.4
+  },
+  {
+    "date": "2026-06-17 00:00:00",
+    "symbol": "JAYBARMARU",
+    "direction": "long",
+    "composite_score": 85.02,
+    "rs_excess": 17.58,
+    "last_price": 167.68
+  },
+  {
+    "date": "2026-06-17 00:00:00",
+    "symbol": "HINDALCO",
+    "direction": "short",
+    "composite_score": 80.94,
+    "rs_excess": -11.97,
+    "last_price": 982.4
+  },
+  {
+    "date": "2026-06-17 00:00:00",
+    "symbol": "GICRE",
+    "direction": "short",
+    "composite_score": 80.93,
+    "rs_excess": -10.84,
+    "last_price": 345.05
+  },
+  {
+    "date": "2026-06-17 00:00:00",
+    "symbol": "RPTECH",
+    "direction": "long",
+    "composite_score": 80.66,
+    "rs_excess": 16.68,
+    "last_price": 662.6
+  },
+  {
+    "date": "2026-06-17 00:00:00",
+    "symbol": "EXICOM",
+    "direction": "long",
+    "composite_score": 78.63,
+    "rs_excess": 10.72,
+    "last_price": 167.9
+  },
+  {
+    "date": "2026-06-18 00:00:00",
+    "symbol": "BRIGADE",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 12.64,
+    "last_price": 565.85
+  },
+  {
+    "date": "2026-06-18 00:00:00",
+    "symbol": "TARSONS",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 30.79,
+    "last_price": 278.11
+  },
+  {
+    "date": "2026-06-18 00:00:00",
+    "symbol": "GICRE",
+    "direction": "short",
+    "composite_score": 78.76,
+    "rs_excess": -10.76,
+    "last_price": 340.25
+  },
+  {
+    "date": "2026-06-18 00:00:00",
+    "symbol": "BLUSPRING",
+    "direction": "long",
+    "composite_score": 78.48,
+    "rs_excess": 23.28,
+    "last_price": 109.35
+  },
+  {
+    "date": "2026-06-18 00:00:00",
+    "symbol": "LLOYDSENGG",
+    "direction": "long",
+    "composite_score": 77.96,
+    "rs_excess": 22.84,
+    "last_price": 87.69
+  },
+  {
+    "date": "2026-06-19 00:00:00",
+    "symbol": "ICIL",
+    "direction": "long",
+    "composite_score": 85.55,
+    "rs_excess": 20.88,
+    "last_price": 405.85
+  },
+  {
+    "date": "2026-06-19 00:00:00",
+    "symbol": "NITCO",
+    "direction": "long",
+    "composite_score": 85.33,
+    "rs_excess": 9.7,
+    "last_price": 106.92
+  },
+  {
+    "date": "2026-06-19 00:00:00",
+    "symbol": "AEROENTER",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 16.64,
+    "last_price": 124.42
+  },
+  {
+    "date": "2026-06-19 00:00:00",
+    "symbol": "BLUSPRING",
+    "direction": "long",
+    "composite_score": 82.79,
+    "rs_excess": 32.09,
+    "last_price": 114.29
+  },
+  {
+    "date": "2026-06-19 00:00:00",
+    "symbol": "GOKEX",
+    "direction": "long",
+    "composite_score": 82.75,
+    "rs_excess": 15.26,
+    "last_price": 784.1
+  },
+  {
+    "date": "2026-06-22 00:00:00",
+    "symbol": "EBGNG",
+    "direction": "long",
+    "composite_score": 85.97,
+    "rs_excess": 14.41,
+    "last_price": 501.95
+  },
+  {
+    "date": "2026-06-22 00:00:00",
+    "symbol": "RELTD",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 23.9,
+    "last_price": 170.75
+  },
+  {
+    "date": "2026-06-22 00:00:00",
+    "symbol": "INFY",
+    "direction": "short",
+    "composite_score": 80.52,
+    "rs_excess": -7.47,
+    "last_price": 1051.4
+  },
+  {
+    "date": "2026-06-22 00:00:00",
+    "symbol": "INDSWFTLAB",
+    "direction": "long",
+    "composite_score": 80.1,
+    "rs_excess": 13.28,
+    "last_price": 187.38
+  },
+  {
+    "date": "2026-06-22 00:00:00",
+    "symbol": "NELCO",
+    "direction": "long",
+    "composite_score": 79.07,
+    "rs_excess": 28.49,
+    "last_price": 940.35
+  },
+  {
+    "date": "2026-06-23 00:00:00",
+    "symbol": "NOCIL",
+    "direction": "long",
+    "composite_score": 85.0,
+    "rs_excess": 15.64,
+    "last_price": 190.82
+  },
+  {
+    "date": "2026-06-23 00:00:00",
+    "symbol": "EMSLIMITED",
+    "direction": "long",
+    "composite_score": 84.38,
+    "rs_excess": 31.24,
+    "last_price": 408.15
+  },
+  {
+    "date": "2026-06-23 00:00:00",
+    "symbol": "IGARASHI",
+    "direction": "long",
+    "composite_score": 83.57,
+    "rs_excess": 24.19,
+    "last_price": 473.7
+  },
+  {
+    "date": "2026-06-23 00:00:00",
+    "symbol": "PANAMAPET",
+    "direction": "long",
+    "composite_score": 83.57,
+    "rs_excess": 29.09,
+    "last_price": 496.45
+  },
+  {
+    "date": "2026-06-23 00:00:00",
+    "symbol": "EIEL",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 18.03,
+    "last_price": 224.91
+  },
+  {
+    "date": "2026-06-24 00:00:00",
+    "symbol": "POWERICA",
+    "direction": "long",
+    "composite_score": 85.04,
+    "rs_excess": 34.34,
+    "last_price": 651.2
+  },
+  {
+    "date": "2026-06-24 00:00:00",
+    "symbol": "SBISILVER",
+    "direction": "short",
+    "composite_score": 84.25,
+    "rs_excess": -8.26,
+    "last_price": 220.2
+  },
+  {
+    "date": "2026-06-24 00:00:00",
+    "symbol": "KIRLOSENG",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 31.23,
+    "last_price": 2504.4
+  },
+  {
+    "date": "2026-06-24 00:00:00",
+    "symbol": "SETL",
+    "direction": "long",
+    "composite_score": 83.4,
+    "rs_excess": 20.8,
+    "last_price": 206.58
+  },
+  {
+    "date": "2026-06-24 00:00:00",
+    "symbol": "PACEDIGITK",
+    "direction": "long",
+    "composite_score": 82.99,
+    "rs_excess": 11.26,
+    "last_price": 206.08
+  },
+  {
+    "date": "2026-06-25 00:00:00",
+    "symbol": "ROTO",
+    "direction": "long",
+    "composite_score": 83.65,
+    "rs_excess": 18.55,
+    "last_price": 76.2
+  },
+  {
+    "date": "2026-06-25 00:00:00",
+    "symbol": "KIRLOSENG",
+    "direction": "long",
+    "composite_score": 78.92,
+    "rs_excess": 29.17,
+    "last_price": 2563.6
+  },
+  {
+    "date": "2026-06-25 00:00:00",
+    "symbol": "RAMCOSYS",
+    "direction": "long",
+    "composite_score": 78.4,
+    "rs_excess": 18.41,
+    "last_price": 673.8
+  },
+  {
+    "date": "2026-06-25 00:00:00",
+    "symbol": "SPAL",
+    "direction": "long",
+    "composite_score": 78.35,
+    "rs_excess": 33.74,
+    "last_price": 1109.1
+  },
+  {
+    "date": "2026-06-25 00:00:00",
+    "symbol": "RPTECH",
+    "direction": "long",
+    "composite_score": 78.27,
+    "rs_excess": 11.38,
+    "last_price": 762.05
+  },
+  {
+    "date": "2026-06-29 00:00:00",
+    "symbol": "RAMCOSYS",
+    "direction": "long",
+    "composite_score": 83.58,
+    "rs_excess": 27.04,
+    "last_price": 709.8
+  },
+  {
+    "date": "2026-06-29 00:00:00",
+    "symbol": "EBGNG",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 24.44,
+    "last_price": 565.75
+  },
+  {
+    "date": "2026-06-29 00:00:00",
+    "symbol": "SILVERBEES",
+    "direction": "short",
+    "composite_score": 83.33,
+    "rs_excess": -9.72,
+    "last_price": 206.57
+  },
+  {
+    "date": "2026-06-29 00:00:00",
+    "symbol": "SBISILVER",
+    "direction": "short",
+    "composite_score": 83.02,
+    "rs_excess": -9.52,
+    "last_price": 211.86
+  },
+  {
+    "date": "2026-06-29 00:00:00",
+    "symbol": "HDFCSILVER",
+    "direction": "short",
+    "composite_score": 82.98,
+    "rs_excess": -9.74,
+    "last_price": 206.44
+  },
+  {
+    "date": "2026-06-30 00:00:00",
+    "symbol": "BAJAJHCARE",
+    "direction": "long",
+    "composite_score": 84.8,
+    "rs_excess": 12.96,
+    "last_price": 352.65
+  },
+  {
+    "date": "2026-06-30 00:00:00",
+    "symbol": "SKMEGGPROD",
+    "direction": "long",
+    "composite_score": 84.48,
+    "rs_excess": 28.43,
+    "last_price": 304.05
+  },
+  {
+    "date": "2026-06-30 00:00:00",
+    "symbol": "PERSISTENT",
+    "direction": "short",
+    "composite_score": 83.56,
+    "rs_excess": -10.71,
+    "last_price": 4298.5
+  },
+  {
+    "date": "2026-06-30 00:00:00",
+    "symbol": "ASTRAL",
+    "direction": "short",
+    "composite_score": 83.54,
+    "rs_excess": -11.01,
+    "last_price": 1368.0
+  },
+  {
+    "date": "2026-06-30 00:00:00",
+    "symbol": "SAKSOFT",
+    "direction": "long",
+    "composite_score": 80.42,
+    "rs_excess": 31.58,
+    "last_price": 183.77
+  },
+  {
+    "date": "2026-07-01 00:00:00",
+    "symbol": "SAKSOFT",
+    "direction": "long",
+    "composite_score": 83.62,
+    "rs_excess": 47.24,
+    "last_price": 206.71
+  },
+  {
+    "date": "2026-07-01 00:00:00",
+    "symbol": "RAMCOSYS",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 50.64,
+    "last_price": 836.05
+  },
+  {
+    "date": "2026-07-01 00:00:00",
+    "symbol": "GUFICBIO",
+    "direction": "long",
+    "composite_score": 81.69,
+    "rs_excess": 13.93,
+    "last_price": 407.05
+  },
+  {
+    "date": "2026-07-01 00:00:00",
+    "symbol": "EBGNG",
+    "direction": "long",
+    "composite_score": 81.62,
+    "rs_excess": 14.96,
+    "last_price": 625.45
+  },
+  {
+    "date": "2026-07-01 00:00:00",
+    "symbol": "JAGSNPHARM",
+    "direction": "long",
+    "composite_score": 80.92,
+    "rs_excess": 7.89,
+    "last_price": 238.1
+  },
+  {
+    "date": "2026-07-02 00:00:00",
+    "symbol": "KPITTECH",
+    "direction": "short",
+    "composite_score": 86.04,
+    "rs_excess": -25.54,
+    "last_price": 557.55
+  },
+  {
+    "date": "2026-07-02 00:00:00",
+    "symbol": "SETL",
+    "direction": "long",
+    "composite_score": 86.04,
+    "rs_excess": 35.96,
+    "last_price": 282.45
+  },
+  {
+    "date": "2026-07-02 00:00:00",
+    "symbol": "DIVGIITTS",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 18.09,
+    "last_price": 987.85
+  },
+  {
+    "date": "2026-07-02 00:00:00",
+    "symbol": "PAISALO",
+    "direction": "long",
+    "composite_score": 81.67,
+    "rs_excess": 18.46,
+    "last_price": 70.84
+  },
+  {
+    "date": "2026-07-02 00:00:00",
+    "symbol": "TATATECH",
+    "direction": "short",
+    "composite_score": 81.11,
+    "rs_excess": -12.47,
+    "last_price": 670.2
+  },
+  {
+    "date": "2026-07-03 00:00:00",
+    "symbol": "BHARATSE",
+    "direction": "long",
+    "composite_score": 83.65,
+    "rs_excess": 29.52,
+    "last_price": 240.76
+  },
+  {
+    "date": "2026-07-03 00:00:00",
+    "symbol": "EBGNG",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 26.21,
+    "last_price": 674.85
+  },
+  {
+    "date": "2026-07-03 00:00:00",
+    "symbol": "JTEKTINDIA",
+    "direction": "long",
+    "composite_score": 81.31,
+    "rs_excess": 12.03,
+    "last_price": 151.48
+  },
+  {
+    "date": "2026-07-03 00:00:00",
+    "symbol": "CEMPRO",
+    "direction": "long",
+    "composite_score": 81.2,
+    "rs_excess": 17.25,
+    "last_price": 1431.4
+  },
+  {
+    "date": "2026-07-03 00:00:00",
+    "symbol": "GRAUWEIL",
+    "direction": "long",
+    "composite_score": 79.4,
+    "rs_excess": 12.08,
+    "last_price": 82.12
+  },
+  {
+    "date": "2026-07-06 00:00:00",
+    "symbol": "IKIO",
+    "direction": "long",
+    "composite_score": 85.0,
+    "rs_excess": 28.76,
+    "last_price": 202.82
+  },
+  {
+    "date": "2026-07-06 00:00:00",
+    "symbol": "GVT&D",
+    "direction": "short",
+    "composite_score": 83.56,
+    "rs_excess": -13.61,
+    "last_price": 4401.5
+  },
+  {
+    "date": "2026-07-06 00:00:00",
+    "symbol": "ZENSARTECH",
+    "direction": "long",
+    "composite_score": 82.98,
+    "rs_excess": 14.97,
+    "last_price": 503.85
+  },
+  {
+    "date": "2026-07-06 00:00:00",
+    "symbol": "BLUSPRING",
+    "direction": "long",
+    "composite_score": 82.32,
+    "rs_excess": 13.62,
+    "last_price": 123.61
+  },
+  {
+    "date": "2026-07-06 00:00:00",
+    "symbol": "SUVEN",
+    "direction": "long",
+    "composite_score": 81.44,
+    "rs_excess": 21.69,
+    "last_price": 327.6
+  },
+  {
+    "date": "2026-07-07 00:00:00",
+    "symbol": "INDOFARM",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 15.31,
+    "last_price": 166.99
+  },
+  {
+    "date": "2026-07-07 00:00:00",
+    "symbol": "DIGITIDE",
+    "direction": "long",
+    "composite_score": 81.56,
+    "rs_excess": 39.79,
+    "last_price": 120.55
+  },
+  {
+    "date": "2026-07-07 00:00:00",
+    "symbol": "MOSCHIP",
+    "direction": "long",
+    "composite_score": 80.04,
+    "rs_excess": 12.95,
+    "last_price": 231.99
+  },
+  {
+    "date": "2026-07-07 00:00:00",
+    "symbol": "KIRLOSENG",
+    "direction": "short",
+    "composite_score": 79.89,
+    "rs_excess": -9.21,
+    "last_price": 2265.6
+  },
+  {
+    "date": "2026-07-07 00:00:00",
+    "symbol": "ADVENTHTL",
+    "direction": "long",
+    "composite_score": 79.56,
+    "rs_excess": 4.6,
+    "last_price": 151.24
+  },
+  {
+    "date": "2026-07-08 00:00:00",
+    "symbol": "RITES",
+    "direction": "long",
+    "composite_score": 86.25,
+    "rs_excess": 12.89,
+    "last_price": 235.43
+  },
+  {
+    "date": "2026-07-08 00:00:00",
+    "symbol": "CEMPRO",
+    "direction": "long",
+    "composite_score": 81.61,
+    "rs_excess": 12.8,
+    "last_price": 1494.0
+  },
+  {
+    "date": "2026-07-08 00:00:00",
+    "symbol": "TRENT",
+    "direction": "short",
+    "composite_score": 81.49,
+    "rs_excess": -13.04,
+    "last_price": 2927.8
+  },
+  {
+    "date": "2026-07-08 00:00:00",
+    "symbol": "CUPID",
+    "direction": "long",
+    "composite_score": 81.15,
+    "rs_excess": 14.18,
+    "last_price": 221.11
+  },
+  {
+    "date": "2026-07-08 00:00:00",
+    "symbol": "BLUEJET",
+    "direction": "long",
+    "composite_score": 80.93,
+    "rs_excess": 8.04,
+    "last_price": 579.15
+  },
+  {
+    "date": "2026-07-09 00:00:00",
+    "symbol": "ITDC",
+    "direction": "long",
+    "composite_score": 83.65,
+    "rs_excess": 24.12,
+    "last_price": 723.4
+  },
+  {
+    "date": "2026-07-09 00:00:00",
+    "symbol": "SHAREINDIA",
+    "direction": "long",
+    "composite_score": 81.93,
+    "rs_excess": 28.95,
+    "last_price": 177.72
+  },
+  {
+    "date": "2026-07-09 00:00:00",
+    "symbol": "IOLCP",
+    "direction": "long",
+    "composite_score": 79.67,
+    "rs_excess": 14.03,
+    "last_price": 167.11
+  },
+  {
+    "date": "2026-07-09 00:00:00",
+    "symbol": "AEGISVOPAK",
+    "direction": "long",
+    "composite_score": 79.45,
+    "rs_excess": 17.97,
+    "last_price": 276.61
+  },
+  {
+    "date": "2026-07-09 00:00:00",
+    "symbol": "UNICHEMLAB",
+    "direction": "long",
+    "composite_score": 79.42,
+    "rs_excess": 21.2,
+    "last_price": 572.7
+  },
+  {
+    "date": "2026-07-10 00:00:00",
+    "symbol": "ITDC",
+    "direction": "long",
+    "composite_score": 85.62,
+    "rs_excess": 23.69,
+    "last_price": 728.1
+  },
+  {
+    "date": "2026-07-10 00:00:00",
+    "symbol": "UNICHEMLAB",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 40.6,
+    "last_price": 650.6
+  },
+  {
+    "date": "2026-07-10 00:00:00",
+    "symbol": "SHAREINDIA",
+    "direction": "long",
+    "composite_score": 81.74,
+    "rs_excess": 29.68,
+    "last_price": 179.03
+  },
+  {
+    "date": "2026-07-10 00:00:00",
+    "symbol": "KALYANKJIL",
+    "direction": "long",
+    "composite_score": 81.26,
+    "rs_excess": 15.03,
+    "last_price": 443.0
+  },
+  {
+    "date": "2026-07-10 00:00:00",
+    "symbol": "AEQUS",
+    "direction": "long",
+    "composite_score": 81.16,
+    "rs_excess": 12.87,
+    "last_price": 258.07
+  },
+  {
+    "date": "2026-07-13 00:00:00",
+    "symbol": "BLUEJET",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 12.5,
+    "last_price": 624.05
+  },
+  {
+    "date": "2026-07-13 00:00:00",
+    "symbol": "MASTERTR",
+    "direction": "long",
+    "composite_score": 82.89,
+    "rs_excess": 22.51,
+    "last_price": 93.21
+  },
+  {
+    "date": "2026-07-13 00:00:00",
+    "symbol": "INA",
+    "direction": "long",
+    "composite_score": 81.83,
+    "rs_excess": 10.0,
+    "last_price": 124.93
+  },
+  {
+    "date": "2026-07-13 00:00:00",
+    "symbol": "MUTHOOTMF",
+    "direction": "long",
+    "composite_score": 80.94,
+    "rs_excess": 6.49,
+    "last_price": 235.26
+  },
+  {
+    "date": "2026-07-13 00:00:00",
+    "symbol": "CUPID",
+    "direction": "long",
+    "composite_score": 80.28,
+    "rs_excess": 7.0,
+    "last_price": 212.24
+  },
+  {
+    "date": "2026-07-14 00:00:00",
+    "symbol": "FINOPB",
+    "direction": "long",
+    "composite_score": 86.38,
+    "rs_excess": 20.14,
+    "last_price": 161.33
+  },
+  {
+    "date": "2026-07-14 00:00:00",
+    "symbol": "JUSTDIAL",
+    "direction": "long",
+    "composite_score": 85.0,
+    "rs_excess": 24.55,
+    "last_price": 676.85
+  },
+  {
+    "date": "2026-07-14 00:00:00",
+    "symbol": "MOBIKWIK",
+    "direction": "long",
+    "composite_score": 80.29,
+    "rs_excess": 13.51,
+    "last_price": 225.29
+  },
+  {
+    "date": "2026-07-14 00:00:00",
+    "symbol": "MUTHOOTMF",
+    "direction": "long",
+    "composite_score": 79.84,
+    "rs_excess": 15.29,
+    "last_price": 246.31
+  },
+  {
+    "date": "2026-07-14 00:00:00",
+    "symbol": "J&KBANK",
+    "direction": "long",
+    "composite_score": 79.07,
+    "rs_excess": 12.43,
+    "last_price": 182.6
+  },
+  {
+    "date": "2026-07-15 00:00:00",
+    "symbol": "JUSTDIAL",
+    "direction": "long",
+    "composite_score": 83.59,
+    "rs_excess": 43.8,
+    "last_price": 790.15
+  },
+  {
+    "date": "2026-07-15 00:00:00",
+    "symbol": "NUVOCO",
+    "direction": "long",
+    "composite_score": 81.2,
+    "rs_excess": 9.68,
+    "last_price": 341.4
+  },
+  {
+    "date": "2026-07-15 00:00:00",
+    "symbol": "FINOPB",
+    "direction": "long",
+    "composite_score": 80.79,
+    "rs_excess": 31.82,
+    "last_price": 176.4
+  },
+  {
+    "date": "2026-07-15 00:00:00",
+    "symbol": "LANDMARK",
+    "direction": "long",
+    "composite_score": 80.54,
+    "rs_excess": 15.93,
+    "last_price": 496.4
+  },
+  {
+    "date": "2026-07-15 00:00:00",
+    "symbol": "PDSL",
+    "direction": "long",
+    "composite_score": 79.92,
+    "rs_excess": 7.6,
+    "last_price": 382.25
+  },
+  {
+    "date": "2026-07-16 00:00:00",
+    "symbol": "LANDMARK",
+    "direction": "long",
+    "composite_score": 83.75,
+    "rs_excess": 20.75,
+    "last_price": 514.25
+  },
+  {
+    "date": "2026-07-16 00:00:00",
+    "symbol": "FILATEX",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 20.35,
+    "last_price": 70.34
+  },
+  {
+    "date": "2026-07-16 00:00:00",
+    "symbol": "JNKINDIA",
+    "direction": "long",
+    "composite_score": 81.01,
+    "rs_excess": 16.61,
+    "last_price": 545.95
+  },
+  {
+    "date": "2026-07-16 00:00:00",
+    "symbol": "NUVOCO",
+    "direction": "long",
+    "composite_score": 80.85,
+    "rs_excess": 20.97,
+    "last_price": 377.25
+  },
+  {
+    "date": "2026-07-16 00:00:00",
+    "symbol": "ORIENTTECH",
+    "direction": "long",
+    "composite_score": 80.31,
+    "rs_excess": 14.02,
+    "last_price": 284.0
+  },
+  {
+    "date": "2026-07-17 00:00:00",
+    "symbol": "MRPL",
+    "direction": "long",
+    "composite_score": 85.58,
+    "rs_excess": 15.34,
+    "last_price": 173.33
+  },
+  {
+    "date": "2026-07-17 00:00:00",
+    "symbol": "PFOCUS",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 18.51,
+    "last_price": 290.84
+  },
+  {
+    "date": "2026-07-17 00:00:00",
+    "symbol": "ICICIGI",
+    "direction": "short",
+    "composite_score": 83.1,
+    "rs_excess": -9.98,
+    "last_price": 1623.8
+  },
+  {
+    "date": "2026-07-17 00:00:00",
+    "symbol": "SSWL",
+    "direction": "long",
+    "composite_score": 81.62,
+    "rs_excess": 10.12,
+    "last_price": 265.44
+  },
+  {
+    "date": "2026-07-17 00:00:00",
+    "symbol": "EMMVEE",
+    "direction": "long",
+    "composite_score": 80.77,
+    "rs_excess": 8.78,
+    "last_price": 365.35
+  },
+  {
+    "date": "2026-07-20 00:00:00",
+    "symbol": "LANDMARK",
+    "direction": "long",
+    "composite_score": 80.95,
+    "rs_excess": 23.59,
+    "last_price": 526.25
+  },
+  {
+    "date": "2026-07-20 00:00:00",
+    "symbol": "BECTORFOOD",
+    "direction": "long",
+    "composite_score": 80.41,
+    "rs_excess": 10.85,
+    "last_price": 188.63
+  },
+  {
+    "date": "2026-07-20 00:00:00",
+    "symbol": "TECHM",
+    "direction": "long",
+    "composite_score": 78.28,
+    "rs_excess": 7.59,
+    "last_price": 1572.9
+  },
+  {
+    "date": "2026-07-20 00:00:00",
+    "symbol": "BHEL",
+    "direction": "long",
+    "composite_score": 77.64,
+    "rs_excess": 6.24,
+    "last_price": 422.0
+  },
+  {
+    "date": "2026-07-20 00:00:00",
+    "symbol": "RELAXO",
+    "direction": "long",
+    "composite_score": 77.38,
+    "rs_excess": 10.94,
+    "last_price": 439.95
+  },
+  {
+    "date": "2026-07-21 00:00:00",
+    "symbol": "ECLERX",
+    "direction": "long",
+    "composite_score": 81.69,
+    "rs_excess": 12.79,
+    "last_price": 1877.5
+  },
+  {
+    "date": "2026-07-21 00:00:00",
+    "symbol": "BEPL",
+    "direction": "long",
+    "composite_score": 80.3,
+    "rs_excess": 18.08,
+    "last_price": 127.77
+  },
+  {
+    "date": "2026-07-21 00:00:00",
+    "symbol": "JAYBARMARU",
+    "direction": "short",
+    "composite_score": 80.13,
+    "rs_excess": -14.72,
+    "last_price": 168.36
+  },
+  {
+    "date": "2026-07-21 00:00:00",
+    "symbol": "MBAPL",
+    "direction": "long",
+    "composite_score": 79.6,
+    "rs_excess": 9.45,
+    "last_price": 145.55
+  },
+  {
+    "date": "2026-07-21 00:00:00",
+    "symbol": "GANDHAR",
+    "direction": "long",
+    "composite_score": 78.54,
+    "rs_excess": 10.66,
+    "last_price": 228.32
+  },
+  {
+    "date": "2026-07-22 00:00:00",
+    "symbol": "KARURVYSYA",
+    "direction": "long",
+    "composite_score": 86.04,
+    "rs_excess": 13.04,
+    "last_price": 340.3
+  },
+  {
+    "date": "2026-07-22 00:00:00",
+    "symbol": "BLUESTONE",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 19.42,
+    "last_price": 728.65
+  },
+  {
+    "date": "2026-07-22 00:00:00",
+    "symbol": "AYE",
+    "direction": "long",
+    "composite_score": 80.41,
+    "rs_excess": 11.54,
+    "last_price": 189.13
+  },
+  {
+    "date": "2026-07-22 00:00:00",
+    "symbol": "SHK",
+    "direction": "long",
+    "composite_score": 79.49,
+    "rs_excess": 10.23,
+    "last_price": 142.82
+  },
+  {
+    "date": "2026-07-22 00:00:00",
+    "symbol": "ARIS",
+    "direction": "long",
+    "composite_score": 78.95,
+    "rs_excess": 10.45,
+    "last_price": 118.94
+  },
+  {
+    "date": "2026-07-23 00:00:00",
+    "symbol": "HSCL",
+    "direction": "long",
+    "composite_score": 83.84,
+    "rs_excess": 13.06,
+    "last_price": 768.25
+  },
+  {
+    "date": "2026-07-23 00:00:00",
+    "symbol": "M&MFIN",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 16.71,
+    "last_price": 378.15
+  },
+  {
+    "date": "2026-07-23 00:00:00",
+    "symbol": "BANDHANBNK",
+    "direction": "short",
+    "composite_score": 83.54,
+    "rs_excess": -19.53,
+    "last_price": 173.5
+  },
+  {
+    "date": "2026-07-23 00:00:00",
+    "symbol": "MARKSANS",
+    "direction": "short",
+    "composite_score": 83.02,
+    "rs_excess": -12.22,
+    "last_price": 241.1
+  },
+  {
+    "date": "2026-07-23 00:00:00",
+    "symbol": "HUHTAMAKI",
+    "direction": "long",
+    "composite_score": 81.38,
+    "rs_excess": 31.69,
+    "last_price": 291.98
+  },
+  {
+    "date": "2026-07-24 00:00:00",
+    "symbol": "SOTL",
+    "direction": "long",
+    "composite_score": 83.58,
+    "rs_excess": 12.02,
+    "last_price": 645.1
+  },
+  {
+    "date": "2026-07-24 00:00:00",
+    "symbol": "GANDHAR",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 34.5,
+    "last_price": 281.95
+  },
+  {
+    "date": "2026-07-24 00:00:00",
+    "symbol": "UFLEX",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 11.19,
+    "last_price": 485.2
+  },
+  {
+    "date": "2026-07-24 00:00:00",
+    "symbol": "DRREDDY",
+    "direction": "short",
+    "composite_score": 80.77,
+    "rs_excess": -3.9,
+    "last_price": 1166.3
+  },
+  {
+    "date": "2026-07-24 00:00:00",
+    "symbol": "TANLA",
+    "direction": "long",
+    "composite_score": 80.61,
+    "rs_excess": 5.98,
+    "last_price": 618.5
+  },
+  {
+    "date": "2026-07-27 00:00:00",
+    "symbol": "UJJIVANSFB",
+    "direction": "long",
+    "composite_score": 85.05,
+    "rs_excess": 11.33,
+    "last_price": 70.72
+  },
+  {
+    "date": "2026-07-27 00:00:00",
+    "symbol": "GANDHAR",
+    "direction": "long",
+    "composite_score": 83.35,
+    "rs_excess": 38.17,
+    "last_price": 282.46
+  },
+  {
+    "date": "2026-07-27 00:00:00",
+    "symbol": "GODIGIT",
+    "direction": "short",
+    "composite_score": 81.13,
+    "rs_excess": -6.79,
+    "last_price": 256.2
+  },
+  {
+    "date": "2026-07-27 00:00:00",
+    "symbol": "HUHTAMAKI",
+    "direction": "long",
+    "composite_score": 79.79,
+    "rs_excess": 36.54,
+    "last_price": 318.68
+  },
+  {
+    "date": "2026-07-27 00:00:00",
+    "symbol": "BLUESTONE",
+    "direction": "long",
+    "composite_score": 79.6,
+    "rs_excess": 31.27,
+    "last_price": 772.4
+  },
+  {
+    "date": "2026-07-28 00:00:00",
+    "symbol": "LXCHEM",
+    "direction": "long",
+    "composite_score": 85.05,
+    "rs_excess": 10.35,
+    "last_price": 193.05
+  },
+  {
+    "date": "2026-07-28 00:00:00",
+    "symbol": "TRIVENI",
+    "direction": "short",
+    "composite_score": 84.54,
+    "rs_excess": -40.07,
+    "last_price": 240.0
+  },
+  {
+    "date": "2026-07-28 00:00:00",
+    "symbol": "BLUESTONE",
+    "direction": "long",
+    "composite_score": 83.63,
+    "rs_excess": 35.46,
+    "last_price": 820.75
+  },
+  {
+    "date": "2026-07-28 00:00:00",
+    "symbol": "MOSCHIP",
+    "direction": "short",
+    "composite_score": 83.24,
+    "rs_excess": -9.9,
+    "last_price": 208.3
+  },
+  {
+    "date": "2026-07-28 00:00:00",
+    "symbol": "RKFORGE",
+    "direction": "long",
+    "composite_score": 81.13,
+    "rs_excess": 12.26,
+    "last_price": 625.45
+  },
+  {
+    "date": "2026-07-29 00:00:00",
+    "symbol": "COFORGE",
+    "direction": "long",
+    "composite_score": 85.11,
+    "rs_excess": 13.69,
+    "last_price": 1686.0
+  },
+  {
+    "date": "2026-07-29 00:00:00",
+    "symbol": "RRKABEL",
+    "direction": "long",
+    "composite_score": 83.28,
+    "rs_excess": 10.71,
+    "last_price": 2576.9
+  },
+  {
+    "date": "2026-07-29 00:00:00",
+    "symbol": "LODHA",
+    "direction": "long",
+    "composite_score": 82.66,
+    "rs_excess": 9.38,
+    "last_price": 1301.4
+  },
+  {
+    "date": "2026-07-29 00:00:00",
+    "symbol": "CEMPRO",
+    "direction": "short",
+    "composite_score": 82.47,
+    "rs_excess": -17.39,
+    "last_price": 1340.8
+  },
+  {
+    "date": "2026-07-29 00:00:00",
+    "symbol": "CGCL",
+    "direction": "short",
+    "composite_score": 80.39,
+    "rs_excess": -7.74,
+    "last_price": 228.22
+  },
+  {
+    "date": "2026-07-30 00:00:00",
+    "symbol": "ASIANTILES",
+    "direction": "long",
+    "composite_score": 83.59,
+    "rs_excess": 38.76,
+    "last_price": 60.71
+  },
+  {
+    "date": "2026-07-30 00:00:00",
+    "symbol": "PARADEEP",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 11.31,
+    "last_price": 156.54
+  },
+  {
+    "date": "2026-07-30 00:00:00",
+    "symbol": "SHK",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 16.63,
+    "last_price": 163.44
+  },
+  {
+    "date": "2026-07-30 00:00:00",
+    "symbol": "SKMEGGPROD",
+    "direction": "short",
+    "composite_score": 83.43,
+    "rs_excess": -13.97,
+    "last_price": 273.5
+  },
+  {
+    "date": "2026-07-30 00:00:00",
+    "symbol": "INFY",
+    "direction": "long",
+    "composite_score": 80.83,
+    "rs_excess": 8.78,
+    "last_price": 1155.6
+  },
+  {
+    "date": "2026-07-31 00:00:00",
+    "symbol": "REDINGTON",
+    "direction": "long",
+    "composite_score": 85.05,
+    "rs_excess": 16.79,
+    "last_price": 310.95
+  },
+  {
+    "date": "2026-07-31 00:00:00",
+    "symbol": "63MOONS",
+    "direction": "long",
+    "composite_score": 78.5,
+    "rs_excess": 18.49,
+    "last_price": 847.35
+  },
+  {
+    "date": "2026-07-31 00:00:00",
+    "symbol": "COFORGE",
+    "direction": "long",
+    "composite_score": 78.47,
+    "rs_excess": 19.45,
+    "last_price": 1746.9
+  },
+  {
+    "date": "2026-07-31 00:00:00",
+    "symbol": "GODIGIT",
+    "direction": "short",
+    "composite_score": 77.66,
+    "rs_excess": -11.1,
+    "last_price": 254.95
+  },
+  {
+    "date": "2026-07-31 00:00:00",
+    "symbol": "FSL",
+    "direction": "long",
+    "composite_score": 77.66,
+    "rs_excess": 15.19,
+    "last_price": 299.62
+  },
+  {
+    "date": "2026-08-03 00:00:00",
+    "symbol": "BAJFINANCE",
+    "direction": "long",
+    "composite_score": 83.17,
+    "rs_excess": 10.09,
+    "last_price": 1141.2
+  },
+  {
+    "date": "2026-08-03 00:00:00",
+    "symbol": "HYUNDAI",
+    "direction": "long",
+    "composite_score": 82.65,
+    "rs_excess": 9.09,
+    "last_price": 2180.7
+  },
+  {
+    "date": "2026-08-03 00:00:00",
+    "symbol": "SATIN",
+    "direction": "short",
+    "composite_score": 79.38,
+    "rs_excess": -13.4,
+    "last_price": 239.81
+  },
+  {
+    "date": "2026-08-03 00:00:00",
+    "symbol": "DEEPINDS",
+    "direction": "long",
+    "composite_score": 78.74,
+    "rs_excess": 21.87,
+    "last_price": 596.9
+  },
+  {
+    "date": "2026-08-03 00:00:00",
+    "symbol": "EBGNG",
+    "direction": "short",
+    "composite_score": 77.82,
+    "rs_excess": -10.23,
+    "last_price": 528.65
+  },
+  {
+    "date": "2026-08-04 00:00:00",
+    "symbol": "GAEL",
+    "direction": "long",
+    "composite_score": 85.05,
+    "rs_excess": 11.61,
+    "last_price": 180.68
+  },
+  {
+    "date": "2026-08-04 00:00:00",
+    "symbol": "SHADOWFAX",
+    "direction": "long",
+    "composite_score": 83.29,
+    "rs_excess": 11.63,
+    "last_price": 240.78
+  },
+  {
+    "date": "2026-08-04 00:00:00",
+    "symbol": "URBANCO",
+    "direction": "long",
+    "composite_score": 82.6,
+    "rs_excess": 8.85,
+    "last_price": 146.19
+  },
+  {
+    "date": "2026-08-04 00:00:00",
+    "symbol": "DEEPINDS",
+    "direction": "long",
+    "composite_score": 82.54,
+    "rs_excess": 22.48,
+    "last_price": 649.3
+  },
+  {
+    "date": "2026-08-04 00:00:00",
+    "symbol": "ASHOKLEY",
+    "direction": "long",
+    "composite_score": 81.75,
+    "rs_excess": 9.33,
+    "last_price": 174.55
+  },
+  {
+    "date": "2026-08-05 00:00:00",
+    "symbol": "DALMIASUG",
+    "direction": "long",
+    "composite_score": 83.59,
+    "rs_excess": 14.5,
+    "last_price": 412.75
+  },
+  {
+    "date": "2026-08-05 00:00:00",
+    "symbol": "RBA",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 24.73,
+    "last_price": 84.91
+  },
+  {
+    "date": "2026-08-05 00:00:00",
+    "symbol": "ATHERENERG",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 18.04,
+    "last_price": 1450.4
+  },
+  {
+    "date": "2026-08-05 00:00:00",
+    "symbol": "LICI",
+    "direction": "short",
+    "composite_score": 82.54,
+    "rs_excess": -11.02,
+    "last_price": 391.3
+  },
+  {
+    "date": "2026-08-05 00:00:00",
+    "symbol": "NAZARA",
+    "direction": "long",
+    "composite_score": 80.34,
+    "rs_excess": 12.34,
+    "last_price": 349.5
+  },
+  {
+    "date": "2026-08-06 00:00:00",
+    "symbol": "RPTECH",
+    "direction": "long",
+    "composite_score": 86.04,
+    "rs_excess": 15.17,
+    "last_price": 902.85
+  },
+  {
+    "date": "2026-08-06 00:00:00",
+    "symbol": "SAURASHCEM",
+    "direction": "long",
+    "composite_score": 83.59,
+    "rs_excess": 17.41,
+    "last_price": 68.71
+  },
+  {
+    "date": "2026-08-06 00:00:00",
+    "symbol": "MOREPENLAB",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 31.47,
+    "last_price": 76.95
+  },
+  {
+    "date": "2026-08-06 00:00:00",
+    "symbol": "TEMBO",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 16.13,
+    "last_price": 65.9
+  },
+  {
+    "date": "2026-08-06 00:00:00",
+    "symbol": "PTC",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 16.66,
+    "last_price": 175.92
+  },
+  {
+    "date": "2026-08-07 00:00:00",
+    "symbol": "SOTL",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 31.65,
+    "last_price": 781.95
+  },
+  {
+    "date": "2026-08-07 00:00:00",
+    "symbol": "IONEXCHANG",
+    "direction": "short",
+    "composite_score": 82.54,
+    "rs_excess": -8.76,
+    "last_price": 386.4
+  },
+  {
+    "date": "2026-08-07 00:00:00",
+    "symbol": "SHILPAMED",
+    "direction": "long",
+    "composite_score": 81.55,
+    "rs_excess": 21.22,
+    "last_price": 738.8
+  },
+  {
+    "date": "2026-08-07 00:00:00",
+    "symbol": "GENESYS",
+    "direction": "long",
+    "composite_score": 81.55,
+    "rs_excess": 24.24,
+    "last_price": 229.0
+  },
+  {
+    "date": "2026-08-07 00:00:00",
+    "symbol": "PACEDIGITK",
+    "direction": "short",
+    "composite_score": 81.05,
+    "rs_excess": -9.39,
+    "last_price": 186.92
+  },
+  {
+    "date": "2026-08-10 00:00:00",
+    "symbol": "MUTHOOTMF",
+    "direction": "short",
+    "composite_score": 83.55,
+    "rs_excess": -13.58,
+    "last_price": 214.02
+  },
+  {
+    "date": "2026-08-10 00:00:00",
+    "symbol": "SBCL",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 22.11,
+    "last_price": 920.9
+  },
+  {
+    "date": "2026-08-10 00:00:00",
+    "symbol": "IXIGO",
+    "direction": "short",
+    "composite_score": 83.54,
+    "rs_excess": -11.58,
+    "last_price": 176.25
+  },
+  {
+    "date": "2026-08-10 00:00:00",
+    "symbol": "ENRIN",
+    "direction": "long",
+    "composite_score": 83.33,
+    "rs_excess": 12.17,
+    "last_price": 3648.8
+  },
+  {
+    "date": "2026-08-10 00:00:00",
+    "symbol": "LLOYDSENGG",
+    "direction": "long",
+    "composite_score": 82.65,
+    "rs_excess": 8.5,
+    "last_price": 96.88
+  },
+  {
+    "date": "2026-08-11 00:00:00",
+    "symbol": "CEMPRO",
+    "direction": "short",
+    "composite_score": 85.69,
+    "rs_excess": -6.34,
+    "last_price": 1266.4
+  },
+  {
+    "date": "2026-08-11 00:00:00",
+    "symbol": "ANDHRSUGAR",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 17.73,
+    "last_price": 99.98
+  },
+  {
+    "date": "2026-08-11 00:00:00",
+    "symbol": "EMIL",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 38.39,
+    "last_price": 180.77
+  },
+  {
+    "date": "2026-08-11 00:00:00",
+    "symbol": "SKYGOLD",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 13.45,
+    "last_price": 779.6
+  },
+  {
+    "date": "2026-08-11 00:00:00",
+    "symbol": "SANGHVIMOV",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 17.66,
+    "last_price": 511.4
+  },
+  {
+    "date": "2026-08-12 00:00:00",
+    "symbol": "AARTIPHARM",
+    "direction": "long",
+    "composite_score": 83.65,
+    "rs_excess": 28.65,
+    "last_price": 883.7
+  },
+  {
+    "date": "2026-08-12 00:00:00",
+    "symbol": "GLAND",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 13.79,
+    "last_price": 2924.4
+  },
+  {
+    "date": "2026-08-12 00:00:00",
+    "symbol": "INDSWFTLAB",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 24.24,
+    "last_price": 284.68
+  },
+  {
+    "date": "2026-08-12 00:00:00",
+    "symbol": "SBCL",
+    "direction": "long",
+    "composite_score": 82.66,
+    "rs_excess": 34.16,
+    "last_price": 1039.2
+  },
+  {
+    "date": "2026-08-12 00:00:00",
+    "symbol": "KOLTEPATIL",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 30.38,
+    "last_price": 516.6
+  },
+  {
+    "date": "2026-08-13 00:00:00",
+    "symbol": "CAMLINFINE",
+    "direction": "short",
+    "composite_score": 86.05,
+    "rs_excess": -15.83,
+    "last_price": 107.94
+  },
+  {
+    "date": "2026-08-13 00:00:00",
+    "symbol": "SENCO",
+    "direction": "short",
+    "composite_score": 85.31,
+    "rs_excess": -12.62,
+    "last_price": 345.65
+  },
+  {
+    "date": "2026-08-13 00:00:00",
+    "symbol": "NATIONALUM",
+    "direction": "long",
+    "composite_score": 85.05,
+    "rs_excess": 11.0,
+    "last_price": 420.0
+  },
+  {
+    "date": "2026-08-13 00:00:00",
+    "symbol": "GODREJCP",
+    "direction": "short",
+    "composite_score": 85.04,
+    "rs_excess": -14.11,
+    "last_price": 910.0
+  },
+  {
+    "date": "2026-08-13 00:00:00",
+    "symbol": "FINCABLES",
+    "direction": "long",
+    "composite_score": 84.05,
+    "rs_excess": 28.34,
+    "last_price": 1280.05
+  },
+  {
+    "date": "2026-08-14 00:00:00",
+    "symbol": "INA",
+    "direction": "short",
+    "composite_score": 85.0,
+    "rs_excess": -12.61,
+    "last_price": 97.16
+  },
+  {
+    "date": "2026-08-14 00:00:00",
+    "symbol": "RSL",
+    "direction": "long",
+    "composite_score": 84.26,
+    "rs_excess": 10.08,
+    "last_price": 166.77
+  },
+  {
+    "date": "2026-08-14 00:00:00",
+    "symbol": "ASTRAL",
+    "direction": "long",
+    "composite_score": 83.97,
+    "rs_excess": 11.38,
+    "last_price": 1592.0
+  },
+  {
+    "date": "2026-08-14 00:00:00",
+    "symbol": "GOODLUCK",
+    "direction": "short",
+    "composite_score": 83.71,
+    "rs_excess": -16.25,
+    "last_price": 423.3
+  },
+  {
+    "date": "2026-08-14 00:00:00",
+    "symbol": "MUNJALAU",
+    "direction": "long",
+    "composite_score": 83.58,
+    "rs_excess": 16.13,
+    "last_price": 119.37
+  },
+  {
+    "date": "2026-08-17 00:00:00",
+    "symbol": "LGEINDIA",
+    "direction": "long",
+    "composite_score": 84.75,
+    "rs_excess": 9.86,
+    "last_price": 1729.7
+  },
+  {
+    "date": "2026-08-17 00:00:00",
+    "symbol": "APEX",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 14.0,
+    "last_price": 426.35
+  },
+  {
+    "date": "2026-08-17 00:00:00",
+    "symbol": "MUNJALAU",
+    "direction": "long",
+    "composite_score": 81.75,
+    "rs_excess": 18.47,
+    "last_price": 120.53
+  },
+  {
+    "date": "2026-08-17 00:00:00",
+    "symbol": "SHANTIGOLD",
+    "direction": "long",
+    "composite_score": 80.89,
+    "rs_excess": 11.39,
+    "last_price": 247.66
+  },
+  {
+    "date": "2026-08-17 00:00:00",
+    "symbol": "MARKSANS",
+    "direction": "long",
+    "composite_score": 80.52,
+    "rs_excess": 22.43,
+    "last_price": 333.0
+  },
+  {
+    "date": "2026-08-18 00:00:00",
+    "symbol": "ZAGGLE",
+    "direction": "short",
+    "composite_score": 86.04,
+    "rs_excess": -20.12,
+    "last_price": 160.48
+  },
+  {
+    "date": "2026-08-18 00:00:00",
+    "symbol": "UFLEX",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 20.21,
+    "last_price": 586.05
+  },
+  {
+    "date": "2026-08-18 00:00:00",
+    "symbol": "SETL",
+    "direction": "long",
+    "composite_score": 83.18,
+    "rs_excess": 10.0,
+    "last_price": 308.7
+  },
+  {
+    "date": "2026-08-18 00:00:00",
+    "symbol": "INDSWFTLAB",
+    "direction": "long",
+    "composite_score": 82.11,
+    "rs_excess": 33.15,
+    "last_price": 313.02
+  },
+  {
+    "date": "2026-08-18 00:00:00",
+    "symbol": "GENESYS",
+    "direction": "short",
+    "composite_score": 81.26,
+    "rs_excess": -21.4,
+    "last_price": 170.85
+  },
+  {
+    "date": "2026-08-19 00:00:00",
+    "symbol": "UFLEX",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 24.68,
+    "last_price": 613.3
+  },
+  {
+    "date": "2026-08-19 00:00:00",
+    "symbol": "STYLEBAAZA",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 15.21,
+    "last_price": 402.65
+  },
+  {
+    "date": "2026-08-19 00:00:00",
+    "symbol": "INDSWFTLAB",
+    "direction": "long",
+    "composite_score": 78.79,
+    "rs_excess": 23.14,
+    "last_price": 346.87
+  },
+  {
+    "date": "2026-08-19 00:00:00",
+    "symbol": "JYOTICNC",
+    "direction": "long",
+    "composite_score": 78.22,
+    "rs_excess": 16.72,
+    "last_price": 929.2
+  },
+  {
+    "date": "2026-08-19 00:00:00",
+    "symbol": "GENESYS",
+    "direction": "short",
+    "composite_score": 77.96,
+    "rs_excess": -13.7,
+    "last_price": 182.3
+  },
+  {
+    "date": "2026-08-20 00:00:00",
+    "symbol": "PRABHA",
+    "direction": "long",
+    "composite_score": 83.88,
+    "rs_excess": 27.43,
+    "last_price": 199.79
+  },
+  {
+    "date": "2026-08-20 00:00:00",
+    "symbol": "STYLEBAAZA",
+    "direction": "long",
+    "composite_score": 82.97,
+    "rs_excess": 21.8,
+    "last_price": 422.75
+  },
+  {
+    "date": "2026-08-20 00:00:00",
+    "symbol": "ORIENTHOT",
+    "direction": "long",
+    "composite_score": 79.06,
+    "rs_excess": 11.71,
+    "last_price": 139.5
+  },
+  {
+    "date": "2026-08-20 00:00:00",
+    "symbol": "UFLEX",
+    "direction": "long",
+    "composite_score": 78.92,
+    "rs_excess": 26.22,
+    "last_price": 620.95
+  },
+  {
+    "date": "2026-08-20 00:00:00",
+    "symbol": "ZAGGLE",
+    "direction": "short",
+    "composite_score": 78.19,
+    "rs_excess": -6.3,
+    "last_price": 186.04
+  },
+  {
+    "date": "2026-08-21 00:00:00",
+    "symbol": "PRABHA",
+    "direction": "long",
+    "composite_score": 85.0,
+    "rs_excess": 36.87,
+    "last_price": 212.89
+  },
+  {
+    "date": "2026-08-21 00:00:00",
+    "symbol": "BALRAMCHIN",
+    "direction": "long",
+    "composite_score": 81.86,
+    "rs_excess": 24.47,
+    "last_price": 767.1
+  },
+  {
+    "date": "2026-08-21 00:00:00",
+    "symbol": "DHAMPURSUG",
+    "direction": "long",
+    "composite_score": 80.2,
+    "rs_excess": 18.0,
+    "last_price": 189.76
+  },
+  {
+    "date": "2026-08-21 00:00:00",
+    "symbol": "STYLEBAAZA",
+    "direction": "long",
+    "composite_score": 80.12,
+    "rs_excess": 27.03,
+    "last_price": 439.6
+  },
+  {
+    "date": "2026-08-21 00:00:00",
+    "symbol": "MANALIPETC",
+    "direction": "long",
+    "composite_score": 79.86,
+    "rs_excess": 13.6,
+    "last_price": 77.73
+  },
+  {
+    "date": "2026-08-24 00:00:00",
+    "symbol": "URBANCO",
+    "direction": "long",
+    "composite_score": 83.57,
+    "rs_excess": 10.31,
+    "last_price": 158.6
+  },
+  {
+    "date": "2026-08-24 00:00:00",
+    "symbol": "WELCORP",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 23.88,
+    "last_price": 2311.9
+  },
+  {
+    "date": "2026-08-24 00:00:00",
+    "symbol": "DHAMPURSUG",
+    "direction": "long",
+    "composite_score": 82.57,
+    "rs_excess": 15.57,
+    "last_price": 185.23
+  },
+  {
+    "date": "2026-08-24 00:00:00",
+    "symbol": "BALRAMCHIN",
+    "direction": "long",
+    "composite_score": 81.99,
+    "rs_excess": 17.19,
+    "last_price": 729.35
+  },
+  {
+    "date": "2026-08-24 00:00:00",
+    "symbol": "DWARKESH",
+    "direction": "long",
+    "composite_score": 80.92,
+    "rs_excess": 25.33,
+    "last_price": 53.63
+  },
+  {
+    "date": "2026-08-25 00:00:00",
+    "symbol": "BALUFORGE",
+    "direction": "long",
+    "composite_score": 83.61,
+    "rs_excess": 23.43,
+    "last_price": 632.2
+  },
+  {
+    "date": "2026-08-25 00:00:00",
+    "symbol": "JAYNECOIND",
+    "direction": "long",
+    "composite_score": 82.65,
+    "rs_excess": 18.3,
+    "last_price": 104.22
+  },
+  {
+    "date": "2026-08-25 00:00:00",
+    "symbol": "SHANTIGEAR",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 39.85,
+    "last_price": 549.0
+  },
+  {
+    "date": "2026-08-25 00:00:00",
+    "symbol": "ORIENTHOT",
+    "direction": "long",
+    "composite_score": 81.7,
+    "rs_excess": 16.16,
+    "last_price": 141.78
+  },
+  {
+    "date": "2026-08-25 00:00:00",
+    "symbol": "GOLDBETA",
+    "direction": "long",
+    "composite_score": 81.46,
+    "rs_excess": 5.53,
+    "last_price": 135.5
+  },
+  {
+    "date": "2026-08-26 00:00:00",
+    "symbol": "QUADFUTURE",
+    "direction": "long",
+    "composite_score": 83.18,
+    "rs_excess": 21.98,
+    "last_price": 418.5
+  },
+  {
+    "date": "2026-08-26 00:00:00",
+    "symbol": "FMGOETZE",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 14.7,
+    "last_price": 452.3
+  },
+  {
+    "date": "2026-08-26 00:00:00",
+    "symbol": "FACT",
+    "direction": "long",
+    "composite_score": 78.66,
+    "rs_excess": 9.48,
+    "last_price": 876.1
+  },
+  {
+    "date": "2026-08-26 00:00:00",
+    "symbol": "GENESYS",
+    "direction": "long",
+    "composite_score": 78.32,
+    "rs_excess": 16.78,
+    "last_price": 214.25
+  },
+  {
+    "date": "2026-08-26 00:00:00",
+    "symbol": "PAYTM",
+    "direction": "long",
+    "composite_score": 78.21,
+    "rs_excess": 10.36,
+    "last_price": 1718.0
+  },
+  {
+    "date": "2026-08-27 00:00:00",
+    "symbol": "PVP",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 43.8,
+    "last_price": 56.48
+  },
+  {
+    "date": "2026-08-27 00:00:00",
+    "symbol": "GENESYS",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 34.46,
+    "last_price": 246.3
+  },
+  {
+    "date": "2026-08-27 00:00:00",
+    "symbol": "INDOTHAI",
+    "direction": "short",
+    "composite_score": 83.54,
+    "rs_excess": -23.14,
+    "last_price": 51.16
+  },
+  {
+    "date": "2026-08-27 00:00:00",
+    "symbol": "BALUFORGE",
+    "direction": "long",
+    "composite_score": 81.95,
+    "rs_excess": 18.33,
+    "last_price": 638.9
+  },
+  {
+    "date": "2026-08-27 00:00:00",
+    "symbol": "HINDZINC",
+    "direction": "long",
+    "composite_score": 79.33,
+    "rs_excess": 11.94,
+    "last_price": 626.5
+  },
+  {
+    "date": "2026-08-28 00:00:00",
+    "symbol": "PVP",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 44.54,
+    "last_price": 62.12
+  },
+  {
+    "date": "2026-08-28 00:00:00",
+    "symbol": "GENESYS",
+    "direction": "long",
+    "composite_score": 82.66,
+    "rs_excess": 28.34,
+    "last_price": 234.5
+  },
+  {
+    "date": "2026-08-28 00:00:00",
+    "symbol": "GKENERGY",
+    "direction": "long",
+    "composite_score": 81.25,
+    "rs_excess": 13.21,
+    "last_price": 139.65
+  },
+  {
+    "date": "2026-08-28 00:00:00",
+    "symbol": "BBTC",
+    "direction": "long",
+    "composite_score": 79.82,
+    "rs_excess": 12.95,
+    "last_price": 1613.6
+  },
+  {
+    "date": "2026-08-28 00:00:00",
+    "symbol": "WELCORP",
+    "direction": "long",
+    "composite_score": 76.73,
+    "rs_excess": 20.56,
+    "last_price": 2405.8
+  },
+  {
+    "date": "2026-08-31 00:00:00",
+    "symbol": "FMGOETZE",
+    "direction": "long",
+    "composite_score": 83.58,
+    "rs_excess": 27.84,
+    "last_price": 509.85
+  },
+  {
+    "date": "2026-08-31 00:00:00",
+    "symbol": "RSL",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 7.98,
+    "last_price": 177.49
+  },
+  {
+    "date": "2026-08-31 00:00:00",
+    "symbol": "ATHERENERG",
+    "direction": "long",
+    "composite_score": 81.97,
+    "rs_excess": 10.87,
+    "last_price": 1616.3
+  },
+  {
+    "date": "2026-08-31 00:00:00",
+    "symbol": "TEJASNET",
+    "direction": "long",
+    "composite_score": 80.25,
+    "rs_excess": 8.09,
+    "last_price": 550.15
+  },
+  {
+    "date": "2026-08-31 00:00:00",
+    "symbol": "CYIENT",
+    "direction": "long",
+    "composite_score": 79.85,
+    "rs_excess": 24.38,
+    "last_price": 1107.45
+  },
+  {
+    "date": "2026-09-01 00:00:00",
+    "symbol": "PVP",
+    "direction": "long",
+    "composite_score": 85.05,
+    "rs_excess": 41.51,
+    "last_price": 68.48
+  },
+  {
+    "date": "2026-09-01 00:00:00",
+    "symbol": "DIFFNKG",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 21.45,
+    "last_price": 485.5
+  },
+  {
+    "date": "2026-09-01 00:00:00",
+    "symbol": "NORTHARC",
+    "direction": "long",
+    "composite_score": 82.6,
+    "rs_excess": 10.17,
+    "last_price": 311.65
+  },
+  {
+    "date": "2026-09-01 00:00:00",
+    "symbol": "JAIBALAJI",
+    "direction": "long",
+    "composite_score": 81.83,
+    "rs_excess": 10.71,
+    "last_price": 72.16
+  },
+  {
+    "date": "2026-09-01 00:00:00",
+    "symbol": "FMGOETZE",
+    "direction": "long",
+    "composite_score": 81.68,
+    "rs_excess": 29.85,
+    "last_price": 529.15
+  },
+  {
+    "date": "2026-09-02 00:00:00",
+    "symbol": "MANALIPETC",
+    "direction": "long",
+    "composite_score": 83.04,
+    "rs_excess": 13.39,
+    "last_price": 84.04
+  },
+  {
+    "date": "2026-09-02 00:00:00",
+    "symbol": "GODREJAGRO",
+    "direction": "long",
+    "composite_score": 82.41,
+    "rs_excess": 8.41,
+    "last_price": 654.4
+  },
+  {
+    "date": "2026-09-02 00:00:00",
+    "symbol": "HAPPSTMNDS",
+    "direction": "short",
+    "composite_score": 78.45,
+    "rs_excess": -17.52,
+    "last_price": 362.7
+  },
+  {
+    "date": "2026-09-02 00:00:00",
+    "symbol": "EBGNG",
+    "direction": "long",
+    "composite_score": 78.38,
+    "rs_excess": 12.39,
+    "last_price": 650.5
+  },
+  {
+    "date": "2026-09-02 00:00:00",
+    "symbol": "SSWL",
+    "direction": "long",
+    "composite_score": 78.28,
+    "rs_excess": 23.87,
+    "last_price": 357.25
+  },
+  {
+    "date": "2026-09-03 00:00:00",
+    "symbol": "ANTELOPUS",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 21.3,
+    "last_price": 951.15
+  },
+  {
+    "date": "2026-09-03 00:00:00",
+    "symbol": "JAYKAY",
+    "direction": "long",
+    "composite_score": 81.95,
+    "rs_excess": 9.74,
+    "last_price": 169.4
+  },
+  {
+    "date": "2026-09-03 00:00:00",
+    "symbol": "TNPETRO",
+    "direction": "long",
+    "composite_score": 78.61,
+    "rs_excess": 19.27,
+    "last_price": 133.73
+  },
+  {
+    "date": "2026-09-03 00:00:00",
+    "symbol": "GHCLTEXTIL",
+    "direction": "long",
+    "composite_score": 77.16,
+    "rs_excess": 11.2,
+    "last_price": 139.35
+  },
+  {
+    "date": "2026-09-03 00:00:00",
+    "symbol": "INDOCO",
+    "direction": "long",
+    "composite_score": 77.01,
+    "rs_excess": 15.79,
+    "last_price": 273.77
+  },
+  {
+    "date": "2026-09-04 00:00:00",
+    "symbol": "ANTELOPUS",
+    "direction": "long",
+    "composite_score": 83.65,
+    "rs_excess": 30.61,
+    "last_price": 1013.3
+  },
+  {
+    "date": "2026-09-04 00:00:00",
+    "symbol": "WAKEFIT",
+    "direction": "long",
+    "composite_score": 78.97,
+    "rs_excess": 2.2,
+    "last_price": 149.64
+  },
+  {
+    "date": "2026-09-04 00:00:00",
+    "symbol": "RAYMOND",
+    "direction": "long",
+    "composite_score": 78.52,
+    "rs_excess": 24.34,
+    "last_price": 757.9
+  },
+  {
+    "date": "2026-09-04 00:00:00",
+    "symbol": "BRIGADE",
+    "direction": "long",
+    "composite_score": 78.43,
+    "rs_excess": 9.36,
+    "last_price": 712.3
+  },
+  {
+    "date": "2026-09-04 00:00:00",
+    "symbol": "CGCL",
+    "direction": "long",
+    "composite_score": 78.12,
+    "rs_excess": 11.89,
+    "last_price": 271.7
+  },
+  {
+    "date": "2026-09-07 00:00:00",
+    "symbol": "JINDWORLD",
+    "direction": "long",
+    "composite_score": 86.05,
+    "rs_excess": 53.05,
+    "last_price": 57.51
+  },
+  {
+    "date": "2026-09-07 00:00:00",
+    "symbol": "SHANTIGEAR",
+    "direction": "long",
+    "composite_score": 84.83,
+    "rs_excess": 21.24,
+    "last_price": 621.75
+  },
+  {
+    "date": "2026-09-07 00:00:00",
+    "symbol": "DIFFNKG",
+    "direction": "long",
+    "composite_score": 83.89,
+    "rs_excess": 16.7,
+    "last_price": 474.9
+  },
+  {
+    "date": "2026-09-07 00:00:00",
+    "symbol": "RRKABEL",
+    "direction": "short",
+    "composite_score": 82.15,
+    "rs_excess": -14.38,
+    "last_price": 2454.1
+  },
+  {
+    "date": "2026-09-07 00:00:00",
+    "symbol": "ALEMBICLTD",
+    "direction": "long",
+    "composite_score": 80.61,
+    "rs_excess": 12.52,
+    "last_price": 111.41
+  },
+  {
+    "date": "2026-09-08 00:00:00",
+    "symbol": "RIR",
+    "direction": "long",
+    "composite_score": 83.58,
+    "rs_excess": 21.77,
+    "last_price": 191.95
+  },
+  {
+    "date": "2026-09-08 00:00:00",
+    "symbol": "IFCI",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 15.53,
+    "last_price": 102.51
+  },
+  {
+    "date": "2026-09-08 00:00:00",
+    "symbol": "JINDWORLD",
+    "direction": "long",
+    "composite_score": 83.05,
+    "rs_excess": 54.0,
+    "last_price": 58.52
+  },
+  {
+    "date": "2026-09-08 00:00:00",
+    "symbol": "SMCGLOBAL",
+    "direction": "long",
+    "composite_score": 81.1,
+    "rs_excess": 8.4,
+    "last_price": 84.95
+  },
+  {
+    "date": "2026-09-08 00:00:00",
+    "symbol": "FCL",
+    "direction": "long",
+    "composite_score": 80.83,
+    "rs_excess": 12.81,
+    "last_price": 56.66
+  },
+  {
+    "date": "2026-09-09 00:00:00",
+    "symbol": "GVT&D",
+    "direction": "long",
+    "composite_score": 83.56,
+    "rs_excess": 11.6,
+    "last_price": 4750.0
+  },
+  {
+    "date": "2026-09-09 00:00:00",
+    "symbol": "FCL",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 21.43,
+    "last_price": 58.44
+  },
+  {
+    "date": "2026-09-09 00:00:00",
+    "symbol": "MVGJL",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 31.53,
+    "last_price": 210.72
+  },
+  {
+    "date": "2026-09-09 00:00:00",
+    "symbol": "ANDHRAPAP",
+    "direction": "long",
+    "composite_score": 80.39,
+    "rs_excess": 20.81,
+    "last_price": 72.09
+  },
+  {
+    "date": "2026-09-09 00:00:00",
+    "symbol": "HIKAL",
+    "direction": "long",
+    "composite_score": 79.39,
+    "rs_excess": 25.66,
+    "last_price": 246.01
+  },
+  {
+    "date": "2026-09-10 00:00:00",
+    "symbol": "GRAPHITE",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 18.27,
+    "last_price": 844.65
+  },
+  {
+    "date": "2026-09-10 00:00:00",
+    "symbol": "RAYMOND",
+    "direction": "long",
+    "composite_score": 81.75,
+    "rs_excess": 23.18,
+    "last_price": 808.45
+  },
+  {
+    "date": "2026-09-10 00:00:00",
+    "symbol": "ELLEN",
+    "direction": "long",
+    "composite_score": 80.53,
+    "rs_excess": 15.35,
+    "last_price": 355.05
+  },
+  {
+    "date": "2026-09-10 00:00:00",
+    "symbol": "ANTELOPUS",
+    "direction": "long",
+    "composite_score": 78.92,
+    "rs_excess": 24.97,
+    "last_price": 1169.4
+  },
+  {
+    "date": "2026-09-10 00:00:00",
+    "symbol": "INFY",
+    "direction": "short",
+    "composite_score": 78.51,
+    "rs_excess": -7.19,
+    "last_price": 1035.0
+  },
+  {
+    "date": "2026-09-11 00:00:00",
+    "symbol": "SHUKRAPHAR",
+    "direction": "long",
+    "composite_score": 83.28,
+    "rs_excess": 5.59,
+    "last_price": 53.97
+  },
+  {
+    "date": "2026-09-11 00:00:00",
+    "symbol": "WHEELS",
+    "direction": "long",
+    "composite_score": 82.36,
+    "rs_excess": 41.47,
+    "last_price": 2313.0
+  },
+  {
+    "date": "2026-09-11 00:00:00",
+    "symbol": "REDINGTON",
+    "direction": "long",
+    "composite_score": 80.51,
+    "rs_excess": 6.91,
+    "last_price": 392.0
+  },
+  {
+    "date": "2026-09-11 00:00:00",
+    "symbol": "MANINDS",
+    "direction": "long",
+    "composite_score": 80.4,
+    "rs_excess": 12.12,
+    "last_price": 876.45
+  },
+  {
+    "date": "2026-09-11 00:00:00",
+    "symbol": "SHAREINDIA",
+    "direction": "long",
+    "composite_score": 78.74,
+    "rs_excess": 17.64,
+    "last_price": 196.32
+  },
+  {
+    "date": "2026-09-15 00:00:00",
+    "symbol": "SETL",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 16.57,
+    "last_price": 468.15
+  },
+  {
+    "date": "2026-09-15 00:00:00",
+    "symbol": "PINELABS",
+    "direction": "long",
+    "composite_score": 82.21,
+    "rs_excess": 23.61,
+    "last_price": 202.17
+  },
+  {
+    "date": "2026-09-15 00:00:00",
+    "symbol": "QUADFUTURE",
+    "direction": "long",
+    "composite_score": 79.24,
+    "rs_excess": 16.59,
+    "last_price": 478.5
+  },
+  {
+    "date": "2026-09-15 00:00:00",
+    "symbol": "PWL",
+    "direction": "long",
+    "composite_score": 79.09,
+    "rs_excess": 9.75,
+    "last_price": 136.1
+  },
+  {
+    "date": "2026-09-15 00:00:00",
+    "symbol": "IONEXCHANG",
+    "direction": "long",
+    "composite_score": 77.71,
+    "rs_excess": 11.01,
+    "last_price": 445.7
+  },
+  {
+    "date": "2026-09-16 00:00:00",
+    "symbol": "PNCINFRA",
+    "direction": "short",
+    "composite_score": 86.04,
+    "rs_excess": -20.0,
+    "last_price": 140.32
+  },
+  {
+    "date": "2026-09-16 00:00:00",
+    "symbol": "TATAINVEST",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 17.2,
+    "last_price": 718.35
+  },
+  {
+    "date": "2026-09-16 00:00:00",
+    "symbol": "TATACHEM",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 22.6,
+    "last_price": 734.9
+  },
+  {
+    "date": "2026-09-16 00:00:00",
+    "symbol": "SMSPHARMA",
+    "direction": "long",
+    "composite_score": 80.78,
+    "rs_excess": 5.84,
+    "last_price": 410.15
+  },
+  {
+    "date": "2026-09-16 00:00:00",
+    "symbol": "AEROENTER",
+    "direction": "short",
+    "composite_score": 79.69,
+    "rs_excess": -21.65,
+    "last_price": 116.93
+  },
+  {
+    "date": "2026-09-17 00:00:00",
+    "symbol": "PNCINFRA",
+    "direction": "short",
+    "composite_score": 83.54,
+    "rs_excess": -22.3,
+    "last_price": 134.44
+  },
+  {
+    "date": "2026-09-17 00:00:00",
+    "symbol": "TATACHEM",
+    "direction": "long",
+    "composite_score": 82.52,
+    "rs_excess": 22.19,
+    "last_price": 731.8
+  },
+  {
+    "date": "2026-09-17 00:00:00",
+    "symbol": "EMUDHRA",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 27.93,
+    "last_price": 642.3
+  },
+  {
+    "date": "2026-09-17 00:00:00",
+    "symbol": "AEROFLEX",
+    "direction": "short",
+    "composite_score": 80.44,
+    "rs_excess": -14.35,
+    "last_price": 481.1
+  },
+  {
+    "date": "2026-09-17 00:00:00",
+    "symbol": "PINELABS",
+    "direction": "long",
+    "composite_score": 80.14,
+    "rs_excess": 11.3,
+    "last_price": 185.71
+  },
+  {
+    "date": "2026-09-18 00:00:00",
+    "symbol": "EMUDHRA",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 24.51,
+    "last_price": 633.35
+  },
+  {
+    "date": "2026-09-18 00:00:00",
+    "symbol": "RIR",
+    "direction": "long",
+    "composite_score": 82.05,
+    "rs_excess": 7.57,
+    "last_price": 197.63
+  },
+  {
+    "date": "2026-09-18 00:00:00",
+    "symbol": "SHAREINDIA",
+    "direction": "long",
+    "composite_score": 80.59,
+    "rs_excess": 15.98,
+    "last_price": 218.44
+  },
+  {
+    "date": "2026-09-18 00:00:00",
+    "symbol": "TEGA",
+    "direction": "long",
+    "composite_score": 79.55,
+    "rs_excess": 15.09,
+    "last_price": 1920.0
+  },
+  {
+    "date": "2026-09-18 00:00:00",
+    "symbol": "MONQ50",
+    "direction": "long",
+    "composite_score": 79.38,
+    "rs_excess": 55.73,
+    "last_price": 330.25
+  },
+  {
+    "date": "2026-09-21 00:00:00",
+    "symbol": "MASPTOP50",
+    "direction": "long",
+    "composite_score": 86.04,
+    "rs_excess": 30.8,
+    "last_price": 124.48
+  },
+  {
+    "date": "2026-09-21 00:00:00",
+    "symbol": "MONQ50",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 98.82,
+    "last_price": 396.3
+  },
+  {
+    "date": "2026-09-21 00:00:00",
+    "symbol": "GRAUWEIL",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 13.82,
+    "last_price": 86.62
+  },
+  {
+    "date": "2026-09-21 00:00:00",
+    "symbol": "RIR",
+    "direction": "long",
+    "composite_score": 81.55,
+    "rs_excess": 12.71,
+    "last_price": 198.93
+  },
+  {
+    "date": "2026-09-21 00:00:00",
+    "symbol": "YATHARTH",
+    "direction": "long",
+    "composite_score": 81.52,
+    "rs_excess": 17.17,
+    "last_price": 1139.5
+  },
+  {
+    "date": "2026-09-22 00:00:00",
+    "symbol": "MASPTOP50",
+    "direction": "long",
+    "composite_score": 82.54,
+    "rs_excess": 20.45,
+    "last_price": 113.25
+  },
+  {
+    "date": "2026-09-22 00:00:00",
+    "symbol": "JASH",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 11.96,
+    "last_price": 575.9
+  },
+  {
+    "date": "2026-09-22 00:00:00",
+    "symbol": "SAMBHV",
+    "direction": "long",
+    "composite_score": 81.53,
+    "rs_excess": 18.28,
+    "last_price": 155.13
+  },
+  {
+    "date": "2026-09-22 00:00:00",
+    "symbol": "MONQ50",
+    "direction": "long",
+    "composite_score": 80.85,
+    "rs_excess": 46.47,
+    "last_price": 317.04
+  },
+  {
+    "date": "2026-09-22 00:00:00",
+    "symbol": "JAYKAY",
+    "direction": "long",
+    "composite_score": 78.55,
+    "rs_excess": 13.38,
+    "last_price": 187.56
+  },
+  {
+    "date": "2026-09-23 00:00:00",
+    "symbol": "PROTEAN",
+    "direction": "long",
+    "composite_score": 81.24,
+    "rs_excess": 26.05,
+    "last_price": 620.65
+  },
+  {
+    "date": "2026-09-23 00:00:00",
+    "symbol": "ASTEC",
+    "direction": "long",
+    "composite_score": 79.61,
+    "rs_excess": 17.02,
+    "last_price": 794.5
+  },
+  {
+    "date": "2026-09-23 00:00:00",
+    "symbol": "PARAGMILK",
+    "direction": "long",
+    "composite_score": 79.3,
+    "rs_excess": 9.9,
+    "last_price": 279.4
+  },
+  {
+    "date": "2026-09-23 00:00:00",
+    "symbol": "OPTIEMUS",
+    "direction": "long",
+    "composite_score": 78.48,
+    "rs_excess": 16.27,
+    "last_price": 708.9
+  },
+  {
+    "date": "2026-09-23 00:00:00",
+    "symbol": "INDSWFTLAB",
+    "direction": "long",
+    "composite_score": 77.91,
+    "rs_excess": 6.17,
+    "last_price": 405.55
+  },
+  {
+    "date": "2026-09-24 00:00:00",
+    "symbol": "OPTIEMUS",
+    "direction": "long",
+    "composite_score": 83.55,
+    "rs_excess": 38.74,
+    "last_price": 828.35
+  },
+  {
+    "date": "2026-09-24 00:00:00",
+    "symbol": "MANINDS",
+    "direction": "long",
+    "composite_score": 83.38,
+    "rs_excess": 23.86,
+    "last_price": 986.7
+  },
+  {
+    "date": "2026-09-24 00:00:00",
+    "symbol": "ARIHANTCAP",
+    "direction": "long",
+    "composite_score": 82.73,
+    "rs_excess": 15.93,
+    "last_price": 94.06
+  },
+  {
+    "date": "2026-09-24 00:00:00",
+    "symbol": "WELSPUNLIV",
+    "direction": "long",
+    "composite_score": 82.06,
+    "rs_excess": 9.34,
+    "last_price": 223.77
+  },
+  {
+    "date": "2026-09-24 00:00:00",
+    "symbol": "REGAAL",
+    "direction": "long",
+    "composite_score": 80.57,
+    "rs_excess": 16.35,
+    "last_price": 94.56
+  },
+  {
+    "date": "2026-09-25 00:00:00",
+    "symbol": "POLICYBZR",
+    "direction": "short",
+    "composite_score": 86.04,
+    "rs_excess": -30.71,
+    "last_price": 1207.2
+  },
+  {
+    "date": "2026-09-25 00:00:00",
+    "symbol": "STLNETWORK",
+    "direction": "long",
+    "composite_score": 85.04,
+    "rs_excess": 28.02,
+    "last_price": 52.01
+  },
+  {
+    "date": "2026-09-25 00:00:00",
+    "symbol": "ONEPOINT",
+    "direction": "long",
+    "composite_score": 83.54,
+    "rs_excess": 18.09,
+    "last_price": 69.31
+  },
+  {
+    "date": "2026-09-25 00:00:00",
+    "symbol": "WHIRLPOOL",
+    "direction": "long",
+    "composite_score": 81.67,
+    "rs_excess": 18.22,
+    "last_price": 853.45
+  },
+  {
+    "date": "2026-09-25 00:00:00",
+    "symbol": "VIKRAN",
+    "direction": "long",
+    "composite_score": 80.93,
+    "rs_excess": 9.8,
+    "last_price": 60.99
+  },
+  {
+    "date": "2026-09-28 00:00:00",
+    "symbol": "POLICYBZR",
+    "direction": "short",
+    "composite_score": 83.54,
+    "rs_excess": -32.22,
+    "last_price": 1166.0
+  },
+  {
+    "date": "2026-09-28 00:00:00",
+    "symbol": "INDIAGLYCO",
+    "direction": "long",
+    "composite_score": 82.68,
+    "rs_excess": 18.4,
+    "last_price": 309.9
+  },
+  {
+    "date": "2026-09-28 00:00:00",
+    "symbol": "ONEPOINT",
+    "direction": "long",
+    "composite_score": 81.66,
+    "rs_excess": 17.58,
+    "last_price": 69.6
+  },
+  {
+    "date": "2026-09-28 00:00:00",
+    "symbol": "SHANTIGOLD",
+    "direction": "long",
+    "composite_score": 80.8,
+    "rs_excess": 30.5,
+    "last_price": 325.68
+  },
+  {
+    "date": "2026-09-28 00:00:00",
+    "symbol": "KSCL",
+    "direction": "long",
+    "composite_score": 79.99,
+    "rs_excess": 16.42,
+    "last_price": 804.55
+  },
+  {
+    "date": "2026-09-29 00:00:00",
+    "symbol": "DELTACORP",
+    "direction": "long",
+    "composite_score": 84.58,
+    "rs_excess": 19.93,
+    "last_price": 72.2
+  },
+  {
+    "date": "2026-09-29 00:00:00",
+    "symbol": "SDBL",
+    "direction": "long",
+    "composite_score": 83.58,
+    "rs_excess": 21.08,
+    "last_price": 80.62
+  },
+  {
+    "date": "2026-09-29 00:00:00",
+    "symbol": "AEQUS",
+    "direction": "long",
+    "composite_score": 83.2,
+    "rs_excess": 15.03,
+    "last_price": 260.1
+  },
+  {
+    "date": "2026-09-29 00:00:00",
+    "symbol": "SHANTIGOLD",
+    "direction": "long",
+    "composite_score": 82.69,
+    "rs_excess": 22.07,
+    "last_price": 308.77
+  },
+  {
+    "date": "2026-09-29 00:00:00",
+    "symbol": "RSYSTEMS",
+    "direction": "long",
+    "composite_score": 82.5,
+    "rs_excess": 15.93,
+    "last_price": 267.34
+  },
+  {
+    "date": "2026-09-30 00:00:00",
+    "symbol": "RSYSTEMS",
+    "direction": "long",
+    "composite_score": 83.61,
+    "rs_excess": 27.36,
+    "last_price": 290.15
+  },
+  {
+    "date": "2026-09-30 00:00:00",
+    "symbol": "PVP",
+    "direction": "short",
+    "composite_score": 81.74,
+    "rs_excess": -11.82,
+    "last_price": 55.91
+  },
+  {
+    "date": "2026-09-30 00:00:00",
+    "symbol": "SUNFLAG",
+    "direction": "long",
+    "composite_score": 81.11,
+    "rs_excess": 33.4,
+    "last_price": 464.3
+  },
+  {
+    "date": "2026-09-30 00:00:00",
+    "symbol": "POLICYBZR",
+    "direction": "short",
+    "composite_score": 79.37,
+    "rs_excess": -37.48,
+    "last_price": 1081.0
+  },
+  {
+    "date": "2026-09-30 00:00:00",
+    "symbol": "VIDYAWIRES",
+    "direction": "long",
+    "composite_score": 77.67,
+    "rs_excess": 12.97,
+    "last_price": 93.54
+  },
+  {
+    "date": "2026-10-01 00:00:00",
+    "symbol": "PVP",
+    "direction": "short",
+    "composite_score": 80.69,
+    "rs_excess": -19.05,
+    "last_price": 53.12
+  },
+  {
+    "date": "2026-10-01 00:00:00",
+    "symbol": "KPIGREEN",
+    "direction": "long",
+    "composite_score": 79.53,
+    "rs_excess": 6.07,
+    "last_price": 358.95
+  },
+  {
+    "date": "2026-10-01 00:00:00",
+    "symbol": "MAXHEALTH",
+    "direction": "short",
+    "composite_score": 78.11,
+    "rs_excess": -8.75,
+    "last_price": 929.8
+  },
+  {
+    "date": "2026-10-01 00:00:00",
+    "symbol": "AEQUS",
+    "direction": "long",
+    "composite_score": 77.24,
+    "rs_excess": 18.09,
+    "last_price": 279.48
+  },
+  {
+    "date": "2026-10-01 00:00:00",
+    "symbol": "ARIS",
+    "direction": "long",
+    "composite_score": 77.07,
+    "rs_excess": 3.64,
+    "last_price": 143.88
+  }
+]

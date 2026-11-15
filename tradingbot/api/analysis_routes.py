@@ -68,11 +68,31 @@ def _make_step_tracker(state: AppState):
     return _on_event
 
 
+def _pipeline_cache_dir(state: AppState):
+    """Where a staged (rerunnable) analysis remembers Jev's answers: the per-date queue dir.
+
+    The web API runs the pipeline once, so it needs no cache and keeps its old behaviour.
+    """
+    return Path(state.config.llm.queue_dir) if state.require_prefetched else None
+
+
+def _build_context_fetcher(state: AppState, market_provider):
+    """The index, VIX and flows fetcher. It reads NIFTY, BANKNIFTY and VIX from the
+    candle store, so it must be given one (without it every index read is empty)."""
+    from tradingbot.scanner.market_context import MarketContextFetcher
+
+    return MarketContextFetcher(
+        candle_store=getattr(state, "candle_store", None), market_data_provider=market_provider,
+    )
+
+
 async def _run_analysis(state: AppState, trade_date: date) -> None:
     """Run the 3-tier analysis pipeline."""
     sub_id = state.event_bus.subscribe(_make_step_tracker(state))
+    state.analysis_blocked = None
     try:
-        from tradingbot.analysis.pipeline import AnalysisPipeline
+        from tradingbot.analysis.pipeline import AnalysisPipeline, DataNeeded
+        from tradingbot.core.llm.file_provider import AnswersNeeded
         from tradingbot.analysis.tier2_analyzer import Tier2Analyzer
         from tradingbot.analysis.tier3_analyzer import Tier3Analyzer
         from tradingbot.backtest.monte_carlo import MonteCarloSimulator
@@ -129,12 +149,14 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
             event_bus=state.event_bus,
             capital=live_capital,
             instrument_cache=inst_cache,
-            context_fetcher=MarketContextFetcher(market_data_provider=market_provider),
+            context_fetcher=_build_context_fetcher(state, market_provider),
             lookback_days=config.backtest.lookback_days,
             db_path=Path(state.data_dir) / "tradingbot.db",
             market_data_provider=market_provider,
             screening_config=config.screening,
             jev_config=config.jev,
+            require_prefetched=state.require_prefetched,
+            cache_dir=_pipeline_cache_dir(state),
         )
 
         await state.event_bus.emit("analysis.started", {
@@ -174,6 +196,12 @@ async def _run_analysis(state: AppState, trade_date: date) -> None:
         state.analysis_status = "idle"
         state.pipeline_started_at = None
         raise
+    except (AnswersNeeded, DataNeeded) as blocked:
+        # Not a failure: the run stopped to wait for the conversation or a download.
+        logger.info("analysis blocked: %s", blocked)
+        state.analysis_blocked = blocked
+        state.analysis_status = "blocked"
+        state.pipeline_started_at = None
     except Exception as exc:  # noqa: BLE001
         logger.error("analysis failed: %s", exc, exc_info=True)
         state.analysis_status = "failed"

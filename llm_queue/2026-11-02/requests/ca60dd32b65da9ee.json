@@ -1,0 +1,116 @@
+{
+  "id": "ca60dd32b65da9ee",
+  "tool_name": "submit_deep_analysis",
+  "tool_description": "Submit per-stock deep analysis",
+  "system_prompt": "You are an expert intraday trading strategist with 15 years of NSE experience. Design precise trade setups based on the multi-timeframe data provided.\n\nRules:\n1. Only propose setups with 3+ independent confirming signals across different timeframes or indicator types (confluence). Volume + RSI + VWAP = 3 signals. RSI + Stochastic = 1 signal (both momentum oscillators).\n2. Minimum reward:risk of 1.5:1 to target_1. If you cannot find that, return no_trade_reason instead of forcing a setup.\n3. Entry, stop loss, and targets MUST align with actual support/resistance, pivot, or VWAP levels from the data. Do NOT round to convenient numbers.\n4. Do NOT guess or invent price levels. Use ONLY levels visible in the data.\n\nThink step by step.\n\nConfidence calibration:\n- 0.8+ means you would bet your own capital\n- 0.6-0.8 means worth taking with reduced size\n- Below 0.6 means skip -- return no_trade_reason\n\nFor each setup, state the invalidation condition -- the specific price action that kills the trade thesis.\n\nState the strongest COUNTER-ARGUMENT against each setup.\n\nIf a <performance_context> block is provided, factor it into your confidence scoring. Strategies that underperform in the current regime deserve lower confidence. If your confidence calibration shows systematic overconfidence in a bucket, adjust downward.",
+  "user_prompt": "Stock: BOROLTD | Shortlist direction: short (advisory \u2014 override if indicators disagree)\nMarket regime: range_bound\n\nTechnical Indicators (multi-timeframe):\n  symbol: BOROLTD\n  last_close: 286.4\n  rsi_14: 75.60220774860316\n  macd: 7.426373859909688\n  macd_signal: 8.797607534054544\n  bb_upper: 290.94591845603463\n  bb_middle: 284.195\n  bb_lower: 277.44408154396535\n  atr_14: 2.433847095208976\n  sma_20: 284.195\n  sma_50: 260.091\n  sma_200: 246.12125\n  ema_12: 284.84778418684465\n  ema_26: 277.42141032693496\n  vwap: 275.6032996251071\n  pivot: 274.24999999999994\n  support_levels: [240.7136231884058, 268.93333333333334, 286.1775862068965]\n  resistance_levels: []\n  adx_14: 59.94269649377931\n  supertrend: 280.70993186338075\n  supertrend_direction: 1\n  bb_bandwidth: 4.750905861140865\n  vwap_upper_1: 281.2004747318739\n  vwap_lower_1: 270.00612451834036\n  poc: 276.47749999999996\n  vah: 284.98249999999996\n  val: 273.6425\n  ema_9: 285.8147489659202\n  sma_9: 286.4\n  pivot_r1: 298.5499999999999\n  pivot_s1: 262.0999999999999\n  last_session_high: 286.4\n  last_session_low: 249.95\n  last_session_close: 286.4\n  high_5d: 286.4\n  low_5d: 230.95\n  high_20d: 294.4\n  low_20d: 227.95\n\nBacktest Results:\n  No prior backtest data \u2014 propose setups based on indicator confluence.\n\nRecent Price Action:\nBOROLTD last 5 candles (15m): [{'open': 286.4, 'high': 286.4, 'low': 286.4, 'close': 286.4, 'volume': 3832}, {'open': 286.4, 'high': 286.4, 'low': 286.4, 'close': 286.4, 'volume': 17106}, {'open': 286.4, 'high': 286.4, 'low': 286.4, 'close': 286.4, 'volume': 7803}, {'open': 286.4, 'high': 286.4, 'low': 286.4, 'close': 286.4, 'volume': 3039}, {'open': 286.4, 'high': 286.4, 'low': 286.4, 'close': 286.4, 'volume': 14319}]\nVWAP (last session): 275.60 | RSI14: 75.6 | ATR14: 2.43 | ADX14: 59.9\nBB: [277.44, 284.19, 290.95] BW: 4.751\nLast session: H 286.40 L 249.95 C 286.40 | 5d H/L: 286.40 / 230.95 | 20d H/L: 294.40 / 227.95\nPivot 274.25 (R1 298.55, S1 262.10) | Volume profile (10 sessions): POC 276.48 VAH 284.98 VAL 273.64\nSupport: [240.7136231884058, 268.93333333333334, 286.1775862068965] | Resistance: []\nSupertrend: 280.71 (up)\n\nDesign 1-3 precise trade setups with exact entry, stop loss, and target levels. Only propose if you find 3+ confluence signals and 1.5:1 minimum R:R. The shortlist direction is advisory. If indicators strongly favor the opposite direction (e.g., overbought RSI + MACD bearish cross + extreme VWAP extension = short, even if shortlist said long), propose the direction the data supports.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "symbol": {
+        "type": "string"
+      },
+      "setups": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "strategy": {
+              "type": "string"
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "long",
+                "short"
+              ]
+            },
+            "entry_trigger": {
+              "type": "string"
+            },
+            "entry_price": {
+              "type": "number"
+            },
+            "stop_loss": {
+              "type": "number"
+            },
+            "target_1": {
+              "type": "number"
+            },
+            "target_2": {
+              "type": "number"
+            },
+            "position_size_hint": {
+              "type": "string",
+              "enum": [
+                "0.5x",
+                "1x",
+                "1.5x"
+              ]
+            },
+            "entry_window": {
+              "type": "string"
+            },
+            "exit_deadline": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "edge_description": {
+              "type": "string"
+            },
+            "invalidation": {
+              "type": "string"
+            },
+            "bear_case": {
+              "type": "string"
+            },
+            "confluence_count": {
+              "type": "integer"
+            },
+            "timeframe_alignment": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "strategy",
+            "direction",
+            "entry_trigger",
+            "entry_price",
+            "stop_loss",
+            "target_1",
+            "target_2",
+            "position_size_hint",
+            "entry_window",
+            "exit_deadline",
+            "confidence",
+            "edge_description",
+            "invalidation",
+            "bear_case",
+            "confluence_count",
+            "timeframe_alignment"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "no_trade_reason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "symbol",
+      "setups",
+      "no_trade_reason"
+    ],
+    "additionalProperties": false
+  },
+  "created_at": "2026-11-02T00:22:54.722000+05:30",
+  "step": "deep:BOROLTD"
+}

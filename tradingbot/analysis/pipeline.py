@@ -10,10 +10,13 @@ The old plan_generator still works for backward compat.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import time
 import uuid
 from datetime import date, datetime, timedelta
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -21,6 +24,7 @@ from tradingbot.core.llm.provider import LLMUsage
 from tradingbot.core.models import AnalysisRun, MarketRegime, StrategyName
 from tradingbot.persistence.review_store import TradeReviewStore
 from tradingbot.screening.candlestick import score_patterns as _score_candlestick
+from tradingbot.core.llm.file_provider import AnswersNeeded, llm_step
 from tradingbot.screening.volume_profile_score import score_volume_profile as _score_volume_profile
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -54,6 +58,32 @@ _STRATEGY_MAP: dict[str, StrategyName] = {
     "bb_lower": StrategyName.BOLLINGER_SQUEEZE,
     "fade": StrategyName.MEAN_REVERSION,
 }
+
+
+class DataNeeded(Exception):
+    """Shortlisted stocks have no candle data yet; the fetch script must run first."""
+
+    def __init__(self, symbols: list[str]) -> None:
+        self.symbols = symbols
+        super().__init__(f"candle data needed for: {', '.join(symbols)}")
+
+
+def _previous_trading_day(day: date) -> date:
+    from datetime import timedelta
+    from tradingbot.scanner.calendar import is_trading_day
+
+    previous = day - timedelta(days=1)
+    while not is_trading_day(previous):
+        previous -= timedelta(days=1)
+    return previous
+
+
+def _advance_decline(stock_metrics: list[dict]) -> float:
+    """Advancers per decliner on the last session across the screened universe."""
+    changes = [m.get("signals", {}).get("change_1d_pct", 0.0) for m in stock_metrics]
+    advancers = sum(1 for c in changes if c > 0)
+    decliners = sum(1 for c in changes if c < 0)
+    return advancers / decliners if decliners else float(advancers)
 
 
 def _match_strategy(name: str) -> StrategyName | None:
@@ -103,6 +133,8 @@ class AnalysisPipeline:
         screening_config: Any = None,
         jev_config: Any = None,
         duckdb_store: Any = None,
+        require_prefetched: bool = False,
+        cache_dir: Any = None,
     ):
         self._sync = data_sync
         self._candles = candle_store
@@ -123,6 +155,8 @@ class AnalysisPipeline:
         self._capital = capital
         self._screening = screening_config
         self._approved_setup_ids: dict[str, int] = {}
+        self._require_prefetched = require_prefetched
+        self._cache_dir = cache_dir
 
         # Intelligent screener wraps deterministic screener with Jev layer
         self._intelligent_screener = None
@@ -165,7 +199,6 @@ class AnalysisPipeline:
         # --- Tier 1: Deterministic screen ---
 
         market_ctx = await _aio.to_thread(self._fetch_market_context)
-        self._bus.emit_sync("scan.context", {"regime": market_ctx.regime.value})
 
         instruments = await _aio.to_thread(self._fetch_universe)
         self._bus.emit_sync("scan.universe", {"total": len(instruments), "status": "fetching"})
@@ -178,43 +211,60 @@ class AnalysisPipeline:
         )
         self._bus.emit_sync("scan.universe", {"total": len(stock_metrics)})
 
+        # --- One regime for the whole run (Jev when available, the LLM otherwise) ---
+        # Decided before Tier 1 so the screener adapts to the SAME regime that the shortlist,
+        # deep analysis and the saved plan use. It once used a rule-based label instead.
+        sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
+        _regime_args = dict(
+            nifty=market_ctx.nifty_level, banknifty=getattr(market_ctx, "banknifty_level", 0.0),
+            vix=market_ctx.india_vix, nifty_5d_change=nifty_5d_change,
+            fii_5d_net=market_ctx.fii_net_cr, dii_5d_net=market_ctx.dii_net_cr,
+            advance_decline=_advance_decline(stock_metrics), sector_data=sector_data,
+        )
+
+        # Jev answers from live inputs, so a rerun would get a different regime. A staged
+        # analysis is rerun several times: remember what Jev said the first time.
+        jev_cache = self._load_jev_cache()
+        regime = jev_cache.get("regime")
+        if regime is None and self._jev_tier2 is not None:
+            regime = await self._jev_tier2.analyze_regime(**_regime_args)
+            if regime is not None:
+                self._store_jev_cache("regime", regime)
+        if regime is None:
+            with llm_step("regime"):
+                regime = await self._tier2.analyze_regime(**_regime_args)
+            llm_calls += 1
+            if isinstance(regime.get("_usage"), LLMUsage):
+                total_cost += regime.pop("_usage").cost_usd()
+
+        sectors = jev_cache.get("sectors")
+        if sectors is None and self._jev_tier2 is not None:
+            sectors = await self._jev_tier2.analyze_sectors(regime, {}, {})
+            if sectors is not None:
+                self._store_jev_cache("sectors", sectors)
+        if sectors is None:
+            with llm_step("sectors"):
+                sectors = await self._tier2.analyze_sectors(regime, {}, {})
+            llm_calls += 1
+            if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
+                total_cost += sectors.pop("_usage").cost_usd()
+
+        self._bus.emit_sync("scan.context", {
+            "regime": regime.get("regime", "unknown"),
+            "regime_confidence": regime.get("regime_confidence", 0.5),
+        })
+
+        # --- Tier 1: deterministic screen, weighted for the regime above ---
         if self._intelligent_screener is not None:
             scored = self._intelligent_screener.screen(
                 stock_metrics,
-                regime=market_ctx.regime.value,
-                regime_confidence=0.7,
+                regime=regime.get("regime", "range_bound"),
+                regime_confidence=float(regime.get("regime_confidence", 0.5)),
             )
         else:
             scored = self._screener.screen(stock_metrics)
         self._bus.emit_sync("scan.filtered", {"candidates": len(scored)})
         await self._bus.emit("analysis.tier1_complete", {"candidates": len(scored)})
-
-        # --- Tier 2: regime + sectors (Jev when available, Claude fallback) ---
-        sector_data = {s: 0.0 for s in (market_ctx.sector_leaders + market_ctx.sector_laggards)}
-        _regime_args = dict(
-            nifty=market_ctx.nifty_level, banknifty=0,
-            vix=market_ctx.india_vix, nifty_5d_change=nifty_5d_change,
-            fii_5d_net=market_ctx.fii_net_cr, dii_5d_net=market_ctx.dii_net_cr,
-            advance_decline=0, sector_data=sector_data,
-        )
-
-        regime = None
-        if self._jev_tier2 is not None:
-            regime = await self._jev_tier2.analyze_regime(**_regime_args)
-        if regime is None:
-            regime = await self._tier2.analyze_regime(**_regime_args)
-            llm_calls += 1
-            if isinstance(regime.get("_usage"), LLMUsage):
-                total_cost += regime.pop("_usage").cost_usd()
-
-        sectors = None
-        if self._jev_tier2 is not None:
-            sectors = await self._jev_tier2.analyze_sectors(regime, {}, {})
-        if sectors is None:
-            sectors = await self._tier2.analyze_sectors(regime, {}, {})
-            llm_calls += 1
-            if isinstance(sectors.get("_usage") if isinstance(sectors, dict) else None, LLMUsage):
-                total_cost += sectors.pop("_usage").cost_usd()
 
         scored_dicts = [
             {
@@ -223,11 +273,13 @@ class AnalysisPipeline:
                 "sector": s.sector,
                 "last_price": s.last_price,
                 "factor_scores": s.factor_scores,
+                "signals": s.signals,
             }
             for s in scored
         ]
 
-        shortlist_result = await self._tier2.shortlist(regime, sectors, scored_dicts)
+        with llm_step("shortlist"):
+            shortlist_result = await self._tier2.shortlist(regime, sectors, scored_dicts)
         llm_calls += 1
         if isinstance(shortlist_result.get("_usage"), LLMUsage):
             total_cost += shortlist_result.pop("_usage").cost_usd()
@@ -239,40 +291,19 @@ class AnalysisPipeline:
         # --- Fetch intraday data for shortlisted stocks (on-demand from Kite) ---
         symbols = [s["symbol"] for s in shortlist]
         if symbols and getattr(self, '_duckdb', None) is not None:
-            self._bus.emit_sync("strategy.indicators", {
-                "status": "fetching", "message": f"Fetching intraday data for {len(symbols)} stocks...",
-            })
-            try:
-                from tradingbot.data.kite_data_sync import KiteDataSync
-                from tradingbot.data.kite_client import KiteClient
-                from kiteconnect import KiteConnect
-                from pathlib import Path
-                import os
-
-                config = getattr(self, '_config', None)
-                token_path = Path.home() / ".tradingbot" / "kite_token"
-                kite_api_key = os.environ.get("KITE_API_KEY", "")
-                if token_path.exists() and kite_api_key:
-                    kite = KiteConnect(api_key=kite_api_key)
-                    kite.set_access_token(token_path.read_text().strip())
-                    kite_client = KiteClient(kite, rate_limit_per_sec=3)
-
-                    sync = KiteDataSync(kite_client, self._duckdb, self._instrument_cache)
-
-                    def _progress(msg):
-                        self._bus.emit_sync("strategy.indicators", {"status": "fetching", "message": msg})
-
-                    await sync.fetch_shortlist_data(symbols, progress_callback=_progress)
-                else:
-                    log.warning("Kite auth not available — skipping intraday fetch")
-            except Exception as exc:
-                log.warning("On-demand intraday fetch failed: %s", exc, exc_info=True)
+            if self._require_prefetched:
+                missing = self.missing_shortlist_data(symbols, trade_date)
+                if missing:
+                    raise DataNeeded(missing)
+            else:
+                await self.fetch_shortlist(symbols)
 
         # --- Performance context for LLM ---
         perf_ctx = self._build_performance_context()
 
         # --- Phase 1: Claude Deep Analysis (ALL shortlisted stocks) ---
         all_setups: list[dict[str, Any]] = []
+        pending_requests: list[Any] = []
         if not shortlist:
             self._bus.emit_sync("strategy.indicators", {"status": "skipped", "reason": "no shortlisted stocks"})
             self._bus.emit_sync("strategy.deep_analysis", {"status": "skipped", "reason": "no shortlisted stocks"})
@@ -301,15 +332,21 @@ class AnalysisPipeline:
                 "symbol": sym, "progress": f"{i+1}/{len(shortlist)}",
                 "status": "fetching", "message": f"Analyzing {sym} ({i+1}/{len(shortlist)})",
             })
-            deep = await self._tier3.deep_analyze(
-                symbol=sym,
-                direction=direction,
-                regime=regime,
-                indicators=indicators,
-                backtest_results=[],
-                price_action=price_action,
-                performance_context=perf_ctx,
-            )
+            try:
+                with llm_step(f"deep:{sym}"):
+                    deep = await self._tier3.deep_analyze(
+                        symbol=sym,
+                        direction=direction,
+                        regime=regime,
+                        indicators=indicators,
+                        backtest_results=[],
+                        price_action=price_action,
+                        performance_context=perf_ctx,
+                    )
+            except AnswersNeeded as needed:
+                # Keep going so every stock's request is written in this one run.
+                pending_requests.extend(needed.requests)
+                continue
             llm_calls += 1
             if isinstance(deep.get("_usage") if isinstance(deep, dict) else None, LLMUsage):
                 total_cost += deep.pop("_usage").cost_usd()
@@ -334,6 +371,9 @@ class AnalysisPipeline:
                 "status": "fetching" if i + 1 < len(shortlist) else "done",
                 "message": f"{sym}: {n_setups} setups found ({i+1}/{len(shortlist)})",
             })
+
+        if pending_requests:
+            raise AnswersNeeded(pending_requests)
 
         self._bus.emit_sync("strategy.setups", {
             "total_setups": sum(len(s.get("setups", [])) for s in all_setups),
@@ -403,12 +443,15 @@ class AnalysisPipeline:
         )
 
         if setups_with_data:
-            validation = await self._tier3.validate_portfolio(
-                setups_with_data, regime, sectors
-            )
+            with llm_step("adversarial"):
+                validation = await self._tier3.validate_portfolio(
+                    setups_with_data, regime, sectors
+                )
             llm_calls += 1
             if isinstance(validation.get("_usage") if isinstance(validation, dict) else None, LLMUsage):
                 total_cost += validation.pop("_usage").cost_usd()
+
+            self._retire_previous_approved(trade_date)
 
             for rejected in validation.get("rejected", []):
                 log.info(
@@ -479,6 +522,9 @@ class AnalysisPipeline:
                     self._approved_setup_ids[strategy_key] = row_id
                     setups_approved += 1
 
+        if not setups_with_data:
+            self._retire_previous_approved(trade_date)
+
         self._bus.emit_sync("strategy.sized", {
             "proposed": setups_proposed,
             "approved": setups_approved,
@@ -514,6 +560,83 @@ class AnalysisPipeline:
         )
         return analysis_run
 
+    def _load_jev_cache(self) -> dict:
+        if self._cache_dir is None:
+            return {}
+        try:
+            cached = json.loads((Path(self._cache_dir) / "jev_tier2.json").read_text())
+        except (OSError, ValueError):
+            return {}
+        return cached if isinstance(cached, dict) else {}
+
+    def _store_jev_cache(self, key: str, value: dict) -> None:
+        if self._cache_dir is None:
+            return
+        directory = Path(self._cache_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+        cached = self._load_jev_cache()
+        cached[key] = value
+        temporary = directory / ".jev_tier2.tmp"
+        temporary.write_text(json.dumps(cached, indent=2, default=str))
+        os.replace(temporary, directory / "jev_tier2.json")
+
+    def _retire_previous_approved(self, trade_date: date) -> None:
+        """Staged runs are rerunnable by design, so a finished run replaces its predecessor.
+
+        The web path keeps its historical behaviour (every run adds rows).
+        """
+        if self._require_prefetched:
+            retired = self._setups.supersede_approved(trade_date, "replaced by a rerun")
+            if retired:
+                log.info("Superseded %d approved setups from an earlier run for %s", retired, trade_date)
+
+    def missing_shortlist_data(self, symbols: list[str], trade_date: date | None = None) -> list[str]:
+        """Symbols whose 15m candles are absent or older than the previous trading day.
+
+        Stale data would be analysed silently, and past 7 days _fetch_indicators_for_symbol
+        re-downloads a year of candles inside analyze, which must stay a separate script.
+        """
+        needed = _previous_trading_day(trade_date) if trade_date is not None else None
+        missing = []
+        for sym in symbols:
+            last = self._duckdb.last_date(sym, "15m")
+            if last is None or (needed is not None and last < needed):
+                missing.append(sym)
+        return missing
+
+    async def fetch_shortlist(self, symbols: list[str], progress: Any = None) -> dict[str, int]:
+        """Download intraday candles for the shortlist. Gap-aware, so safe to rerun."""
+        self._bus.emit_sync("strategy.indicators", {
+            "status": "fetching", "message": f"Fetching intraday data for {len(symbols)} stocks...",
+        })
+        try:
+            from tradingbot.data.kite_data_sync import KiteDataSync
+            from tradingbot.data.kite_client import KiteClient
+            from kiteconnect import KiteConnect
+            from pathlib import Path
+            import os
+
+            token_path = Path.home() / ".tradingbot" / "kite_token"
+            kite_api_key = os.environ.get("KITE_API_KEY", "")
+            if not (token_path.exists() and kite_api_key):
+                log.warning("Kite auth not available — skipping intraday fetch")
+                return {}
+            kite = KiteConnect(api_key=kite_api_key)
+            kite.set_access_token(token_path.read_text().strip())
+            kite_client = KiteClient(kite, rate_limit_per_sec=3)
+
+            sync = KiteDataSync(kite_client, self._duckdb, self._instrument_cache)
+
+            def _progress(msg):
+                self._bus.emit_sync("strategy.indicators", {"status": "fetching", "message": msg})
+                if progress is not None:
+                    progress(msg)
+
+            return await sync.fetch_shortlist_data(symbols, progress_callback=_progress)
+        except Exception as exc:
+            log.warning("On-demand intraday fetch failed: %s", exc, exc_info=True)
+            return {}
+
     def _fetch_universe(self) -> list[dict]:
         """Fetch instrument universe (fast — 1 Kite API call)."""
         if self._provider is not None:
@@ -547,6 +670,7 @@ class AnalysisPipeline:
 
         import statistics
         import pandas as pd
+        from tradingbot.strategy.indicators import rsi
         from datetime import timedelta
 
         now = datetime.now(tz=IST)
@@ -610,13 +734,33 @@ class AnalysisPipeline:
             rs_excess = stock_5d_return - nifty_5d_change
             relative_strength_score = min(100.0, max(0.0, 50.0 + abs(rs_excess) * 5.0))
 
-            # ATR expansion (2% ATR = 100 score)
-            atr_expansion_score = min(100.0, max(0.0, atr_pct * 50.0))
+            # ATR expansion (6.3% ATR = 100 score — recalibrated from the original
+            # 2% threshold, which saturated for 96% of the liquid NSE universe
+            # whose median daily ATR is ~4%. See design doc Gate-0 diagnostic.)
+            atr_expansion_score = min(100.0, max(0.0, atr_pct * 15.87))
 
             # Price structure: close vs SMA20
             sma20 = float(close.tail(20).mean()) if len(close) >= 20 else last_price
             pct_above = ((last_price - sma20) / sma20 * 100) if sma20 > 0 else 0
             price_structure_score = min(100.0, max(0.0, 50.0 + abs(pct_above) * 5.0))
+
+            # Signed signals. The factor scores above are magnitudes (abs() inside), so
+            # without these the shortlist cannot tell a stock rising from one falling.
+            prev_close = float(close.iloc[-2]) if len(close) >= 2 else last_price
+            rsi_now = rsi(close).iloc[-1]
+            high_20d = float(df["high"].tail(20).max())
+            signals = {
+                "change_1d_pct": round((last_price / prev_close - 1) * 100, 2) if prev_close > 0 else 0.0,
+                "change_5d_pct": round(stock_5d_return, 2),
+                "rsi_14": 50.0 if pd.isna(rsi_now) else round(float(rsi_now), 1),
+                "vs_sma20_pct": round((last_price / sma20 - 1) * 100, 2) if sma20 > 0 else 0.0,
+                "from_20d_high_pct": round((last_price / high_20d - 1) * 100, 2) if high_20d > 0 else 0.0,
+                "gap_pct": (
+                    round((float(df["open"].iloc[-1]) - prev_close) / prev_close * 100, 2)
+                    if prev_close > 0 else 0.0
+                ),
+                "vol_ratio": round(vol_today / avg_volume, 2) if avg_volume > 0 else 0.0,
+            }
 
             sector = inst.get("sector", "unknown")
             sector_returns.setdefault(sector, []).append(stock_5d_return)
@@ -632,6 +776,7 @@ class AnalysisPipeline:
                 "atr_pct": atr_pct,
                 "sector": sector,
                 "trading_days": trading_days,
+                "signals": signals,
                 "_stock_5d_return": stock_5d_return,
                 "factor_scores": {
                     "gap_analysis": gap_score,
@@ -796,10 +941,16 @@ class AnalysisPipeline:
         last_5 = df.tail(5)[["open", "high", "low", "close", "volume"]].to_dict("records")
         return (
             f"{symbol} last 5 candles (15m): {last_5}\n"
-            f"VWAP: {snap.vwap:.2f} | RSI14: {snap.rsi_14:.1f} | "
+            f"VWAP (last session): {snap.vwap:.2f} | RSI14: {snap.rsi_14:.1f} | "
             f"ATR14: {snap.atr_14:.2f} | ADX14: {snap.adx_14:.1f}\n"
             f"BB: [{snap.bb_lower:.2f}, {snap.bb_middle:.2f}, {snap.bb_upper:.2f}] "
             f"BW: {snap.bb_bandwidth:.3f}\n"
+            f"Last session: H {snap.last_session_high:.2f} L {snap.last_session_low:.2f} "
+            f"C {snap.last_session_close:.2f} | "
+            f"5d H/L: {snap.high_5d:.2f} / {snap.low_5d:.2f} | "
+            f"20d H/L: {snap.high_20d:.2f} / {snap.low_20d:.2f}\n"
+            f"Pivot {snap.pivot:.2f} (R1 {snap.pivot_r1:.2f}, S1 {snap.pivot_s1:.2f}) | "
+            f"Volume profile (10 sessions): POC {snap.poc:.2f} VAH {snap.vah:.2f} VAL {snap.val:.2f}\n"
             f"Support: {snap.support_levels} | Resistance: {snap.resistance_levels}\n"
             f"Supertrend: {snap.supertrend:.2f} "
             f"({'up' if snap.supertrend_direction == 1 else 'down'})"

@@ -152,3 +152,13 @@ def test_smart_caps_give_strong_sector_more_slots():
     result = screener._smart_sector_filter(stocks, sector_scores)
     # base cap=3, strong=+2 → 5 allowed
     assert len(result) == 5
+
+
+def test_signals_survive_the_intelligent_screener():
+    from tradingbot.screening.intelligent_screener import IntelligentScreener
+
+    stock = _stock(signals={"change_1d_pct": -4.2, "rsi_14": 27.0})
+
+    scored = IntelligentScreener(_config(), jev_client=None).screen([stock], regime="range_bound")
+
+    assert scored and scored[0].signals == {"change_1d_pct": -4.2, "rsi_14": 27.0}
