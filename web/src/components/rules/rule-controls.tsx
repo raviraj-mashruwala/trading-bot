@@ -2,24 +2,37 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ruleApi, type RuleMode, type RuleStatus } from "@/lib/rule-api";
+import { ruleApi, type RuleMode, type RuleSizing, type RuleStatus } from "@/lib/rule-api";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-const NOTIONAL_KEY = "kec-rule-notional";
+export const BUFFER_KEY = "kec-rule-buffer";
+export const DEFAULT_BUFFER = "2500";
+export const STOP_KEY = "kec-rule-stop-mult";
+export const DEFAULT_STOP = "0.65";
 
-export function RuleControls({ status }: { status: RuleStatus | undefined }) {
+export function stopMultValid(v: string) {
+  const n = Number(v);
+  return v !== "" && Number.isFinite(n) && n >= 0.1 && n <= 2;
+}
+
+function inr(n: number | undefined | null) {
+  return n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`;
+}
+
+interface Props {
+  status: RuleStatus | undefined;
+  buffer: string;
+  onBufferChange: (value: string) => void;
+  stopMult: string;
+  onStopMultChange: (value: string) => void;
+  sizing: RuleSizing | null | undefined;
+}
+
+export function RuleControls({ status, buffer, onBufferChange, stopMult, onStopMultChange, sizing }: Props) {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<RuleMode>("paper");
-  const [notional, setNotional] = useState(() => {
-    if (typeof window === "undefined") return "100000";
-    try {
-      return localStorage.getItem(NOTIONAL_KEY) || "100000";
-    } catch {
-      return "100000";
-    }
-  });
   const [liveOpen, setLiveOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [stopOpen, setStopOpen] = useState(false);
@@ -33,13 +46,16 @@ export function RuleControls({ status }: { status: RuleStatus | undefined }) {
     queryClient.invalidateQueries({ queryKey: ["rule-trades"] });
   };
 
+  const bufferValue = Number(buffer);
+  const bufferValid = buffer !== "" && Number.isFinite(bufferValue) && bufferValue >= 0 && bufferValue <= 1000000;
+
   const start = useMutation({
-    mutationFn: (args: { mode: RuleMode; confirm?: string }) =>
-      ruleApi.start(args.mode, Number(notional), args.confirm),
+    mutationFn: (args: { mode: RuleMode; confirm?: string }) => ruleApi.start(args.mode, bufferValue, Number(stopMult), args.confirm),
     onSuccess: (r) => {
-      setMessage(`Started in ${r.mode} mode`);
+      setMessage(`Started in ${r.mode} mode, keeping ₹${r.buffer.toLocaleString("en-IN")} unused, stop ${r.stop_adr_mult}× ADR`);
       try {
-        localStorage.setItem(NOTIONAL_KEY, notional);
+        localStorage.setItem(BUFFER_KEY, buffer);
+        localStorage.setItem(STOP_KEY, stopMult);
       } catch {
         /* storage unavailable */
       }
@@ -60,9 +76,6 @@ export function RuleControls({ status }: { status: RuleStatus | undefined }) {
     },
     onError: (e: Error) => setMessage(e.message),
   });
-
-  const notionalValue = Number(notional);
-  const notionalValid = Number.isFinite(notionalValue) && notionalValue >= 5000 && notionalValue <= 1000000;
 
   const onStart = () => {
     setMessage(null);
@@ -104,20 +117,31 @@ export function RuleControls({ status }: { status: RuleStatus | undefined }) {
         </div>
 
         <label className="flex items-center gap-2 text-[13px] text-muted-foreground">
-          Per trade ₹
+          Keep unused ₹
           <input
             inputMode="numeric"
-            value={notional}
+            value={buffer}
             disabled={running}
-            onChange={(e) => setNotional(e.target.value.replace(/[^0-9]/g, ""))}
-            className="h-9 w-28 rounded-md border border-[rgba(28,39,54,0.5)] bg-[rgba(22,29,38,0.3)] px-3 font-mono-nums text-sm text-foreground outline-none focus:border-[rgba(212,160,21,0.5)] disabled:opacity-50"
+            onChange={(e) => onBufferChange(e.target.value.replace(/[^0-9]/g, ""))}
+            className="h-9 w-24 rounded-md border border-[rgba(28,39,54,0.5)] bg-[rgba(22,29,38,0.3)] px-3 font-mono-nums text-sm text-foreground outline-none focus:border-[rgba(212,160,21,0.5)] disabled:opacity-50"
+          />
+        </label>
+
+        <label className="flex items-center gap-2 text-[13px] text-muted-foreground">
+          Stop × ADR
+          <input
+            inputMode="decimal"
+            value={stopMult}
+            disabled={running}
+            onChange={(e) => onStopMultChange(e.target.value.replace(/[^0-9.]/g, ""))}
+            className="h-9 w-16 rounded-md border border-[rgba(28,39,54,0.5)] bg-[rgba(22,29,38,0.3)] px-3 font-mono-nums text-sm text-foreground outline-none focus:border-[rgba(212,160,21,0.5)] disabled:opacity-50"
           />
         </label>
 
         {!running ? (
           <Button
             onClick={onStart}
-            disabled={!notionalValid || start.isPending}
+            disabled={!bufferValid || !stopMultValid(stopMult) || start.isPending}
             className={cn(
               mode === "live"
                 ? "bg-[#f85149] text-white hover:bg-[#f85149]/90"
@@ -133,8 +157,14 @@ export function RuleControls({ status }: { status: RuleStatus | undefined }) {
         )}
       </div>
 
-      {!notionalValid && !running && (
-        <p className="text-[11px] text-[#f85149]">Amount must be between ₹5,000 and ₹10,00,000.</p>
+      <p className="text-[11px] text-muted-foreground">
+        Quantity is set at 09:20 from your Kite balance minus this amount, using Kite&apos;s intraday margin per share.
+      </p>
+      {!stopMultValid(stopMult) && !running && (
+        <p className="text-[11px] text-[#f85149]">Stop must be between 0.1 and 2 × ADR.</p>
+      )}
+      {!bufferValid && !running && (
+        <p className="text-[11px] text-[#f85149]">Enter an amount between ₹0 and ₹10,00,000.</p>
       )}
       {running && (
         <p className="text-[11px] text-muted-foreground">
@@ -145,11 +175,18 @@ export function RuleControls({ status }: { status: RuleStatus | undefined }) {
 
       <Dialog open={liveOpen} onClose={() => setLiveOpen(false)}>
         <h3 className="mb-2 text-sm font-semibold text-[#e6edf3]">Start live trading</h3>
-        <p className="mb-3 text-xs leading-relaxed text-[#c9d1d9]">
-          This places real MIS orders on Kite: a short of about ₹{notionalValue.toLocaleString("en-IN")} in KEC
-          at 09:20 if today&apos;s signal fires, a stop-loss order at the broker, and a buy-back by 15:15.
-          Type LIVE to confirm.
+        <p className="mb-2 text-xs leading-relaxed text-[#c9d1d9]">
+          This places real MIS orders on Kite: a short in KEC at 09:20 if today&apos;s signal fires, sized to your Kite
+          balance minus ₹{bufferValue.toLocaleString("en-IN")}, with a stop-loss order {stopMult}× the 14-day average range above entry and a buy-back by 15:15.
         </p>
+        {sizing && (
+          <p className="mb-2 text-xs leading-relaxed text-[#c9d1d9]">
+            At the current price that is about {sizing.quantity} shares ({inr(sizing.position_value)}). If the stop is hit
+            you lose about <span className="text-[#f85149]">{inr(sizing.loss_at_stop)}</span>
+            {sizing.loss_at_stop_pct_of_balance != null && ` (${sizing.loss_at_stop_pct_of_balance}% of your balance)`} plus charges.
+          </p>
+        )}
+        <p className="mb-3 text-xs text-[#c9d1d9]">Type LIVE to confirm.</p>
         <input
           autoFocus
           value={confirmText}

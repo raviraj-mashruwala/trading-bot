@@ -21,7 +21,18 @@ router = APIRouter(prefix="/api/rules/kec", tags=["rules"])
 
 RULE_NAME = "kec_short"
 LIVE_CONFIRMATION = "LIVE"
-MIN_NOTIONAL, MAX_NOTIONAL = 5_000.0, 1_000_000.0
+MAX_BUFFER = 1_000_000.0
+MIN_STOP_MULT, MAX_STOP_MULT = 0.1, 2.0
+
+
+def _stop_mult(value) -> float:
+    try:
+        mult = float(value)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="stop_adr_mult must be a number") from None
+    if not MIN_STOP_MULT <= mult <= MAX_STOP_MULT:
+        raise HTTPException(status_code=400, detail=f"stop_adr_mult must be between {MIN_STOP_MULT} and {MAX_STOP_MULT}")
+    return mult
 
 
 @dataclass
@@ -98,11 +109,12 @@ async def status(request: Request):
 
 
 @router.get("/preview")
-async def preview(request: Request):
-    """Today's conditions from Kite, without trading."""
+async def preview(request: Request, buffer: float = KecRuleConfig.balance_buffer,
+                  stop_adr_mult: float = KecRuleConfig.stop_adr_mult):
+    """Today's conditions and the size the rule would trade now, from Kite, without trading."""
     from tradingbot.rule_executor.market import KiteMarketData
 
-    cfg = KecRuleConfig()
+    cfg = replace(KecRuleConfig(), stop_adr_mult=_stop_mult(stop_adr_mult))
     market = KiteMarketData(_kite(request.app.state.app_state.config))
     now = now_ist()
     bars = await asyncio.to_thread(market.completed_daily_bars, cfg.symbol, now, cfg.adr_days + 5)
@@ -115,7 +127,16 @@ async def preview(request: Request):
     rng = prev.high - prev.low
     prev_pos = (prev.close - prev.low) / rng if rng > 0 else 0.5
     adr = sum((b.high - b.low) / b.close for b in bars[-cfg.adr_days:]) / min(cfg.adr_days, len(bars))
+    sizing, sizing_error = None, None
+    try:
+        price = await asyncio.to_thread(market.ltp, cfg.symbol)
+        size = await asyncio.to_thread(market.size_short, cfg.symbol, price, max(buffer, 0.0))
+        sizing = {"price": price, "buffer": buffer, **size.to_dict(price, adr * cfg.stop_adr_mult)}
+    except Exception as exc:  # noqa: BLE001
+        sizing_error = str(exc)
     return {
+        "sizing": sizing,
+        "sizing_error": sizing_error,
         "as_of": now.isoformat(),
         "previous_session": str(prev.day),
         "previous_close": prev.close,
@@ -123,6 +144,8 @@ async def preview(request: Request):
         "weak_close_met": prev_pos <= cfg.weak_close_max,
         "gap_trigger_price": round(prev.close * (1 + cfg.gap_min), 2),
         "adr_pct": round(adr * 100, 3),
+        "stop_adr_mult": cfg.stop_adr_mult,
+        "stop_pct": round(adr * cfg.stop_adr_mult * 100, 3),
         "today_open": today_open,
         "signal": signal.to_dict() if signal else None,
     }
@@ -139,9 +162,13 @@ async def start(request: Request):
         raise HTTPException(status_code=400, detail="mode must be paper or live")
     if mode == "live" and body.get("confirm") != LIVE_CONFIRMATION:
         raise HTTPException(status_code=400, detail=f'live trading needs "confirm": "{LIVE_CONFIRMATION}"')
-    notional = float(body.get("notional", KecRuleConfig.notional))
-    if not MIN_NOTIONAL <= notional <= MAX_NOTIONAL:
-        raise HTTPException(status_code=400, detail=f"notional must be between {MIN_NOTIONAL:.0f} and {MAX_NOTIONAL:.0f}")
+    try:
+        buffer = float(body.get("buffer", KecRuleConfig.balance_buffer))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="buffer must be a number") from None
+    if not 0 <= buffer <= MAX_BUFFER:
+        raise HTTPException(status_code=400, detail=f"buffer must be between 0 and {MAX_BUFFER:.0f}")
+    stop_mult = _stop_mult(body.get("stop_adr_mult", KecRuleConfig.stop_adr_mult))
 
     from tradingbot.scanner import calendar as cal
 
@@ -170,11 +197,11 @@ async def start(request: Request):
 
     executor = RuleExecutor(
         broker=broker, market=KiteMarketData(kite), store=rt.store, mode=mode,
-        config=replace(KecRuleConfig(), notional=notional), telegram=getattr(state, "_telegram", None),
+        config=replace(KecRuleConfig(), balance_buffer=buffer, stop_adr_mult=stop_mult), telegram=getattr(state, "_telegram", None),
     )
     rt.executor, rt.error = executor, None
     rt.task = asyncio.create_task(_run(rt, executor))
-    return {"status": "started", "mode": mode, "notional": notional}
+    return {"status": "started", "mode": mode, "buffer": buffer, "stop_adr_mult": stop_mult}
 
 
 @router.post("/stop")

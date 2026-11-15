@@ -18,13 +18,13 @@ class KecRuleConfig:
     symbol: str = "KEC"
     gap_min: float = 0.01
     weak_close_max: float = 0.20
-    stop_adr_mult: float = 1.0
+    stop_adr_mult: float = 0.65        # set from the page; backtested 0.25-1.0, all similar net of costs
     adr_days: int = 14
     signal_time: time = time(9, 16)    # 09:15 open is known once the first minute prints
     entry_time: time = time(9, 20)
     entry_deadline: time = time(9, 30)  # no entry after this; the backtest entered at 09:20
     exit_time: time = time(15, 15)      # before Zerodha's MIS auto square-off (~15:20)
-    notional: float = 100_000.0
+    balance_buffer: float = 2_500.0     # Kite balance left unused; quantity uses the rest as MIS margin
 
 
 @dataclass(frozen=True)
@@ -93,5 +93,33 @@ def stop_price(entry: float, adr_pct: float, cfg: KecRuleConfig, tick: float = 0
     return round(ticks * tick, 2)
 
 
-def quantity_for(entry: float, cfg: KecRuleConfig) -> int:
-    return int(cfg.notional // entry) if entry > 0 else 0
+@dataclass(frozen=True)
+class Sizing:
+    """Position size from the Kite balance and the broker's intraday margin per share."""
+
+    available: float
+    margin_per_share: float
+    quantity: int
+
+    def to_dict(self, price: float, stop_pct: float | None = None) -> dict:
+        out = {
+            "available": round(self.available, 2),
+            "margin_per_share": round(self.margin_per_share, 2),
+            "quantity": self.quantity,
+            "position_value": round(self.quantity * price, 2),
+            "margin_used": round(self.quantity * self.margin_per_share, 2),
+        }
+        if stop_pct is not None:
+            loss = self.quantity * price * stop_pct
+            out["stop_pct"] = round(stop_pct * 100, 3)
+            out["loss_at_stop"] = round(loss, 2)
+            out["loss_at_stop_pct_of_balance"] = round(loss / self.available * 100, 2) if self.available > 0 else None
+        return out
+
+
+def margin_quantity(available: float, margin_per_share: float, buffer: float) -> int:
+    """Shares whose intraday margin fits in (available - buffer)."""
+    usable = available - buffer
+    if usable <= 0 or margin_per_share <= 0:
+        return 0
+    return int(usable // margin_per_share)

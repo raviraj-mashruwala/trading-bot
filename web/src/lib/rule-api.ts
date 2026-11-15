@@ -14,6 +14,19 @@ export interface RuleSignal {
   note: string;
 }
 
+export interface RuleSizing {
+  price?: number;
+  buffer?: number;
+  available: number;
+  margin_per_share: number;
+  quantity: number;
+  position_value: number;
+  margin_used: number;
+  loss_at_stop?: number;
+  loss_at_stop_pct_of_balance?: number | null;
+  stop_pct?: number;
+}
+
 export interface RuleSession {
   phase: string;
   mode: RuleMode;
@@ -29,6 +42,7 @@ export interface RuleSession {
     entered_at: string | null;
   } | null;
   result: { gross_pnl: number; est_charges: number; net_pnl: number } | null;
+  sizing: RuleSizing | null;
 }
 
 export interface RuleStatus {
@@ -46,8 +60,12 @@ export interface RulePreview {
   weak_close_met: boolean;
   gap_trigger_price: number;
   adr_pct: number;
+  stop_adr_mult: number;
+  stop_pct: number;
   today_open: number | null;
   signal: RuleSignal | null;
+  sizing: RuleSizing | null;
+  sizing_error: string | null;
 }
 
 export interface RuleTrade {
@@ -89,14 +107,15 @@ const BASE = "/api/rules/kec";
 
 export const ruleApi = {
   status: () => request<RuleStatus>(`${BASE}/status`),
-  preview: () => request<RulePreview>(`${BASE}/preview`),
+  preview: (buffer: number, stopMult: number) =>
+    request<RulePreview>(`${BASE}/preview?buffer=${buffer}&stop_adr_mult=${stopMult}`),
   trades: () => request<RuleTrade[]>(`${BASE}/trades`),
   events: (date?: string) => request<RuleEvent[]>(`${BASE}/events${date ? `?date=${date}` : ""}`),
-  start: (mode: RuleMode, notional: number, confirm?: string) =>
-    request<{ status: string; mode: RuleMode; notional: number }>(`${BASE}/start`, {
+  start: (mode: RuleMode, buffer: number, stopMult: number, confirm?: string) =>
+    request<{ status: string; mode: RuleMode; buffer: number; stop_adr_mult: number }>(`${BASE}/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode, notional, ...(confirm ? { confirm } : {}) }),
+      body: JSON.stringify({ mode, buffer, stop_adr_mult: stopMult, ...(confirm ? { confirm } : {}) }),
     }),
   stop: () => request<{ status: string; position_left_open?: boolean }>(`${BASE}/stop`, { method: "POST" }),
 };

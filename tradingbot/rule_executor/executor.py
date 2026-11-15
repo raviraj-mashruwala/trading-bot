@@ -28,8 +28,8 @@ from tradingbot.rule_executor.kec_rule import (
     DailyBar,
     KecRuleConfig,
     RuleSignal,
+    Sizing,
     evaluate_signal,
-    quantity_for,
     stop_price,
 )
 from tradingbot.rule_executor.store import RuleStore
@@ -47,6 +47,7 @@ STOP_BACKUP_PCT = 0.005      # if price is 0.5% past the stop and the stop order
 class MarketData(Protocol):
     def completed_daily_bars(self, symbol: str, before: datetime, count: int) -> list[DailyBar]: ...
     def today_open(self, symbol: str) -> float | None: ...
+    def size_short(self, symbol: str, price: float, buffer: float) -> Sizing: ...
 
 
 def tick_down(price: float) -> float:
@@ -75,6 +76,7 @@ class RuleState:
     entered_at: datetime | None = None
     last_price: float | None = None
     result: dict = field(default_factory=dict)
+    sizing: dict = field(default_factory=dict)
     note: str = ""
 
 
@@ -168,9 +170,20 @@ class RuleExecutor:
 
     def _submit_entry(self, now: datetime) -> None:
         ltp = self.broker.get_ltp(self.cfg.symbol)
-        qty = quantity_for(ltp, self.cfg)
+        try:
+            sizing = self.market.size_short(self.cfg.symbol, ltp, self.cfg.balance_buffer)
+        except Exception as exc:  # noqa: BLE001 - never trade on a guessed size
+            self._fail(f"could not size from Kite balance: {exc}")
+            return
+        adr = self.state.signal.adr_pct * self.cfg.stop_adr_mult if self.state.signal else None  # stop distance
+        self.state.sizing = sizing.to_dict(ltp, adr)
+        self._event("SIZING", (
+            f"balance {sizing.available:,.0f} - buffer {self.cfg.balance_buffer:,.0f}; margin/share "
+            f"{sizing.margin_per_share:.2f}; qty {sizing.quantity}; position {sizing.quantity * ltp:,.0f}"
+            + (f"; loss at stop ~{sizing.quantity * ltp * adr:,.0f}" if adr else "")))
+        qty = sizing.quantity
         if qty <= 0:
-            self._finish("quantity is zero at current price")
+            self._fail("Kite balance after the buffer does not cover the margin for 1 share")
             return
         limit = tick_down(ltp * (1 - LIMIT_BUFFER))
         try:
@@ -390,4 +403,5 @@ class RuleExecutor:
                 "entered_at": st.entered_at.isoformat() if st.entered_at else None,
             },
             "result": st.result or None,
+            "sizing": st.sizing or None,
         }

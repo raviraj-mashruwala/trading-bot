@@ -1,8 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ruleApi, type RuleTrade } from "@/lib/rule-api";
-import { RuleControls } from "@/components/rules/rule-controls";
+import {
+  BUFFER_KEY,
+  DEFAULT_BUFFER,
+  DEFAULT_STOP,
+  RuleControls,
+  STOP_KEY,
+  stopMultValid,
+} from "@/components/rules/rule-controls";
 import { cn } from "@/lib/utils";
 
 const PHASE_LABEL: Record<string, string> = {
@@ -61,7 +69,30 @@ function Totals({ trades }: { trades: RuleTrade[] }) {
 
 export default function RulesPage() {
   const { data: status } = useQuery({ queryKey: ["rule-status"], queryFn: ruleApi.status, refetchInterval: 3000 });
-  const preview = useQuery({ queryKey: ["rule-preview"], queryFn: ruleApi.preview, refetchInterval: 60_000, retry: false });
+  const [buffer, setBuffer] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_BUFFER;
+    try {
+      return localStorage.getItem(BUFFER_KEY) || DEFAULT_BUFFER;
+    } catch {
+      return DEFAULT_BUFFER;
+    }
+  });
+  const [stopMult, setStopMult] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_STOP;
+    try {
+      return localStorage.getItem(STOP_KEY) || DEFAULT_STOP;
+    } catch {
+      return DEFAULT_STOP;
+    }
+  });
+  const previewBuffer = Number(buffer) >= 0 && buffer !== "" ? Number(buffer) : Number(DEFAULT_BUFFER);
+  const previewStop = stopMultValid(stopMult) ? Number(stopMult) : Number(DEFAULT_STOP);
+  const preview = useQuery({
+    queryKey: ["rule-preview", previewBuffer, previewStop],
+    queryFn: () => ruleApi.preview(previewBuffer, previewStop),
+    refetchInterval: 60_000,
+    retry: false,
+  });
   const today = status?.session?.trade_date;
   const { data: events = [] } = useQuery({
     queryKey: ["rule-events", today],
@@ -97,7 +128,14 @@ export default function RulesPage() {
         </div>
       </div>
 
-      <RuleControls status={status} />
+      <RuleControls
+        status={status}
+        buffer={buffer}
+        onBufferChange={setBuffer}
+        stopMult={stopMult}
+        onStopMultChange={setStopMult}
+        sizing={p?.sizing}
+      />
       {status?.error && <p className="text-xs text-[#f85149]">Executor error: {status.error}</p>}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -116,7 +154,7 @@ export default function RulesPage() {
               />
               <Stat label="Gap trigger (open at or above)" value={num(p.gap_trigger_price)} />
               <Stat label="Today's open" value={num(p.today_open)} />
-              <Stat label="Stop distance (ADR 14)" value={`${p.adr_pct.toFixed(2)}%`} />
+              <Stat label={`Stop distance (${p.stop_adr_mult}× ADR ${p.adr_pct.toFixed(2)}%)`} value={`${p.stop_pct.toFixed(2)}%`} />
               <Stat
                 label="Signal"
                 value={p.signal ? (p.signal.trade ? "Short" : "No trade") : p.weak_close_met ? "Short (weak close)" : "Decided at 09:16"}
@@ -127,6 +165,31 @@ export default function RulesPage() {
           {p?.signal?.reasons?.length ? (
             <p className="mt-3 text-xs text-muted-foreground">{p.signal.reasons.join(" · ")}</p>
           ) : null}
+        </section>
+
+        <section className="rounded-lg border border-[rgba(28,39,54,0.5)] bg-card p-4 lg:col-span-2">
+          <h2 className="mb-1 text-sm font-semibold text-[#e6edf3]">Size if it trades now</h2>
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            Kite balance minus the amount kept unused, divided by Kite&apos;s intraday margin per share. Recalculated at 09:20.
+          </p>
+          {p?.sizing_error && <p className="text-xs text-[#f85149]">Could not read balance or margin: {p.sizing_error}</p>}
+          {p?.sizing && (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-6">
+              <Stat label="Kite balance" value={inr(p.sizing.available)} />
+              <Stat
+                label="Margin per share"
+                value={`${inr(p.sizing.margin_per_share)}${p.sizing.price ? ` (${Math.round((p.sizing.margin_per_share / p.sizing.price) * 100)}%)` : ""}`}
+              />
+              <Stat label="Shares" value={String(p.sizing.quantity)} />
+              <Stat label="Position value" value={inr(p.sizing.position_value)} />
+              <Stat label="Margin used" value={inr(p.sizing.margin_used)} />
+              <Stat
+                label="Loss if stopped"
+                value={`${inr(p.sizing.loss_at_stop)}${p.sizing.loss_at_stop_pct_of_balance != null ? ` · ${p.sizing.loss_at_stop_pct_of_balance}%` : ""}`}
+                tone="text-[#f85149]"
+              />
+            </div>
+          )}
         </section>
 
         <section className="rounded-lg border border-[rgba(28,39,54,0.5)] bg-card p-4">
@@ -202,7 +265,7 @@ export default function RulesPage() {
 
       <p className="text-[11px] leading-relaxed text-muted-foreground">
         Rule: short KEC at 09:20 if it opens 1%+ above the previous close, or the previous day closed in the
-        bottom 20% of its range. Stop 1× the 14-day average range above entry. Buy back at 15:15. One trade a day.
+        bottom 20% of its range. Stop a set multiple (default 0.65×) of the 14-day average range above entry. Buy back at 15:15. One trade a day, sized to the Kite balance with intraday margin (about 5× leverage).
         Backtest 2019–Nov 2026 was positive but not statistically reliable outside its training years.
       </p>
     </div>

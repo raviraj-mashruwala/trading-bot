@@ -8,7 +8,7 @@ from tradingbot.core.broker import BrokerError, OrderSide, OrderStatus, OrderTyp
 from tradingbot.core.config import PaperConfig
 from tradingbot.core.models import Direction
 from tradingbot.rule_executor.executor import RuleExecutor, tick_down, tick_up
-from tradingbot.rule_executor.kec_rule import DailyBar, KecRuleConfig, evaluate_signal, quantity_for, stop_price
+from tradingbot.rule_executor.kec_rule import DailyBar, KecRuleConfig, Sizing, evaluate_signal, margin_quantity, stop_price
 from tradingbot.rule_executor.paper_broker import RulePaperBroker
 from tradingbot.rule_executor.store import RuleStore, intraday_charges
 
@@ -35,8 +35,16 @@ class Clock:
 
 
 class Market:
-    def __init__(self, history, today_open):
-        self.history, self.open, self.calls = history, today_open, 0
+    """Kite stand-in: balance 50,000, intraday margin 20% of price."""
+
+    def __init__(self, history, today_open, available=50_000.0):
+        self.history, self.open, self.calls, self.available = history, today_open, 0, available
+        self.sized = []
+
+    def size_short(self, symbol, price, buffer):
+        per_share = price * 0.2
+        self.sized.append((price, buffer))
+        return Sizing(self.available, per_share, margin_quantity(self.available, per_share, buffer))
 
     def completed_daily_bars(self, symbol, before, count):
         self.calls += 1
@@ -96,14 +104,27 @@ def test_huge_gap_is_treated_as_corporate_action():
     assert not evaluate_signal(bars(), 130.0, KecRuleConfig()).trade
 
 
-def test_stop_is_one_adr_above_entry_rounded_up_to_tick():
-    assert stop_price(350.0, 0.025, KecRuleConfig()) == 358.75
-    assert stop_price(350.03, 0.02, KecRuleConfig()) == 357.05
+def test_stop_is_mult_x_adr_above_entry_rounded_up_to_tick():
+    one = KecRuleConfig(stop_adr_mult=1.0)
+    assert stop_price(350.0, 0.025, one) == 358.75
+    assert stop_price(350.03, 0.02, one) == 357.05
+    assert KecRuleConfig().stop_adr_mult == 0.65
+    assert stop_price(350.0, 0.025, KecRuleConfig()) == 355.7  # 350 x 1.01625 = 355.69 -> tick up
 
 
 def test_tick_rounding_and_quantity():
     assert tick_down(346.53) == 346.5 and tick_up(346.53) == 346.55
-    assert quantity_for(345.0, KecRuleConfig()) == 289
+
+def test_margin_quantity_keeps_the_buffer():
+    assert margin_quantity(50_000, 20.2, 2_500) == 2351      # 47,500 / 20.2
+    assert margin_quantity(2_400, 20.2, 2_500) == 0
+    assert margin_quantity(50_000, 0, 2_500) == 0
+
+
+def test_sizing_reports_loss_at_stop():
+    d = Sizing(50_000, 20.0, 2375).to_dict(price=100.0, stop_pct=0.02)
+    assert d["position_value"] == 237_500 and d["margin_used"] == 47_500
+    assert d["loss_at_stop"] == 4_750 and d["loss_at_stop_pct_of_balance"] == 9.5
 
 
 # ----- paper broker ---------------------------------------------------------------
@@ -127,10 +148,10 @@ def test_full_day_gap_short_squares_off_and_records_net_pnl(store):
     assert ex.state.phase == "entry_pending"
     ex.tick()
     assert ex.state.phase == "in_position"
-    assert ex.state.entry_price == 101.0 and ex.state.quantity == 990
-    assert ex.state.stop == pytest.approx(103.05)
+    assert ex.state.entry_price == 101.0 and ex.state.quantity == 2351
+    assert ex.state.stop == pytest.approx(102.35)  # 101 x (1 + 0.65 x 2%) = 102.313 -> tick up
     stop_order = broker.get_order(ex.state.stop_order_id)
-    assert stop_order.order_type is OrderType.SL and stop_order.trigger_price == pytest.approx(103.05)
+    assert stop_order.order_type is OrderType.SL and stop_order.trigger_price == pytest.approx(102.35)
 
     price.value = 100.0
     clock.at(12, 0); ex.tick()
@@ -141,8 +162,8 @@ def test_full_day_gap_short_squares_off_and_records_net_pnl(store):
     assert ex.state.phase == "done"
     trade = store.trades()[0]
     assert trade["status"] == "closed" and trade["exit_reason"] == "square_off"
-    assert trade["gross_pnl"] == pytest.approx(990.0)
-    assert trade["net_pnl"] == pytest.approx(990.0 - intraday_charges(101.0, 100.0, 990, True))
+    assert trade["gross_pnl"] == pytest.approx(2351.0)
+    assert trade["net_pnl"] == pytest.approx(2351.0 - intraday_charges(101.0, 100.0, 2351, True))
     assert broker.get_positions() == []
     assert broker.get_order(stop_order.order_id).status is OrderStatus.CANCELLED
 
@@ -196,7 +217,7 @@ def test_paper_restart_resumes_open_short(store):
     ex.stop()
     resumed, broker2, clock2 = make(store, bars(), 101.0, price, clock=Clock(11, 0))
     resumed.start()
-    assert resumed.state.phase == "in_position" and resumed.state.quantity == 990
+    assert resumed.state.phase == "in_position" and resumed.state.quantity == 2351
     assert broker2.get_positions()[0].direction is Direction.SHORT
     clock2.at(15, 15); resumed.tick(); resumed.tick()
     assert store.trades()[0]["status"] == "closed"
@@ -250,3 +271,39 @@ def test_resting_exit_is_cancelled_and_retried(store):
     broker.hold_exits = False
     ex.tick()
     assert ex.state.phase == "done" and store.trades()[0]["exit_reason"] == "square_off"
+
+
+def test_entry_uses_the_buffer_and_records_sizing(store):
+    ex, _, clock = make(store, bars(), 101.0, Price(101.0))
+    ex.start(); clock.at(9, 16); ex.tick(); clock.at(9, 20); ex.tick()
+    assert ex.market.sized == [(101.0, 2_500.0)]
+    assert ex.status()["sizing"]["quantity"] == 2351
+    assert any(e["kind"] == "SIZING" for e in store.events())
+
+
+def test_balance_below_buffer_does_not_trade(store):
+    clock = Clock()
+    broker = RulePaperBroker(PaperConfig(slippage_pct=0.0, initial_capital=400_000), price_feed=Price(101.0))
+    ex = RuleExecutor(broker, Market(bars(), 101.0, available=2_000.0), store, "paper", KecRuleConfig(), clock=clock)
+    ex.start(); clock.at(9, 16); ex.tick(); clock.at(9, 20); ex.tick()
+    assert ex.state.phase == "done" and broker._orders == {} and "does not cover" in ex.state.note
+
+
+def test_sizing_failure_does_not_trade(store):
+    ex, broker, clock = make(store, bars(), 101.0, Price(101.0))
+
+    def fail(*a, **k):
+        raise ConnectionError("margins API down")
+
+    ex.market.size_short = fail
+    ex.start(); clock.at(9, 16); ex.tick(); clock.at(9, 20); ex.tick()
+    assert ex.state.phase == "done" and broker._orders == {} and "could not size" in ex.state.note
+
+
+def test_stop_multiplier_setting_moves_the_stop_and_loss_estimate(store):
+    clock = Clock()
+    broker = RulePaperBroker(PaperConfig(slippage_pct=0.0, initial_capital=400_000), price_feed=Price(101.0))
+    ex = RuleExecutor(broker, Market(bars(), 101.0), store, "paper", KecRuleConfig(stop_adr_mult=0.25), clock=clock)
+    ex.start(); clock.at(9, 16); ex.tick(); clock.at(9, 20); ex.tick(); ex.tick()
+    assert ex.state.stop == pytest.approx(101.55)  # 101 x 1.005 = 101.505 -> tick up
+    assert ex.status()["sizing"]["stop_pct"] == pytest.approx(0.5)

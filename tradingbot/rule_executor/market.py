@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from tradingbot.rule_executor.kec_rule import DailyBar
+from tradingbot.rule_executor.kec_rule import DailyBar, Sizing, margin_quantity
 
 
 class KiteMarketData:
@@ -28,6 +28,31 @@ class KiteMarketData:
             if day < today:
                 bars.append(DailyBar(day, float(r["open"]), float(r["high"]), float(r["low"]), float(r["close"])))
         return bars[-count:]
+
+    def ltp(self, symbol: str) -> float:
+        key = f"NSE:{symbol}"
+        return float(self._kite.ltp([key])[key]["last_price"])
+
+    def _short_margin(self, symbol: str, price: float, quantity: int) -> float:
+        rows = self._kite.order_margins([{
+            "exchange": "NSE", "tradingsymbol": symbol, "transaction_type": "SELL", "variety": "regular",
+            "product": "MIS", "order_type": "LIMIT", "quantity": quantity, "price": price,
+        }])
+        return float(rows[0]["total"])
+
+    def size_short(self, symbol: str, price: float, buffer: float) -> Sizing:
+        """Largest MIS short whose margin fits in Kite's available balance minus `buffer`."""
+        available = float(self._kite.margins("equity")["net"])
+        per_share = self._short_margin(symbol, price, 1)
+        qty = margin_quantity(available, per_share, buffer)
+        for _ in range(3):  # confirm with the real quantity; margin can be non-linear at size
+            if qty <= 0:
+                break
+            total = self._short_margin(symbol, price, qty)
+            if total <= available - buffer:
+                break
+            qty = int(qty * (available - buffer) / total) - 1
+        return Sizing(available, per_share, max(qty, 0))
 
     def today_open(self, symbol: str) -> float | None:
         key = f"NSE:{symbol}"
